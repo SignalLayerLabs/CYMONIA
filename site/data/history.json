@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "active_agent_rate_pct": 60.0,
+    "agent_count": 100,
+    "epoch": 1,
+    "gini": 0.005352,
+    "inflation_pct": 0.0,
+    "money_supply": 100000.0,
+    "nominal_gdp": 437.417637,
+    "policy_rate_pct": 3.0,
+    "price_index": 93.60619,
+    "transaction_count": 65,
+    "velocity": 0.004374176
+  }
+]
