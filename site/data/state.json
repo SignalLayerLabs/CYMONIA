@@ -1,0 +1,85 @@
+{
+  "agent_count": 100,
+  "constitution_hash": "0ae3858a6de52c592ce70d789023ebe97bcedbd9a9f4cfd6944f880ef8f28737",
+  "constitution_valid": true,
+  "cumulative_issuance": 0.0,
+  "currency": "CYMONIA",
+  "epoch": 0,
+  "latest_metrics": {},
+  "money_supply": 100000.0,
+  "policy_rate_pct": 3.0,
+  "previous_state_hash": "GENESIS",
+  "state_hash": "a58b42d86284730dc4729f266c4b4b30f4c6a46c35f6dab72b2675b6c29e2160",
+  "top_agents": [
+    {
+      "agent_id": "agent-0001",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "compute"
+    },
+    {
+      "agent_id": "agent-0002",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "data"
+    },
+    {
+      "agent_id": "agent-0003",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "research"
+    },
+    {
+      "agent_id": "agent-0004",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "code"
+    },
+    {
+      "agent_id": "agent-0005",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "audit"
+    },
+    {
+      "agent_id": "agent-0006",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "security"
+    },
+    {
+      "agent_id": "agent-0007",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "planning"
+    },
+    {
+      "agent_id": "agent-0008",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "design"
+    },
+    {
+      "agent_id": "agent-0009",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "verification"
+    },
+    {
+      "agent_id": "agent-0010",
+      "balance": 1000.0,
+      "purchases": 0,
+      "sales": 0,
+      "specialty": "storage"
+    }
+  ]
+}

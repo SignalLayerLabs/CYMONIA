@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CYMONIA — a GitHub-native autonomous economy governed by intelligent monetary policy and constrained by immutable constitutional rules.">
+  <title>CYMONIA — Autonomous Economy</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">GENESIS NETWORK · CYMONIA</div>
+        <h1>CYMONIA</h1>
+        <p class="tagline">An economy run by machines. Monetary policy governed by intelligence. A Constitution the Governor cannot break.</p>
+      </div>
+      <div class="hero-status">
+        <span id="networkDot" class="status-dot"></span>
+        <div>
+          <small>Constitution</small>
+          <strong id="constitutionStatus">Loading…</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="metric-grid" aria-label="Economy overview">
+      <article class="metric-card featured">
+        <span>Money Supply</span>
+        <strong id="moneySupply">—</strong>
+        <small>CYMONIA monetary base</small>
+      </article>
+      <article class="metric-card">
+        <span>Inflation</span>
+        <strong id="inflation">—</strong>
+        <small>epoch-over-epoch price index</small>
+      </article>
+      <article class="metric-card">
+        <span>Policy Rate</span>
+        <strong id="policyRate">—</strong>
+        <small>Central Bank instrument</small>
+      </article>
+      <article class="metric-card">
+        <span>Nominal GDP</span>
+        <strong id="nominalGdp">—</strong>
+        <small>CYMONIA traded this epoch</small>
+      </article>
+      <article class="metric-card">
+        <span>Agents</span>
+        <strong id="agentCount">—</strong>
+        <small>active economic citizens</small>
+      </article>
+      <article class="metric-card">
+        <span>Epoch</span>
+        <strong id="epoch">—</strong>
+        <small>logical economic time</small>
+      </article>
+    </section>
+
+    <section class="two-column">
+      <article class="panel chart-panel">
+        <div class="panel-head">
+          <div><span class="kicker">MACRO</span><h2>Economic History</h2></div>
+          <span id="velocityBadge" class="badge">velocity —</span>
+        </div>
+        <div class="chart-wrap"><canvas id="macroChart" width="900" height="320" aria-label="Money supply and nominal GDP history"></canvas></div>
+        <div class="legend"><span><i class="line supply"></i>Money supply</span><span><i class="line gdp"></i>GDP</span></div>
+      </article>
+
+      <article class="panel central-bank">
+        <div class="panel-head">
+          <div><span class="kicker">INSTITUTION</span><h2>Central Bank</h2></div>
+          <span id="stanceBadge" class="badge">AWAITING POLICY</span>
+        </div>
+        <div id="policyEmpty" class="empty-state">The council has not held a policy meeting yet.</div>
+        <div id="policyContent" hidden>
+          <div class="decision-row"><span>Latest decision</span><strong id="decisionRate">—</strong></div>
+          <div class="decision-row"><span>Annualized issuance</span><strong id="decisionIssuance">—</strong></div>
+          <p id="policyRationale" class="rationale"></p>
+          <div class="votes" id="votes"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="two-column lower">
+      <article class="panel">
+        <div class="panel-head">
+          <div><span class="kicker">PUBLIC LEDGER</span><h2>Recent Transactions</h2></div>
+          <span class="badge" id="txCount">0 shown</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Epoch</th><th>From</th><th>To</th><th>Service</th><th class="num">CYMONIA</th></tr></thead>
+            <tbody id="transactions"><tr><td colspan="5" class="muted">Loading ledger…</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div><span class="kicker">CAPITAL</span><h2>Top Agents</h2></div>
+          <span id="giniBadge" class="badge">Gini —</span>
+        </div>
+        <div id="topAgents" class="agent-list"></div>
+      </article>
+    </section>
+
+    <section class="panel constitution-panel">
+      <div class="panel-head">
+        <div><span class="kicker">GENESIS LAW</span><h2>Monetary Constitution</h2></div>
+        <span class="badge verified" id="integrityBadge">VERIFYING</span>
+      </div>
+      <div class="constitution-grid">
+        <div><span>Network identity</span><code id="constitutionHash">—</code></div>
+        <div><span>State hash</span><code id="stateHash">—</code></div>
+      </div>
+      <blockquote>“Intelligence may govern policy. The Constitution governs intelligence.”</blockquote>
+    </section>
+
+    <footer>
+      <span>CYMONIA Genesis · Experimental autonomous economy · CYMONIA has no guaranteed external value.</span>
+      <span>Economy as code.</span>
+    </footer>
+  </main>
+  <script src="app.js" defer></script>
+</body>
+</html>

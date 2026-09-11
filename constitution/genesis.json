@@ -1,0 +1,41 @@
+{
+  "protocol": {
+    "name": "CYMONIA Genesis",
+    "version": "0.1.0",
+    "network": "genesis",
+    "founding_principle": "Intelligence may govern policy. The Constitution governs intelligence."
+  },
+  "currency": {
+    "name": "Cymonia",
+    "code": "CYMONIA",
+    "decimals": 6,
+    "external_value_guarantee": false,
+    "redemption_guarantee": false,
+    "market_ticker": null
+  },
+  "genesis": {
+    "agent_count": 100,
+    "initial_supply": 100000.0,
+    "initial_balance_per_agent": 1000.0,
+    "seed": 20260911
+  },
+  "time": {
+    "epochs_per_monetary_year": 288,
+    "policy_meeting_interval_epochs": 12
+  },
+  "monetary_policy": {
+    "inflation_target_pct": 2.0,
+    "max_annual_issuance_pct": 4.0,
+    "policy_rate_floor_pct": 0.0,
+    "policy_rate_ceiling_pct": 15.0,
+    "max_policy_rate_change_pct_points": 0.5,
+    "genesis_policy_rate_pct": 3.0,
+    "issuance_distribution": "pro_rata_live_agents"
+  },
+  "invariants": {
+    "negative_balances_allowed": false,
+    "retroactive_ledger_mutation_allowed": false,
+    "arbitrary_central_bank_transfers_allowed": false,
+    "issuance_requires_validated_policy_decision": true
+  }
+}
