@@ -1,5 +1,75 @@
 {
-  "count": 0,
-  "latest": null,
-  "recent": []
+  "count": 1,
+  "latest": {
+    "annualized_issuance_rate": 0.333333,
+    "decision_id": "policy-00000012",
+    "enacted": true,
+    "epoch": 12,
+    "evidence": {
+      "active_agent_rate_pct": 59.0,
+      "gini": 0.034891,
+      "inflation_pct": 0.503122,
+      "nominal_gdp": 356.82965,
+      "velocity": 0.003568297
+    },
+    "issuance_amount": 13.8889,
+    "new_policy_rate": 3.0,
+    "previous_policy_rate": 3.0,
+    "rationale": "Governor ease: inflation 0.50%, activity 59.00%, gini 0.035; council median rate move +0.00pp.",
+    "violations": [],
+    "votes": {
+      "growth": {
+        "issuance_rate": 0.0,
+        "rate_delta": 0.0,
+        "stance": "hold"
+      },
+      "inflation": {
+        "issuance_rate": 1.0,
+        "rate_delta": -0.25,
+        "stance": "ease"
+      },
+      "stability": {
+        "issuance_rate": 0.0,
+        "rate_delta": 0.0,
+        "stance": "hold"
+      }
+    }
+  },
+  "recent": [
+    {
+      "annualized_issuance_rate": 0.333333,
+      "decision_id": "policy-00000012",
+      "enacted": true,
+      "epoch": 12,
+      "evidence": {
+        "active_agent_rate_pct": 59.0,
+        "gini": 0.034891,
+        "inflation_pct": 0.503122,
+        "nominal_gdp": 356.82965,
+        "velocity": 0.003568297
+      },
+      "issuance_amount": 13.8889,
+      "new_policy_rate": 3.0,
+      "previous_policy_rate": 3.0,
+      "rationale": "Governor ease: inflation 0.50%, activity 59.00%, gini 0.035; council median rate move +0.00pp.",
+      "violations": [],
+      "votes": {
+        "growth": {
+          "issuance_rate": 0.0,
+          "rate_delta": 0.0,
+          "stance": "hold"
+        },
+        "inflation": {
+          "issuance_rate": 1.0,
+          "rate_delta": -0.25,
+          "stance": "ease"
+        },
+        "stability": {
+          "issuance_rate": 0.0,
+          "rate_delta": 0.0,
+          "stance": "hold"
+        }
+      }
+    }
+  ]
 }
