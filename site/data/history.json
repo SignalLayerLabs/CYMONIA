@@ -297,5 +297,18 @@
     "price_index": 95.601862,
     "transaction_count": 58,
     "velocity": 0.003384036
+  },
+  {
+    "active_agent_rate_pct": 60.0,
+    "agent_count": 100,
+    "epoch": 24,
+    "gini": 0.067426,
+    "inflation_pct": 0.745452,
+    "money_supply": 100027.7797,
+    "nominal_gdp": 378.872362,
+    "policy_rate_pct": 3.0,
+    "price_index": 96.314528,
+    "transaction_count": 57,
+    "velocity": 0.003787671
   }
 ]
