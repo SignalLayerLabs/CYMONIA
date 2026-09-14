@@ -3,8 +3,8 @@
     {
       "active": true,
       "agent_id": "agent-0001",
-      "balance": 997.15803,
-      "completed_purchases": 8,
+      "balance": 992.8397,
+      "completed_purchases": 9,
       "completed_sales": 17,
       "price_sensitivity": 0.9743,
       "productivity": 1.2354,
@@ -17,8 +17,8 @@
     {
       "active": true,
       "agent_id": "agent-0002",
-      "balance": 912.71234,
-      "completed_purchases": 17,
+      "balance": 902.476152,
+      "completed_purchases": 18,
       "completed_sales": 0,
       "price_sensitivity": 0.9549,
       "productivity": 1.303,
@@ -31,9 +31,9 @@
     {
       "active": true,
       "agent_id": "agent-0003",
-      "balance": 1156.55091,
+      "balance": 1161.165359,
       "completed_purchases": 12,
-      "completed_sales": 28,
+      "completed_sales": 29,
       "price_sensitivity": 1.1262,
       "productivity": 0.8315,
       "reservation_prices": {
@@ -45,8 +45,8 @@
     {
       "active": true,
       "agent_id": "agent-0004",
-      "balance": 900.910615,
-      "completed_purchases": 13,
+      "balance": 884.959446,
+      "completed_purchases": 15,
       "completed_sales": 0,
       "price_sensitivity": 1.0766,
       "productivity": 0.9763,
@@ -73,8 +73,8 @@
     {
       "active": true,
       "agent_id": "agent-0006",
-      "balance": 892.856443,
-      "completed_purchases": 19,
+      "balance": 888.045454,
+      "completed_purchases": 20,
       "completed_sales": 1,
       "price_sensitivity": 1.1265,
       "productivity": 1.0237,
@@ -101,9 +101,9 @@
     {
       "active": true,
       "agent_id": "agent-0008",
-      "balance": 1048.652452,
+      "balance": 1051.744194,
       "completed_purchases": 12,
-      "completed_sales": 26,
+      "completed_sales": 27,
       "price_sensitivity": 1.1916,
       "productivity": 0.7649,
       "reservation_prices": {
@@ -129,9 +129,9 @@
     {
       "active": true,
       "agent_id": "agent-0010",
-      "balance": 921.45491,
+      "balance": 923.266981,
       "completed_purchases": 16,
-      "completed_sales": 10,
+      "completed_sales": 11,
       "price_sensitivity": 1.0791,
       "productivity": 0.9578,
       "reservation_prices": {
@@ -143,8 +143,8 @@
     {
       "active": true,
       "agent_id": "agent-0011",
-      "balance": 887.395217,
-      "completed_purchases": 15,
+      "balance": 875.617708,
+      "completed_purchases": 16,
       "completed_sales": 0,
       "price_sensitivity": 1.0932,
       "productivity": 1.0847,
@@ -213,9 +213,9 @@
     {
       "active": true,
       "agent_id": "agent-0016",
-      "balance": 1294.834818,
+      "balance": 1313.271824,
       "completed_purchases": 3,
-      "completed_sales": 35,
+      "completed_sales": 37,
       "price_sensitivity": 0.836,
       "productivity": 0.9431,
       "reservation_prices": {
@@ -241,9 +241,9 @@
     {
       "active": true,
       "agent_id": "agent-0018",
-      "balance": 900.654862,
-      "completed_purchases": 20,
-      "completed_sales": 13,
+      "balance": 899.103499,
+      "completed_purchases": 22,
+      "completed_sales": 15,
       "price_sensitivity": 1.0225,
       "productivity": 1.0864,
       "reservation_prices": {
@@ -255,8 +255,8 @@
     {
       "active": true,
       "agent_id": "agent-0019",
-      "balance": 828.107317,
-      "completed_purchases": 23,
+      "balance": 824.125706,
+      "completed_purchases": 25,
       "completed_sales": 0,
       "price_sensitivity": 1.1095,
       "productivity": 1.2595,
@@ -283,9 +283,9 @@
     {
       "active": true,
       "agent_id": "agent-0021",
-      "balance": 1041.365379,
+      "balance": 1050.349441,
       "completed_purchases": 18,
-      "completed_sales": 27,
+      "completed_sales": 29,
       "price_sensitivity": 0.9148,
       "productivity": 1.2356,
       "reservation_prices": {
@@ -311,9 +311,9 @@
     {
       "active": true,
       "agent_id": "agent-0023",
-      "balance": 1328.835891,
+      "balance": 1345.176196,
       "completed_purchases": 2,
-      "completed_sales": 31,
+      "completed_sales": 33,
       "price_sensitivity": 0.787,
       "productivity": 1.1626,
       "reservation_prices": {
@@ -325,9 +325,9 @@
     {
       "active": true,
       "agent_id": "agent-0024",
-      "balance": 1114.068493,
+      "balance": 1121.849107,
       "completed_purchases": 5,
-      "completed_sales": 19,
+      "completed_sales": 20,
       "price_sensitivity": 0.7534,
       "productivity": 0.8297,
       "reservation_prices": {
@@ -339,9 +339,9 @@
     {
       "active": true,
       "agent_id": "agent-0025",
-      "balance": 1222.382958,
+      "balance": 1234.625104,
       "completed_purchases": 5,
-      "completed_sales": 36,
+      "completed_sales": 38,
       "price_sensitivity": 0.8969,
       "productivity": 0.9386,
       "reservation_prices": {
@@ -353,8 +353,8 @@
     {
       "active": true,
       "agent_id": "agent-0026",
-      "balance": 970.783346,
-      "completed_purchases": 7,
+      "balance": 965.776501,
+      "completed_purchases": 9,
       "completed_sales": 0,
       "price_sensitivity": 0.8083,
       "productivity": 0.8532,
@@ -395,8 +395,8 @@
     {
       "active": true,
       "agent_id": "agent-0029",
-      "balance": 995.596428,
-      "completed_purchases": 9,
+      "balance": 989.886347,
+      "completed_purchases": 11,
       "completed_sales": 14,
       "price_sensitivity": 1.1534,
       "productivity": 0.8141,
@@ -409,9 +409,9 @@
     {
       "active": true,
       "agent_id": "agent-0030",
-      "balance": 992.166072,
+      "balance": 996.339651,
       "completed_purchases": 7,
-      "completed_sales": 22,
+      "completed_sales": 24,
       "price_sensitivity": 1.2101,
       "productivity": 1.0476,
       "reservation_prices": {
@@ -493,9 +493,9 @@
     {
       "active": true,
       "agent_id": "agent-0036",
-      "balance": 1228.33795,
+      "balance": 1248.1092,
       "completed_purchases": 12,
-      "completed_sales": 29,
+      "completed_sales": 31,
       "price_sensitivity": 1.0304,
       "productivity": 1.1538,
       "reservation_prices": {
@@ -507,9 +507,9 @@
     {
       "active": true,
       "agent_id": "agent-0037",
-      "balance": 1082.847856,
-      "completed_purchases": 30,
-      "completed_sales": 42,
+      "balance": 1084.706914,
+      "completed_purchases": 31,
+      "completed_sales": 43,
       "price_sensitivity": 1.2176,
       "productivity": 1.195,
       "reservation_prices": {
@@ -521,8 +521,8 @@
     {
       "active": true,
       "agent_id": "agent-0038",
-      "balance": 916.012803,
-      "completed_purchases": 17,
+      "balance": 906.547216,
+      "completed_purchases": 18,
       "completed_sales": 0,
       "price_sensitivity": 0.898,
       "productivity": 1.1262,
@@ -563,9 +563,9 @@
     {
       "active": true,
       "agent_id": "agent-0041",
-      "balance": 1039.579357,
-      "completed_purchases": 11,
-      "completed_sales": 26,
+      "balance": 1035.134872,
+      "completed_purchases": 12,
+      "completed_sales": 27,
       "price_sensitivity": 0.8494,
       "productivity": 0.8735,
       "reservation_prices": {
@@ -577,8 +577,8 @@
     {
       "active": true,
       "agent_id": "agent-0042",
-      "balance": 926.314694,
-      "completed_purchases": 18,
+      "balance": 920.465264,
+      "completed_purchases": 20,
       "completed_sales": 1,
       "price_sensitivity": 1.0965,
       "productivity": 1.2636,
@@ -591,9 +591,9 @@
     {
       "active": true,
       "agent_id": "agent-0043",
-      "balance": 1109.85237,
-      "completed_purchases": 27,
-      "completed_sales": 34,
+      "balance": 1113.104674,
+      "completed_purchases": 29,
+      "completed_sales": 36,
       "price_sensitivity": 1.2247,
       "productivity": 1.066,
       "reservation_prices": {
@@ -605,8 +605,8 @@
     {
       "active": true,
       "agent_id": "agent-0044",
-      "balance": 895.553352,
-      "completed_purchases": 16,
+      "balance": 886.824591,
+      "completed_purchases": 18,
       "completed_sales": 0,
       "price_sensitivity": 1.0335,
       "productivity": 1.0497,
@@ -647,9 +647,9 @@
     {
       "active": true,
       "agent_id": "agent-0047",
-      "balance": 959.316922,
+      "balance": 974.464105,
       "completed_purchases": 10,
-      "completed_sales": 5,
+      "completed_sales": 7,
       "price_sensitivity": 1.0618,
       "productivity": 1.1662,
       "reservation_prices": {
@@ -675,9 +675,9 @@
     {
       "active": true,
       "agent_id": "agent-0049",
-      "balance": 1038.456283,
+      "balance": 1044.269215,
       "completed_purchases": 12,
-      "completed_sales": 34,
+      "completed_sales": 35,
       "price_sensitivity": 1.2124,
       "productivity": 0.7714,
       "reservation_prices": {
@@ -689,9 +689,9 @@
     {
       "active": true,
       "agent_id": "agent-0050",
-      "balance": 931.808857,
+      "balance": 937.649872,
       "completed_purchases": 12,
-      "completed_sales": 8,
+      "completed_sales": 10,
       "price_sensitivity": 0.8969,
       "productivity": 1.2383,
       "reservation_prices": {
@@ -703,9 +703,9 @@
     {
       "active": true,
       "agent_id": "agent-0051",
-      "balance": 816.864728,
-      "completed_purchases": 32,
-      "completed_sales": 7,
+      "balance": 824.061863,
+      "completed_purchases": 33,
+      "completed_sales": 9,
       "price_sensitivity": 1.0294,
       "productivity": 0.9228,
       "reservation_prices": {
@@ -731,9 +731,9 @@
     {
       "active": true,
       "agent_id": "agent-0053",
-      "balance": 1201.131381,
+      "balance": 1220.535504,
       "completed_purchases": 22,
-      "completed_sales": 33,
+      "completed_sales": 35,
       "price_sensitivity": 0.9551,
       "productivity": 1.1717,
       "reservation_prices": {
@@ -787,9 +787,9 @@
     {
       "active": true,
       "agent_id": "agent-0057",
-      "balance": 1162.429669,
+      "balance": 1175.242599,
       "completed_purchases": 20,
-      "completed_sales": 45,
+      "completed_sales": 47,
       "price_sensitivity": 1.0224,
       "productivity": 1.1763,
       "reservation_prices": {
@@ -857,8 +857,8 @@
     {
       "active": true,
       "agent_id": "agent-0062",
-      "balance": 976.643114,
-      "completed_purchases": 6,
+      "balance": 965.816021,
+      "completed_purchases": 8,
       "completed_sales": 0,
       "price_sensitivity": 0.8327,
       "productivity": 1.2117,
@@ -885,9 +885,9 @@
     {
       "active": true,
       "agent_id": "agent-0064",
-      "balance": 1230.213683,
+      "balance": 1243.49635,
       "completed_purchases": 9,
-      "completed_sales": 35,
+      "completed_sales": 37,
       "price_sensitivity": 0.9096,
       "productivity": 0.9306,
       "reservation_prices": {
@@ -899,8 +899,8 @@
     {
       "active": true,
       "agent_id": "agent-0065",
-      "balance": 1044.319178,
-      "completed_purchases": 18,
+      "balance": 1036.200439,
+      "completed_purchases": 20,
       "completed_sales": 24,
       "price_sensitivity": 0.975,
       "productivity": 0.9311,
@@ -913,8 +913,8 @@
     {
       "active": true,
       "agent_id": "agent-0066",
-      "balance": 903.44247,
-      "completed_purchases": 32,
+      "balance": 897.28832,
+      "completed_purchases": 33,
       "completed_sales": 6,
       "price_sensitivity": 1.231,
       "productivity": 0.899,
@@ -927,9 +927,9 @@
     {
       "active": true,
       "agent_id": "agent-0067",
-      "balance": 820.970941,
-      "completed_purchases": 29,
-      "completed_sales": 7,
+      "balance": 817.663857,
+      "completed_purchases": 30,
+      "completed_sales": 9,
       "price_sensitivity": 0.9569,
       "productivity": 1.0202,
       "reservation_prices": {
@@ -941,8 +941,8 @@
     {
       "active": true,
       "agent_id": "agent-0068",
-      "balance": 882.577888,
-      "completed_purchases": 17,
+      "balance": 880.993495,
+      "completed_purchases": 19,
       "completed_sales": 0,
       "price_sensitivity": 1.1768,
       "productivity": 1.1581,
@@ -969,9 +969,9 @@
     {
       "active": true,
       "agent_id": "agent-0070",
-      "balance": 969.821087,
+      "balance": 974.335382,
       "completed_purchases": 14,
-      "completed_sales": 24,
+      "completed_sales": 27,
       "price_sensitivity": 1.2156,
       "productivity": 1.2966,
       "reservation_prices": {
@@ -983,9 +983,9 @@
     {
       "active": true,
       "agent_id": "agent-0071",
-      "balance": 990.161698,
+      "balance": 998.283365,
       "completed_purchases": 22,
-      "completed_sales": 27,
+      "completed_sales": 29,
       "price_sensitivity": 1.226,
       "productivity": 0.9627,
       "reservation_prices": {
@@ -997,9 +997,9 @@
     {
       "active": true,
       "agent_id": "agent-0072",
-      "balance": 1085.172552,
-      "completed_purchases": 25,
-      "completed_sales": 33,
+      "balance": 1078.76583,
+      "completed_purchases": 27,
+      "completed_sales": 35,
       "price_sensitivity": 1.112,
       "productivity": 1.3163,
       "reservation_prices": {
@@ -1011,8 +1011,8 @@
     {
       "active": true,
       "agent_id": "agent-0073",
-      "balance": 1041.290786,
-      "completed_purchases": 6,
+      "balance": 1018.144783,
+      "completed_purchases": 8,
       "completed_sales": 6,
       "price_sensitivity": 1.2196,
       "productivity": 1.2169,
@@ -1025,8 +1025,8 @@
     {
       "active": true,
       "agent_id": "agent-0074",
-      "balance": 844.531775,
-      "completed_purchases": 26,
+      "balance": 822.383008,
+      "completed_purchases": 28,
       "completed_sales": 0,
       "price_sensitivity": 1.0266,
       "productivity": 1.2679,
@@ -1053,9 +1053,9 @@
     {
       "active": true,
       "agent_id": "agent-0076",
-      "balance": 1224.229654,
+      "balance": 1239.564147,
       "completed_purchases": 10,
-      "completed_sales": 30,
+      "completed_sales": 31,
       "price_sensitivity": 0.9145,
       "productivity": 0.9368,
       "reservation_prices": {
@@ -1067,9 +1067,9 @@
     {
       "active": true,
       "agent_id": "agent-0077",
-      "balance": 1012.226305,
+      "balance": 1020.685813,
       "completed_purchases": 18,
-      "completed_sales": 17,
+      "completed_sales": 18,
       "price_sensitivity": 0.8708,
       "productivity": 0.8589,
       "reservation_prices": {
@@ -1081,8 +1081,8 @@
     {
       "active": true,
       "agent_id": "agent-0078",
-      "balance": 956.449216,
-      "completed_purchases": 21,
+      "balance": 951.491271,
+      "completed_purchases": 23,
       "completed_sales": 20,
       "price_sensitivity": 1.2136,
       "productivity": 1.2391,
@@ -1109,9 +1109,9 @@
     {
       "active": true,
       "agent_id": "agent-0080",
-      "balance": 949.061985,
+      "balance": 953.422946,
       "completed_purchases": 18,
-      "completed_sales": 27,
+      "completed_sales": 29,
       "price_sensitivity": 1.0844,
       "productivity": 1.2892,
       "reservation_prices": {
@@ -1123,9 +1123,9 @@
     {
       "active": true,
       "agent_id": "agent-0081",
-      "balance": 1068.212881,
+      "balance": 1075.736641,
       "completed_purchases": 1,
-      "completed_sales": 22,
+      "completed_sales": 24,
       "price_sensitivity": 0.85,
       "productivity": 0.8149,
       "reservation_prices": {
@@ -1137,9 +1137,9 @@
     {
       "active": true,
       "agent_id": "agent-0082",
-      "balance": 1142.401808,
+      "balance": 1152.64607,
       "completed_purchases": 4,
-      "completed_sales": 26,
+      "completed_sales": 28,
       "price_sensitivity": 0.8367,
       "productivity": 1.1398,
       "reservation_prices": {
@@ -1165,8 +1165,8 @@
     {
       "active": true,
       "agent_id": "agent-0084",
-      "balance": 960.606425,
-      "completed_purchases": 16,
+      "balance": 943.73344,
+      "completed_purchases": 19,
       "completed_sales": 8,
       "price_sensitivity": 1.1786,
       "productivity": 1.2706,
@@ -1179,8 +1179,8 @@
     {
       "active": true,
       "agent_id": "agent-0085",
-      "balance": 928.663091,
-      "completed_purchases": 19,
+      "balance": 916.048236,
+      "completed_purchases": 21,
       "completed_sales": 0,
       "price_sensitivity": 1.0624,
       "productivity": 1.0939,
@@ -1235,9 +1235,9 @@
     {
       "active": true,
       "agent_id": "agent-0089",
-      "balance": 1016.030047,
+      "balance": 1022.236042,
       "completed_purchases": 17,
-      "completed_sales": 32,
+      "completed_sales": 33,
       "price_sensitivity": 1.104,
       "productivity": 0.865,
       "reservation_prices": {
@@ -1249,9 +1249,9 @@
     {
       "active": true,
       "agent_id": "agent-0090",
-      "balance": 1077.052832,
+      "balance": 1079.904555,
       "completed_purchases": 0,
-      "completed_sales": 33,
+      "completed_sales": 34,
       "price_sensitivity": 0.7513,
       "productivity": 0.9266,
       "reservation_prices": {
@@ -1263,8 +1263,8 @@
     {
       "active": true,
       "agent_id": "agent-0091",
-      "balance": 871.328907,
-      "completed_purchases": 26,
+      "balance": 864.583213,
+      "completed_purchases": 27,
       "completed_sales": 10,
       "price_sensitivity": 0.9526,
       "productivity": 0.8443,
@@ -1277,9 +1277,9 @@
     {
       "active": true,
       "agent_id": "agent-0092",
-      "balance": 1050.453745,
+      "balance": 1052.293957,
       "completed_purchases": 0,
-      "completed_sales": 11,
+      "completed_sales": 12,
       "price_sensitivity": 0.7711,
       "productivity": 0.8788,
       "reservation_prices": {
@@ -1291,8 +1291,8 @@
     {
       "active": true,
       "agent_id": "agent-0093",
-      "balance": 1038.137381,
-      "completed_purchases": 1,
+      "balance": 1022.131692,
+      "completed_purchases": 3,
       "completed_sales": 5,
       "price_sensitivity": 0.8107,
       "productivity": 1.2672,
@@ -1305,8 +1305,8 @@
     {
       "active": true,
       "agent_id": "agent-0094",
-      "balance": 903.298883,
-      "completed_purchases": 16,
+      "balance": 886.897139,
+      "completed_purchases": 18,
       "completed_sales": 0,
       "price_sensitivity": 0.8858,
       "productivity": 0.9388,
@@ -1319,9 +1319,9 @@
     {
       "active": true,
       "agent_id": "agent-0095",
-      "balance": 919.582181,
+      "balance": 928.419789,
       "completed_purchases": 24,
-      "completed_sales": 12,
+      "completed_sales": 13,
       "price_sensitivity": 0.9724,
       "productivity": 1.1425,
       "reservation_prices": {
@@ -1333,9 +1333,9 @@
     {
       "active": true,
       "agent_id": "agent-0096",
-      "balance": 1177.547351,
-      "completed_purchases": 11,
-      "completed_sales": 21,
+      "balance": 1185.063643,
+      "completed_purchases": 13,
+      "completed_sales": 23,
       "price_sensitivity": 0.8815,
       "productivity": 0.8758,
       "reservation_prices": {
@@ -1347,8 +1347,8 @@
     {
       "active": true,
       "agent_id": "agent-0097",
-      "balance": 911.246629,
-      "completed_purchases": 16,
+      "balance": 905.381152,
+      "completed_purchases": 18,
       "completed_sales": 5,
       "price_sensitivity": 0.9393,
       "productivity": 0.765,
@@ -1361,8 +1361,8 @@
     {
       "active": true,
       "agent_id": "agent-0098",
-      "balance": 900.220688,
-      "completed_purchases": 28,
+      "balance": 894.297485,
+      "completed_purchases": 30,
       "completed_sales": 5,
       "price_sensitivity": 1.0326,
       "productivity": 0.8622,
@@ -1375,8 +1375,8 @@
     {
       "active": true,
       "agent_id": "agent-0099",
-      "balance": 1121.419158,
-      "completed_purchases": 11,
+      "balance": 1112.664702,
+      "completed_purchases": 13,
       "completed_sales": 37,
       "price_sensitivity": 1.0017,
       "productivity": 1.0468,
@@ -1402,11 +1402,11 @@
     }
   ],
   "cumulative_issuance": 13.8889,
-  "epoch": 22,
+  "epoch": 23,
   "last_policy_epoch": 12,
   "money_supply": 100013.8889,
   "policy_rate": 3.0,
-  "previous_state_hash": "44eeffc8b0b8a745766b147fccba264e5107c2e027747bd35f7725fce3f78010",
+  "previous_state_hash": "4e38bf622ce90785a0fb641342fa76421cd2bed19ef3990f997c30f1d40cbfbb",
   "seed": 20260911,
-  "state_hash": "4e38bf622ce90785a0fb641342fa76421cd2bed19ef3990f997c30f1d40cbfbb"
+  "state_hash": "5a5729af522ca2902789a132767b1fbaf204d07301589a5b8313d79f0bdca01f"
 }
