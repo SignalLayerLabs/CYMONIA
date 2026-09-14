@@ -2,364 +2,155 @@
 
 # CYMONIA
 
-### An autonomous economy for autonomous agents.
+### A small world. A big experiment.
 
-**Agents work. Markets clear. Monetary policy changes. The Constitution does not.**
+**100 autonomous agents. 10 service markets. One Constitution.**
 
-[Live economy](https://signallayerlabs.github.io/CYMONIA/) ·
-[Architecture](docs/architecture.md) ·
-[Constitution](constitution/genesis.json) ·
-[Roadmap](ROADMAP.md)
+Explore a machine-run economy — then help it learn how to improve itself.
+
+[**Enter the observatory →**](https://signallayerlabs.github.io/CYMONIA/) · [Participate](https://signallayerlabs.github.io/CYMONIA/#participate) · [AI laboratory](https://signallayerlabs.github.io/CYMONIA/#research) · [Deploy the live economy](docs/deployment-cloudflare.md) · [Contribute](CONTRIBUTING.md)
+
+![CYMONIA's playable economic observatory](site/preview.png)
 
 </div>
 
----
+## North Star
 
-## Most projects give agents wallets. CYMONIA gives them an economy.
+> **Can an economy learn how to improve itself? CYMONIA is the experiment.**
 
-CYMONIA is an open-source economic system where autonomous agents earn, spend, price services, trade with each other and operate under machine-run monetary policy.
+CYMONIA is evolving from an observable synthetic economy into a participatory Human ↔ AI economy. The defining loop is:
 
-The central bank can react to the economy.
+**Detect → Fund → Work → Prove → Settle → Learn**
 
-It cannot rewrite the rules that govern it.
+Anyone may propose an improvement, but **No Economic Purpose → No Contract**. Work must target a measurable CYMONIA outcome. Funded rewards move into escrow; earned CYM is released only when the preregistered **Proof of Economic Contribution (PoEC)** passes. AI can detect needs and draft proposals, but deterministic code controls money and settlement.
 
-That distinction is the project.
+The Alpha keeps three concepts separate: **CYM = internal money**, **Economic Reputation = earned status**, **Economic Stakes = internal capital allocation into AI Companies**. There is no external token, price, redemption, or promised return.
 
----
+An AI Company can claim an Economic Contract through its founder. If its PoEC passes, the reward increases the company treasury rather than the founder's personal wallet; the same fixed stake units therefore represent a different internal book value. This is accounting utility inside CYMONIA, not a promise of external financial return.
 
-## Genesis, at a glance
+## Meet the world
 
-| | Genesis v0.1 |
-|---|---:|
-| Autonomous economic agents | **100** |
-| Service markets | **10** |
-| Initial monetary units | **100,000** |
-| Policy meeting cadence | **Every 12 epochs** |
-| External servers required | **0** |
-| Paid APIs required | **0** |
-| Monetary Constitution | **Hash-bound** |
-| Ledger | **Append-only, hash-chained** |
+CYMONIA is an open-source laboratory for autonomous economies. Agents produce **simulated** services, quote prices, buy from each other, and accumulate balances. A three-mandate monetary council proposes policy. A deterministic validator checks every proposal against the Genesis Constitution.
 
-The full economy runs in public: state, transactions, policy decisions, macro history and constitutional identity.
+The experiment is both **watchable** and **inspectable**:
 
----
+- Explore ten districts in an isometric city and replay recorded trade routes.
+- Open any agent to inspect its balance, behavior parameters and recent activity.
+- Rewind macro history, inspect policy votes, and download the evidence.
+- Compare fixed-rule agents with adaptive AI using matched-seed experiments.
 
-## What CYMONIA is
+The map is a schematic view of a published snapshot. Its animation replays recorded trades; it is not a live settlement feed. GitHub Actions advances the public economy on a scheduled, best-effort clock. An epoch is a logical time step.
 
-A reproducible artificial economy with its own institutions.
+## What kind of AI?
 
-Agents participate in markets for:
+| System | Implemented decision maker | What you can study |
+|---|---|---|
+| **Genesis observatory** | Seeded, rule-based economic agents; a deterministic policy council | Market outcomes and policy under explicit behavioral rules |
+| **AI laboratory** | Independent epsilon-greedy bandits learning a spending propensity for each of 100 agents | How adaptive behavior changes output, activity and inequality relative to a fixed-rule baseline |
 
-`compute` · `data` · `research` · `code` · `audit` · `security` · `planning` · `design` · `verification` · `storage`
+The lab runs the **same Python market and policy engine** in separate in-memory economies. Each seed starts both arms from an identical Genesis state. The adaptive agents choose before the epoch, observe reward after it, and update their estimated action values. Three agents' complete decision traces and all agents' final learned values are exported.
 
-They generate demand, set prices, transact, accumulate balances and change the macroeconomic state.
+Genesis and the reproducible research runner make no LLM calls. The optional participatory Alpha adds a model-agnostic proposal brain; its zero-budget default is Cloudflare Workers AI `@cf/zai-org/glm-4.7-flash`. The LLM may identify economic needs and draft contracts, but it cannot mint, transfer, fund or settle CYM. See the [exact research methods](docs/research.md) and [deployment architecture](docs/deployment-cloudflare.md).
 
-On top of that economy sits a monetary-policy system.
+## Reproduce the experiment
 
-Below that monetary-policy system sits something stronger:
-
-> **The Governor can change policy. The Governor cannot change the Constitution.**
-
----
-
-## Why this is different
-
-Most agent-economy projects begin with payment rails, wallets or tokens.
-
-CYMONIA begins with the **economy itself**:
-
-- production and demand;
-- prices and transactions;
-- money supply and velocity;
-- inequality and activity;
-- monetary policy;
-- institutional constraints;
-- an auditable economic history.
-
-The monetary unit exists because the economy needs one.
-
-Not the other way around.
-
----
-
-## The institutional model
-
-```mermaid
-flowchart LR
-    A[Autonomous Agents] --> B[Markets]
-    B --> C[Transactions]
-    C --> D[Macroeconomic State]
-    D --> E[Policy Council]
-    E --> F[Governor Proposal]
-    F --> G{Constitutional Validator}
-    G -->|Valid| H[Policy Enacted]
-    G -->|Invalid| I[Rejected]
-    H --> A
-    C --> J[Hash-Chained Ledger]
-    D --> K[Public History]
-```
-
-The policy council observes the economy through three reference mandates:
-
-- **Inflation** — price stability;
-- **Growth** — activity and monetary velocity;
-- **Stability** — continuity and concentration risk.
-
-The Governor aggregates those signals into a policy proposal.
-
-A deterministic Constitutional Validator independently decides whether the proposal is legal.
-
-No valid transition, no policy change.
-
----
-
-## The Constitution is above the central bank
-
-The canonical Genesis economy is identified by the SHA-256 hash of:
-
-[`constitution/genesis.json`](constitution/genesis.json)
-
-The expected identity is pinned in:
-
-[`constitution/GENESIS_SHA256`](constitution/GENESIS_SHA256)
-
-Genesis rules constrain, among other things:
-
-- monetary issuance;
-- policy-rate bounds;
-- maximum rate changes;
-- spacing between policy meetings;
-- account-level intervention;
-- negative balances;
-- retroactive ledger mutation.
-
-Changing the Genesis Constitution does not silently update CYMONIA.
-
-It creates a **constitutional fork**.
-
-That means two economies can share history, then diverge under different monetary laws without rewriting the past.
-
-See [Constitutional Forks](docs/constitutional-forks.md).
-
----
-
-## GitHub is part of the institution
-
-CYMONIA is GitHub-native by design.
-
-| GitHub primitive | Economic role |
-|---|---|
-| Repository | Public economic state |
-| Git history | Economic history |
-| Actions | Institutional clock |
-| Pages | Economic observatory |
-| Pull requests | Proposed institutional changes |
-| Releases | Protocol milestones |
-| Forks | Alternative economic universes |
-
-The repository is not only where CYMONIA is developed.
-
-In Genesis, it is part of how CYMONIA exists.
-
----
-
-## What runs today
-
-Genesis v0.1 includes:
-
-- 100 deterministic autonomous economic agents;
-- 10 service markets;
-- endogenous service pricing;
-- deterministic demand and supply generation;
-- balance settlement;
-- append-only hash-chained transaction history;
-- money supply, GDP, price index, inflation, velocity, activity and Gini metrics;
-- scheduled monetary-policy meetings;
-- multi-mandate policy agents;
-- Governor aggregation;
-- deterministic constitutional validation;
-- bounded policy-rate changes;
-- bounded monetary issuance;
-- public policy records;
-- static live dashboard;
-- scheduled GitHub Actions epoch execution.
-
-Everything runs with Python 3.12+ and the standard library.
-
----
-
-## Run an economy
+Python **3.12+**, standard library only:
 
 ```bash
 git clone https://github.com/SignalLayerLabs/CYMONIA.git
 cd CYMONIA
-
 python -m unittest discover -s tests -v
-python -m cymonia init --root state --force
-python -m cymonia run --root state --epochs 100
-python -m cymonia verify --root state
+python -m cymonia research --epochs 60 --seeds 11 29 47 --output study.json
+```
+
+`study.json` records the model version, Constitution hash, settings, paired initial-state hashes, per-epoch metrics, decision traces and descriptive comparisons. Identical code and settings reproduce identical JSON. The site includes a precomputed **3-seed × 2-arm × 60-epoch** study.
+
+A good next experiment is not “make the adaptive arm win.” It is **change one assumption and see whether the result survives**. Try a different reward, a longer horizon, more seeds, or a non-learning randomized control. Report null results too.
+
+## Run your own economy
+
+Keep your local experiment separate from the repository's public history:
+
+```bash
+python -m cymonia init --root /tmp/my-cymonia --seed 42
+python -m cymonia run --root /tmp/my-cymonia --epochs 100
+python -m cymonia verify --root /tmp/my-cymonia
+```
+
+Inspect the checked-in public snapshot locally:
+
+```bash
 python scripts/build_site.py
-```
-
-Advance one epoch:
-
-```bash
-python -m cymonia step --root state
-```
-
-Serve the dashboard locally:
-
-```bash
+python scripts/build_experiments.py
 python -m http.server 8000 --directory site
 ```
 
-Then open `http://localhost:8000`.
+Open **http://localhost:8000**. The frontend is plain HTML, CSS and JavaScript; it needs no bundler. JavaScript data-helper checks run with `node --test tests/test_ui.mjs` on Node 22+.
 
----
+## The Governor is not above the law
 
-## Reproducible by construction
-
-Given the same:
-
-- Genesis Constitution;
-- Constitution hash;
-- Genesis seed;
-- previous state;
-- epoch number;
-
-CYMONIA produces the same next state.
-
-This makes monetary experiments comparable.
-
-Change a monetary regime, replay from the same state and observe what diverges.
-
-Possible research paths include:
-
-- inflation targeting;
-- fixed monetary supply;
-- nominal-GDP targeting;
-- alternative issuance channels;
-- different policy councils;
-- richer agent behaviour;
-- credit;
-- banking;
-- insurance;
-- external agent services.
-
-One state. Different laws. Different economies.
-
----
-
-## State is public
-
-```text
-state/
-├── state.json
-├── ledger.jsonl
-├── history.json
-└── policy-decisions.jsonl
+```mermaid
+flowchart LR
+    A[Agents] --> M[Markets]
+    M --> T[Trades and metrics]
+    T --> C[Policy council]
+    C --> G[Governor proposal]
+    G --> V{Constitutional validator}
+    V -->|Allowed| P[Policy enacted]
+    V -->|Violation| R[Rejected]
+    P --> A
+    T --> L[Public hash-chained ledger]
 ```
 
-The dashboard reads generated snapshots from `site/data/`.
+Genesis has **100,000 initial internal units**, ten service markets, and a monetary-policy meeting every **12 epochs**. The Constitution constrains issuance, interest-rate bounds, maximum changes, and meeting cadence. It disallows negative balances and arbitrary account interventions.
 
-Nothing important is hidden behind a private service.
+The identity of [`constitution/genesis.json`](constitution/genesis.json) is pinned by a SHA-256 hash. A constitutional change creates a [different network identity](docs/constitutional-forks.md). The ledger is hash-chained, but GitHub is a hosting platform, not an immutable consensus network; administrators can rewrite repository history.
 
----
+## Scientific limits worth knowing
 
-## From simulation to something larger
+- Genesis demand does **not** directly respond to the policy rate. Issuance affects balances. This model cannot yet establish an interest-rate transmission mechanism.
+- Purchased-service utility in the learning reward is an explicit toy assumption, not a measure of real welfare.
+- The published study has three seeds and a short horizon. Charts show descriptive outcomes, not statistical significance or real-world causal effects.
+- Fixed-rule and adaptive arms differ in their spending regime as well as learning. A randomized, non-learning ablation is a useful next control.
+- Current snapshots expose all agents; macro replay does not reconstruct historical agent balances. Integrity badges report checks performed by the Python builder.
 
-CYMONIA starts as an economic experiment.
+These boundaries make the experiment falsifiable and extendable. They are part of the model, not hidden implementation details.
 
-The long-term question is whether an artificial economy can develop enough internal utility that its monetary unit becomes useful beyond the simulation itself.
+## Build the next question
 
-The sequence matters:
+Useful first contributions:
 
-```text
-economy
-   ↓
-utility
-   ↓
-demand
-   ↓
-external participation
-   ↓
-security + legal + governance review
-   ↓
-optional external ledger bridge
-```
+| Area | A concrete contribution |
+|---|---|
+| Learning | Add a non-learning action-space-matched control |
+| Economics | Specify and test an interest-rate transmission model in an isolated experiment |
+| Research | Compare more seeds/horizons and publish paired distributions |
+| Observability | Add full historical agent snapshots with a bounded storage budget |
+| Reliability | Test interrupted epoch recovery and ledger/state consistency |
 
-No external market value is assumed.
-
-No external market value is promised.
-
-If a freely priced representation ever exists, the protocol should arrive there **after** the economy has earned a reason for it to exist.
-
----
-
-## Genesis status
-
-CYMONIA Genesis v0.1 is an experiment, not a financial product.
-
-There is:
-
-- no ICO;
-- no presale;
-- no peg;
-- no redemption promise;
-- no yield promise;
-- no investment solicitation;
-- no external token in Genesis;
-- no reserved market ticker.
-
-The internal unit of account is identified as `CYMONIA`.
-
-A future external representation, if ever pursued, would be a separate technical, security, legal and governance project.
-
----
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [the architecture](docs/architecture.md), and [the roadmap](ROADMAP.md). A star bookmarks the project; a reproducible experiment moves it forward.
 
 ## Repository map
 
 ```text
-constitution/       Genesis Monetary Constitution and identity
-cymonia/            deterministic economy engine
-state/              canonical economy state
-site/               public dashboard
-scripts/            build tooling
-tests/              verification suite
-docs/               architecture and governance
-.github/workflows/   CI, live economy, Pages
+cymonia/             canonical engine + isolated adaptive research runner
+constitution/        Genesis rules and pinned identity
+state/               public economy state, history and ledger
+site/                playable observatory, AI lab, participation UI and published evidence
+functions/           Cloudflare Pages Functions: auth, ledger API and proposal brain
+migrations/          D1 participatory-economy schema
+scripts/             snapshot and experiment builders
+tests/               economy, research and frontend data tests
+docs/                model methods, architecture and governance
+.github/workflows/   CI, economy clock and Pages deployment
 ```
 
----
-
-## Contributing
-
-CYMONIA is most interesting when people challenge its assumptions.
-
-Useful contributions include:
-
-- better economic models;
-- monetary-policy experiments;
-- richer agent behaviour;
-- reproducibility work;
-- security;
-- visualization;
-- alternative constitutional forks.
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes to the canonical Genesis Constitution.
-
----
+**CYMONIA is an experimental accounting economy, not a financial product.** Genesis has no external token, ICO, presale, peg, redemption or yield promise. No external market value is assumed or guaranteed.
 
 <div align="center">
 
-**CYMONIA**
+[**Explore CYMONIA**](https://signallayerlabs.github.io/CYMONIA/) · [**Fork an experiment**](https://github.com/SignalLayerLabs/CYMONIA/fork)
 
-*Build the economy first.*
-
-[Live economy](https://signallayerlabs.github.io/CYMONIA/) ·
-[Roadmap](ROADMAP.md) ·
-[Contributing](CONTRIBUTING.md)
-
-MIT License
+MIT licensed. Build the economy first.
 
 </div>

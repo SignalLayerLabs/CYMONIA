@@ -7,7 +7,9 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from cymonia.constitution import constitution_hash, verify_constitution_identity
+from cymonia.constitution import constitution_hash, verify_constitution_identity, load_constitution
+from cymonia.genesis import SERVICES
+from cymonia.simulation import verify_economy
 from cymonia.ledger import read_ledger
 from cymonia.storage import load_state, read_history, read_policy_decisions
 
@@ -30,7 +32,29 @@ def build_dashboard_data(state_root: Path | str = "state", site_root: Path | str
         state.agents,
         key=lambda agent: (-agent.balance, agent.agent_id),
     )[:10]
+    integrity_ok, integrity_problems = verify_economy(state_root)
+    interval = int(load_constitution()["time"]["policy_meeting_interval_epochs"])
+    current_trades = [tx for tx in transactions if tx.epoch == state.epoch and tx.kind == "trade"]
+    markets = []
+    for service in SERVICES:
+        trades = [tx for tx in current_trades if tx.service == service]
+        quantity = sum(tx.quantity for tx in trades)
+        volume = sum(tx.amount for tx in trades)
+        markets.append({
+            "service": service,
+            "agents": sum(1 for agent in state.agents if agent.active and agent.specialty == service),
+            "trades": len(trades),
+            "volume": round(volume, 6),
+            "quantity": round(quantity, 6),
+            "average_price": round(volume / quantity, 6) if quantity else None,
+        })
     state_payload = {
+        "schema_version": 2,
+        "agents": [agent.to_dict() for agent in sorted(state.agents, key=lambda a: a.agent_id)],
+        "markets": markets,
+        "integrity": {"ok": integrity_ok, "problems": integrity_problems, "checked_at": "snapshot build"},
+        "next_policy_epoch": (state.epoch // interval + 1) * interval,
+        "agent_model": "Deterministic rule-based agents (Genesis v0.1)",
         "epoch": state.epoch,
         "currency": "CYMONIA",
         "money_supply": state.money_supply,
