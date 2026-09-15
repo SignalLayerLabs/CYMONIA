@@ -3,3 +3,10 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+.wrangler/
+node_modules/
+test-results/

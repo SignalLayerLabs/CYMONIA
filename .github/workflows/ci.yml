@@ -15,6 +15,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript domain and frontend tests
+        run: node --test tests/test_*.mjs
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Deterministic 100-epoch smoke economy
@@ -25,3 +30,42 @@ jobs:
           python -m cymonia verify --root /tmp/cymonia-smoke
       - name: Build dashboard data
         run: python scripts/build_site.py
+      - name: Build deterministic Autonomous World replay
+        run: |
+          node scripts/build_world_replay.mjs
+          cp site/data/world.json /tmp/world-a.json
+          node scripts/build_world_replay.mjs
+          cmp /tmp/world-a.json site/data/world.json
+      - name: Reproduce published research
+        run: |
+          python scripts/build_experiments.py
+          node scripts/build_world_replay.mjs
+          git diff --exit-code -- site/data/experiments.json
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build static data
+        run: |
+          python scripts/build_site.py
+          python scripts/build_experiments.py
+          node scripts/build_world_replay.mjs
+      - name: Install Playwright for integration smoke
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Browser integration smoke
+        run: |
+          python -m http.server 8765 --directory site >/tmp/cymonia-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8765/ >/dev/null && break; sleep 0.5; done
+          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser.mjs
+          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-world.mjs
