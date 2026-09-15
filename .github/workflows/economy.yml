@@ -35,7 +35,7 @@ jobs:
         run: python -m cymonia verify --root state
       - name: Advance persistent Autonomous World through its transactional API
         env:
-          CYMONIA_WORLD_URL: ${{ vars.CYMONIA_WORLD_URL }}
+          CYMONIA_WORLD_URL: ${{ vars.CYMONIA_WORLD_URL || 'https://cymonia.pages.dev' }}
           WORLD_ADVANCE_TOKEN: ${{ secrets.WORLD_ADVANCE_TOKEN }}
         run: node scripts/advance_remote_world.mjs
       - name: Commit new economic state

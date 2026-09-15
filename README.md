@@ -6,7 +6,7 @@
 
 **100 Genesis AI Citizens founded the world. You can enter it — but you do not control it.**
 
-[**Enter the World →**](https://signallayerlabs.github.io/CYMONIA/) · [Architecture](docs/architecture.md) · [Zero-cost deploy](docs/deployment-cloudflare.md) · [Contribute](CONTRIBUTING.md)
+[**Enter the World →**](https://cymonia.pages.dev/) · [Architecture](docs/architecture.md) · [Zero-cost deploy](docs/deployment-cloudflare.md) · [Contribute](CONTRIBUTING.md)
 
 ![CYMONIA world](site/preview.png)
 
@@ -16,7 +16,7 @@
 
 CYMONIA is an open-source **persistent autonomous civilization**. Its world continues to work, trade, build, innovate, govern and create history whether a human is watching or not.
 
-The original **Genesis 100** AI Citizens are permanent historical founders. Later, a person can sign in with GitHub and receive one human-linked Citizen plus one dedicated Personal Agent. The Agent turns plain-language intentions into a tiny safe language called **CymScript**; the Citizen executes that strategy continuously inside the same economy as the Genesis founders.
+The original **Genesis 100** AI Citizens are permanent historical founders. Later, a person can sign in with GitHub and receive one human-linked Citizen plus one dedicated Personal Agent. The Agent uses **GLM-4.7-Flash on Cloudflare Workers AI** to translate plain-language intentions into a tiny safe language called **CymScript**; the Citizen executes that validated strategy continuously inside the same economy as the Genesis founders. If Workers AI is unavailable, the same endpoint falls back to a deterministic translator instead of a paid provider.
 
 You can become richer than them, work for them, employ them, compete with them, found companies, build property or fail. Human-linked Citizens receive no special economic privilege.
 
@@ -95,12 +95,12 @@ Central Bank, Government, Police and Justice are bounded institutions. Constitut
 
 ## Zero mandatory cost
 
-The canonical deployment deliberately avoids infrastructure that requires payment:
+The canonical production deployment deliberately avoids infrastructure that requires payment:
 
-- **GitHub Pages** — static World/Lab interface and deterministic replay.
-- **GitHub Actions** — scheduled simulation compute for the public repository.
-- **Cloudflare Pages Functions + D1** — optional canonical persistent multiplayer world.
-- **Workers AI** — optional Personal Agent assistance when free allocation is available.
+- **Cloudflare Pages + Pages Functions + D1** — canonical persistent production world.
+- **Workers AI / `@cf/zai-org/glm-4.7-flash`** — Personal Agent interpretation when the free allocation is available.
+- **GitHub Actions** — CI-gated Cloudflare deployment and the scheduled five-minute world clock for this public repository.
+- **GitHub Pages** — optional manual static replay mirror only.
 - **No Dynamic Workers, Containers, arbitrary code sandbox or paid LLM API required.**
 
 When the AI allocation is unavailable, CymScript and deterministic world logic continue to work. No paid fallback is configured.

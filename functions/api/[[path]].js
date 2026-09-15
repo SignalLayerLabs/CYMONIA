@@ -8,7 +8,7 @@ import {
   parseCookies,
   sessionCookie,
 } from "../_lib/auth.js";
-import { DEFAULT_BRAIN_MODEL, proposeContractWithWorkersAI } from "../_lib/brain.js";
+import { DEFAULT_BRAIN_MODEL, proposeCitizenStrategyWithWorkersAI, proposeContractWithWorkersAI } from "../_lib/brain.js";
 import { errorResponse, json, readJson, redirect, requireActor, safeReturnTo, sessionActor } from "../_lib/http.js";
 import {
   advancePersistentWorld,
@@ -154,7 +154,7 @@ async function handle(request, env) {
   const method = request.method.toUpperCase();
 
   if (parts[0] === "health" && method === "GET") {
-    return json({ ok: true, service: "cymonia-participation-alpha", north_star: "detect-fund-work-prove-settle-learn", external_token: false, default_brain_model: env.BRAIN_MODEL || DEFAULT_BRAIN_MODEL });
+    return json({ ok: true, service: "cymonia-participation-alpha", north_star: "detect-fund-work-prove-settle-learn", external_token: false, default_brain_model: env.BRAIN_MODEL || DEFAULT_BRAIN_MODEL, personal_agent_ai: env?.AI && typeof env.AI.run === "function" ? "workers-ai" : "deterministic-fallback", d1_bound: Boolean(env?.CYMONIA_DB) });
   }
 
   if (parts[0] === "auth" && parts[1] === "github" && method === "GET") return authStart(request, env);
@@ -180,7 +180,7 @@ async function handle(request, env) {
   const actor = await requireActor(request, env);
 
   if (parts[0] === "agent" && parts.length === 1 && method === "GET") return json({ ok: true, agent: await getAgentProfile(db(env), actor) });
-  if (parts[0] === "agent" && parts[1] === "propose" && isPost(request)) { const body = await readJson(request); if (!String(body.intent || "").trim()) return json({ ok: false, error: "intent_required" }, 400); return json({ ok: true, proposal: await proposeAgentStrategy(db(env), actor, body.intent) }); }
+  if (parts[0] === "agent" && parts[1] === "propose" && isPost(request)) { const body = await readJson(request); if (!String(body.intent || "").trim()) return json({ ok: false, error: "intent_required" }, 400); return json({ ok: true, proposal: await proposeAgentStrategy(db(env), actor, body.intent, { translator: (intent, current) => proposeCitizenStrategyWithWorkersAI(env, intent, current) }) }); }
   if (parts[0] === "agent" && parts[1] === "approve" && isPost(request)) { const body = await readJson(request); return json({ ok: true, strategy: await approveAgentStrategy(db(env), actor, body.version) }); }
   if (parts[0] === "agent" && parts[1] === "mode" && isPost(request)) { const body = await readJson(request); return json({ ok: true, agent: await setAgentMode(db(env), actor, body.mode) }); }
 
