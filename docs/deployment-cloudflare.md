@@ -1,91 +1,87 @@
-# Zero-mandatory-cost deployment
+# Cloudflare production deployment
 
-CYMONIA can be published without a mandatory paid service. The free architecture deliberately has no automatic paid fallback.
+CYMONIA production runs on Cloudflare Pages + Pages Functions + D1 + Workers AI. GitHub is source control, CI and the free five-minute world clock. GitHub Pages is only an optional manual static mirror.
 
-## 1. Static World / research site
-
-GitHub Pages can host `site/`. The Pages workflow generates `site/data/world.json` at deploy time:
-
-```bash
-node scripts/build_world_replay.mjs
-python scripts/build_site.py
-python scripts/build_experiments.py
-```
-
-This mode is observation-only but uses the real deterministic Autonomous World Engine.
-
-## 2. Persistent multiplayer world on Cloudflare
-
-Create a D1 database and place its UUID in `wrangler.toml`:
-
-```bash
-npx wrangler@latest login
-npx wrangler@latest d1 create cymonia-participation
-npx wrangler@latest d1 migrations apply cymonia-participation --remote
-npx wrangler@latest pages project create cymonia
-npx wrangler@latest pages deploy site --project-name cymonia
-```
-
-D1 binding name must remain `CYMONIA_DB`.
-
-## 3. GitHub OAuth
-
-Create a GitHub OAuth/GitHub App with callback:
+## Runtime architecture
 
 ```text
-https://YOUR-PAGES-ORIGIN/api/auth/callback
+GitHub main
+  -> CI tests
+  -> browser smoke
+  -> D1 migrations
+  -> Cloudflare Pages/Functions deploy
+  -> production health check
+
+GitHub scheduled Live Economy (5 min)
+  -> legacy deterministic economy step
+  -> POST https://cymonia.pages.dev/api/world/advance
+  -> Cloudflare D1 canonical Autonomous World
+
+Cloudflare Pages Functions
+  -> D1 (CYMONIA_DB)
+  -> Workers AI (AI)
+  -> @cf/zai-org/glm-4.7-flash
 ```
 
-Set Pages secrets:
+## One-time GitHub repository configuration
+
+Add repository Actions secrets:
+
+- `CLOUDFLARE_API_TOKEN` — Cloudflare token with Pages deploy and D1 edit permissions for this account/project.
+- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare account ID.
+- `WORLD_ADVANCE_TOKEN` — same random value configured as the Cloudflare Pages runtime secret.
+
+Optional repository variable:
+
+- `CYMONIA_WORLD_URL` — defaults to `https://cymonia.pages.dev` if omitted. Set this to a custom production domain later.
+
+## One-time Cloudflare Pages runtime secrets
+
+These remain in Cloudflare and are preserved by CI deploys:
 
 ```bash
-npx wrangler@latest pages secret put GITHUB_CLIENT_ID --project-name cymonia
-npx wrangler@latest pages secret put GITHUB_CLIENT_SECRET --project-name cymonia
-npx wrangler@latest pages secret put SESSION_HASH_SECRET --project-name cymonia
+npx wrangler@4 pages secret put GITHUB_CLIENT_ID --project-name cymonia
+npx wrangler@4 pages secret put GITHUB_CLIENT_SECRET --project-name cymonia
+npx wrangler@4 pages secret put SESSION_HASH_SECRET --project-name cymonia
+npx wrangler@4 pages secret put WORLD_ADVANCE_TOKEN --project-name cymonia
 ```
 
-One numeric GitHub user id maps to one canonical human-linked Citizen.
+The GitHub OAuth callback must be:
 
-## 4. Optional Workers AI
-
-Bind Workers AI as `AI` if the current free allocation is available. The world does not depend on an AI call for routine life. If AI is unavailable, deterministic CymScript translation and execution continue.
-
-No paid third-party LLM key is required.
-
-## 5. Autonomous clock without Cloudflare simulation CPU
-
-The `Live Economy` GitHub Action already runs every five minutes. For the persistent Autonomous World, add these repository secrets:
-
-- `CF_ACCOUNT_ID`
-- `CF_D1_DATABASE_ID`
-- `CF_API_TOKEN` with minimum D1 edit permission
-
-The action runs:
-
-```bash
-node scripts/advance_remote_world.mjs
+```text
+https://cymonia.pages.dev/api/auth/callback
 ```
 
-The tick is computed on the GitHub runner and the resulting state/event rows are sent to D1. If these secrets are absent, the step exits successfully and performs no remote mutation.
+or the equivalent custom-domain callback after a custom domain is enabled.
 
-## 6. Production validation
+## Automatic production flow
 
-```bash
-node --test tests/test_*.mjs
-python -m unittest discover -s tests -v
-node scripts/build_world_replay.mjs
-python scripts/build_site.py
-python scripts/build_experiments.py
-python -m cymonia verify --root state
-```
+Every push to `main` runs `.github/workflows/ci.yml`. Cloudflare deployment occurs only after both the complete test job and Playwright browser smoke are green. The deploy job then:
 
-Deploy D1 migrations before deploying Pages Functions.
+1. rebuilds deterministic static/research data;
+2. applies unapplied migrations to `cymonia-participation`;
+3. deploys `site/` and `functions/` to the `cymonia` Pages project;
+4. verifies `https://cymonia.pages.dev/api/health`;
+5. requires the health response to report the configured GLM model.
 
-## 7. Failure behavior
+A failed test, browser smoke, migration, deployment or production health check prevents a successful release.
 
-- AI unavailable: deterministic Agent fallback; no paid provider.
-- D1 unavailable: API returns an operational error; UI can still use the static replay.
-- Remote clock credentials absent: scheduled persistent tick is skipped.
-- Free-tier quota exhausted: the system stops that optional operation instead of inventing activity or routing to paid infrastructure.
+## Personal Agent AI
 
-CYMONIA never treats an infrastructure failure as a successful economic event.
+`env.AI` is bound as `AI` by `wrangler.toml`. The configured model is `@cf/zai-org/glm-4.7-flash`. The Personal Agent sends the owner's intent plus the current validated strategy to Workers AI and requests a strict JSON strategy schema. It cannot change Agent autonomy mode, transfer CYM, call tools, bypass the Constitution, or directly mutate D1.
+
+The model result is converted into CymScript and parsed again before persistence. If Workers AI is unavailable, malformed or quota-limited, CYMONIA falls back to the deterministic intent translator. No paid third-party provider is used.
+
+## D1 and Workers AI bindings
+
+Production bindings are declared in `wrangler.toml`:
+
+- `CYMONIA_DB` -> `cymonia-participation`
+- `AI` -> Workers AI
+- `BRAIN_MODEL` -> `@cf/zai-org/glm-4.7-flash`
+
+## Avoid duplicate Cloudflare deployments
+
+If the existing `cymonia` Pages project is also connected through Cloudflare's GitHub automatic-build integration, disable automatic production builds there (or disconnect the Git integration) once this GitHub Actions deploy flow is enabled. Otherwise a push to `main` can create two deployments: one directly from Cloudflare Git integration and one after CI.
+
+The CI-gated GitHub Actions path is the canonical production deploy.

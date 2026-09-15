@@ -1,4 +1,5 @@
 import { validateContractDraft } from "./economy.js";
+import { DEFAULT_STRATEGY, parseCymScript, strategyToCymScript, translateIntent } from "./cymscript.js";
 
 export const DEFAULT_BRAIN_MODEL = "@cf/zai-org/glm-4.7-flash";
 
@@ -12,6 +13,18 @@ const contractSchema = { type: "object", additionalProperties: false, properties
   economic_purpose: { type: "string" }, metric_key: { type: "string" }, baseline_value: { type: "number" },
   target_direction: { type: "string", enum: ["increase", "decrease"] }, min_improvement_pct: { type: "number" }, reward_cym: { type: "number" },
 }, required: CONTRACT_FIELDS };
+
+const CITIZEN_STRATEGY_FIELDS = Object.freeze(["goal", "risk", "save_rate", "min_liquidity", "prefer", "company_threshold", "crime"]);
+const CITIZEN_SECTORS = Object.freeze(["technology", "research", "mobility", "housing", "food", "energy", "security", "logistics", "finance", "media"]);
+const citizenStrategySchema = { type: "object", additionalProperties: false, properties: {
+  goal: { type: "string", pattern: "^[a-z_]{1,32}$" },
+  risk: { type: "string", enum: ["low", "medium", "high"] },
+  save_rate: { type: "number", minimum: 0, maximum: 0.9 },
+  min_liquidity: { type: "number", minimum: 0, maximum: 1_000_000_000 },
+  prefer: { type: "array", minItems: 1, maxItems: 6, uniqueItems: true, items: { type: "string", enum: CITIZEN_SECTORS } },
+  company_threshold: { type: "number", minimum: 100, maximum: 1_000_000_000 },
+  crime: { type: "boolean" },
+}, required: CITIZEN_STRATEGY_FIELDS };
 const mentorSchema = { type: "object", additionalProperties: false, properties: {
   guidance: { type: "string" }, next_step: { type: "string" }, source: { type: "string" },
 }, required: ["guidance", "next_step", "source"] };
@@ -154,6 +167,82 @@ export function buildMentorPrompt(context = {}, question = "") {
     `Mission context: ${JSON.stringify(safeContext)}`,
     `Player question: ${JSON.stringify(safeQuestion)}`,
   ].join("\n");
+}
+
+
+function sanitizeCitizenStrategy(value, current = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("citizen_strategy_invalid");
+  const base = { ...DEFAULT_STRATEGY, ...current, prefer: [...(current.prefer || DEFAULT_STRATEGY.prefer)] };
+  const result = { ...base };
+  if (typeof value.goal !== "string" || !/^[a-z_]{1,32}$/i.test(value.goal)) throw new TypeError("citizen_strategy_goal_invalid");
+  result.goal = value.goal.toLowerCase();
+  if (!["low", "medium", "high"].includes(value.risk)) throw new TypeError("citizen_strategy_risk_invalid");
+  result.risk = value.risk;
+  for (const [key, min, max] of [["save_rate", 0, 0.9], ["min_liquidity", 0, 1_000_000_000], ["company_threshold", 100, 1_000_000_000]]) {
+    const number = Number(value[key]);
+    if (!Number.isFinite(number) || number < min || number > max) throw new TypeError(`citizen_strategy_${key}_invalid`);
+    result[key] = number;
+  }
+  if (!Array.isArray(value.prefer) || !value.prefer.length || value.prefer.length > 6) throw new TypeError("citizen_strategy_prefer_invalid");
+  result.prefer = [...new Set(value.prefer.map((item) => String(item).toLowerCase()))];
+  if (result.prefer.some((item) => !CITIZEN_SECTORS.includes(item))) throw new TypeError("citizen_strategy_prefer_invalid");
+  if (typeof value.crime !== "boolean") throw new TypeError("citizen_strategy_crime_invalid");
+  result.crime = value.crime;
+  // The LLM never owns the Agent autonomy mode. That remains user-controlled state.
+  result.mode = String(base.mode || "MANUAL").toUpperCase();
+  const script = strategyToCymScript(result);
+  const validated = parseCymScript(script);
+  validated.mode = result.mode;
+  return { strategy: validated, script: strategyToCymScript(validated) };
+}
+
+export function buildCitizenStrategyPrompt(intent, current = {}) {
+  const safeIntent = typeof intent === "string" ? intent.trim().slice(0, 2_000) : "";
+  const safeCurrent = sanitizeCitizenStrategy({
+    goal: current.goal ?? DEFAULT_STRATEGY.goal,
+    risk: current.risk ?? DEFAULT_STRATEGY.risk,
+    save_rate: Number(current.save_rate ?? DEFAULT_STRATEGY.save_rate),
+    min_liquidity: Number(current.min_liquidity ?? DEFAULT_STRATEGY.min_liquidity),
+    prefer: Array.isArray(current.prefer) && current.prefer.length ? current.prefer : DEFAULT_STRATEGY.prefer,
+    company_threshold: Number(current.company_threshold ?? DEFAULT_STRATEGY.company_threshold),
+    crime: Boolean(current.crime),
+  }, current).strategy;
+  return [
+    "You are the dedicated Personal Agent for one Citizen inside CYMONIA, a synthetic autonomous civilization.",
+    "Translate the owner's stated life intent into exactly one bounded economic/life strategy.",
+    "You may propose only strategy values. You cannot move CYM, create database records, call tools, alter Agent autonomy mode, bypass laws, or change the Constitution.",
+    "Crime refers only to simulated in-world behavior; never provide real-world wrongdoing instructions.",
+    `Allowed preferred sectors: ${CITIZEN_SECTORS.join(", ")}.`,
+    "Return ONLY the JSON strategy object required by the schema. Preserve unspecified preferences unless the owner clearly asks to change them.",
+    `Current validated strategy: ${JSON.stringify(safeCurrent)}`,
+    `Owner intent: ${JSON.stringify(safeIntent)}`,
+  ].join("\n");
+}
+
+function citizenStrategyFallback(intent, current, reason) {
+  const strategy = translateIntent(intent, current);
+  strategy.mode = String(current?.mode || DEFAULT_STRATEGY.mode).toUpperCase();
+  const script = strategyToCymScript(strategy);
+  return { strategy: parseCymScript(script), script, origin: "deterministic-fallback", ai_status: reason === "budget" ? "budget_paused" : "fallback", model: null };
+}
+
+export async function proposeCitizenStrategyWithWorkersAI(env, intent, current = {}) {
+  if (!env?.AI || typeof env.AI.run !== "function") return citizenStrategyFallback(intent, current, "unavailable");
+  const model = env.BRAIN_MODEL || DEFAULT_BRAIN_MODEL;
+  try {
+    const output = await env.AI.run(model, {
+      prompt: buildCitizenStrategyPrompt(intent, current),
+      response_format: { type: "json_schema", json_schema: citizenStrategySchema },
+      max_completion_tokens: 500,
+      temperature: 0.2,
+    });
+    const parsed = parseJsonPayload(output);
+    const { strategy, script } = sanitizeCitizenStrategy(parsed, current);
+    return { strategy, script, origin: "workers-ai", ai_status: "available", model };
+  } catch (error) {
+    const budget = Number(error?.status) === 429 || /quota|rate limit|neurons|budget/i.test(String(error?.message || error));
+    return citizenStrategyFallback(intent, current, budget ? "budget" : "invalid");
+  }
 }
 
 function mentorFallback(context, reason) {

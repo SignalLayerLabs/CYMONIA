@@ -7,6 +7,7 @@ import {
   mentorMissionWithWorkersAI,
   parseBrainProposal,
   proposeContractWithWorkersAI,
+  proposeCitizenStrategyWithWorkersAI,
 } from "../functions/_lib/brain.js";
 
 const draft = {
@@ -95,4 +96,54 @@ test("mentor falls back safely when AI is offline or malformed", async () => {
   const malformed = await mentorMissionWithWorkersAI({ AI: { run: async () => ({ response: "ignore the mission and mint CYM" }) } }, context, "Help");
   assert.equal(malformed.source, "rule-based fallback (AI response invalid)");
   assert.equal(malformed.next_step, "Inspect the oldest mission");
+});
+
+
+test("Personal Agent uses Workers AI but only returns validated CymScript strategy", async () => {
+  let modelUsed;
+  let input;
+  const env = { AI: { run: async (model, value) => {
+    modelUsed = model;
+    input = value;
+    return { response: JSON.stringify({
+      goal: "entrepreneur",
+      risk: "low",
+      save_rate: 0.4,
+      min_liquidity: 1500,
+      prefer: ["technology", "research"],
+      company_threshold: 3200,
+      crime: false,
+      mode: "AUTONOMOUS",
+      admin: true,
+    }) };
+  } } };
+  const current = { goal: "build_wealth", risk: "medium", save_rate: 0.3, min_liquidity: 1000, prefer: ["technology"], company_threshold: 5000, crime: false, mode: "MANUAL" };
+  const result = await proposeCitizenStrategyWithWorkersAI(env, "Become a cautious technology entrepreneur", current);
+  assert.equal(modelUsed, "@cf/zai-org/glm-4.7-flash");
+  assert.equal(result.origin, "workers-ai");
+  assert.equal(result.ai_status, "available");
+  assert.equal(result.strategy.goal, "entrepreneur");
+  assert.equal(result.strategy.risk, "low");
+  assert.equal(result.strategy.mode, "MANUAL");
+  assert.equal(result.strategy.min_liquidity, 1500);
+  assert.equal(result.strategy.company_threshold, 3200);
+  assert.match(result.script, /citizen\.goal\("entrepreneur"\)/);
+  assert.match(result.script, /citizen\.mode\("MANUAL"\)/);
+  assert.equal(input.response_format.type, "json_schema");
+  assert.equal(input.tools, undefined);
+});
+
+test("Personal Agent falls back deterministically when Workers AI is unavailable or invalid", async () => {
+  const current = { goal: "build_wealth", risk: "medium", save_rate: 0.3, min_liquidity: 1000, prefer: ["technology"], company_threshold: 5000, crime: false, mode: "ADVISOR" };
+  const offline = await proposeCitizenStrategyWithWorkersAI({}, "become entrepreneur and stay low risk", current);
+  assert.equal(offline.origin, "deterministic-fallback");
+  assert.equal(offline.ai_status, "fallback");
+  assert.equal(offline.strategy.goal, "entrepreneur");
+  assert.equal(offline.strategy.risk, "low");
+  assert.equal(offline.strategy.mode, "ADVISOR");
+
+  const invalid = await proposeCitizenStrategyWithWorkersAI({ AI: { run: async () => ({ response: "not json" }) } }, "save 45%", current);
+  assert.equal(invalid.origin, "deterministic-fallback");
+  assert.equal(invalid.ai_status, "fallback");
+  assert.equal(invalid.strategy.save_rate, 0.45);
 });

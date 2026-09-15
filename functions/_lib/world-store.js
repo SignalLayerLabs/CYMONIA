@@ -123,14 +123,16 @@ function activationStatements(db, actorId, version) {
     statement(db, "UPDATE world_human_links SET active_strategy_version=?,updated_at=datetime('now') WHERE actor_id=?", version, actorId),
   ];
 }
-export async function proposeAgentStrategy(db, actor, intent, {origin = "deterministic"} = {}) {
+export async function proposeAgentStrategy(db, actor, intent, {origin = "deterministic", translator = null} = {}) {
   await ensureHumanWorldCitizen(db, actor);
   return mutateWorld(db, async world => {
     const link = await first(db, "SELECT * FROM world_human_links WHERE actor_id=?", actor.id);
     const active = await first(db, "SELECT strategy_json FROM world_strategy_versions WHERE actor_id=? AND version=?", actor.id, link.active_strategy_version);
     const current = active ? JSON.parse(active.strategy_json) : DEFAULT_STRATEGY;
-    const next = translateIntent(intent, current);
+    const translated = translator ? await translator(intent, current) : null;
+    const next = translated?.strategy ? translated.strategy : translateIntent(intent, current);
     next.mode = link.agent_mode;
+    const effectiveOrigin = translated?.origin || origin;
     const max = await first(db, "SELECT COALESCE(MAX(version),0) v FROM world_strategy_versions WHERE actor_id=?", actor.id);
     const version = Number(max.v) + 1;
     const script = strategyToCymScript(next);
@@ -138,7 +140,7 @@ export async function proposeAgentStrategy(db, actor, intent, {origin = "determi
     const status = auto ? "active" : "pending";
     const statements = [
       statement(db, "UPDATE world_strategy_versions SET status='superseded' WHERE actor_id=? AND status='pending'", actor.id),
-      statement(db, "INSERT INTO world_strategy_versions(actor_id,version,cym_script,strategy_json,status,origin,intent) VALUES(?,?,?,?,?,?,?)", actor.id, version, script, JSON.stringify(next), status, origin, String(intent || "").slice(0, 2000)),
+      statement(db, "INSERT INTO world_strategy_versions(actor_id,version,cym_script,strategy_json,status,origin,intent) VALUES(?,?,?,?,?,?,?)", actor.id, version, script, JSON.stringify(next), status, effectiveOrigin, String(intent || "").slice(0, 2000)),
     ];
     if (auto) {
       applyCitizenStrategy(world, link.citizen_id, next);
@@ -147,7 +149,7 @@ export async function proposeAgentStrategy(db, actor, intent, {origin = "determi
     return {
       guards: [linkGuard(db, link), guard(db, "(SELECT COALESCE(MAX(version),0) FROM world_strategy_versions WHERE actor_id=?)=?", actor.id, Number(max.v))],
       statements,
-      result: {version, script, strategy: next, status, auto_approved: auto},
+      result: {version, script, strategy: next, status, auto_approved: auto, origin: effectiveOrigin, ai_status: translated?.ai_status || "fallback", model: translated?.model || null},
     };
   });
 }

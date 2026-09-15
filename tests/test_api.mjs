@@ -63,6 +63,9 @@ test("health is public and states the North Star", async () => {
   assert.equal(data.ok, true);
   assert.equal(data.north_star, "detect-fund-work-prove-settle-learn");
   assert.equal(data.external_token, false);
+  assert.equal(data.default_brain_model, "@cf/zai-org/glm-4.7-flash");
+  assert.equal(data.personal_agent_ai, "workers-ai");
+  assert.equal(data.d1_bound, true);
 });
 
 test("state mutation requires session and application/json", async () => {

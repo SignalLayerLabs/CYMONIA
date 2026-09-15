@@ -1,16 +1,6 @@
-name: Deploy Pages
+name: Static Mirror (manual)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - 'scripts/build_world_replay.mjs'
-      - 'functions/_lib/world-engine.js'
-      - '.github/workflows/pages.yml'
-  workflow_run:
-    workflows: ['Live Economy']
-    types: [completed]
   workflow_dispatch:
 
 permissions:
