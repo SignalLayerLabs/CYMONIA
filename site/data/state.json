@@ -4,73 +4,73 @@
   "constitution_valid": true,
   "cumulative_issuance": 27.7797,
   "currency": "CYMONIA",
-  "epoch": 27,
+  "epoch": 28,
   "latest_metrics": {
-    "active_agent_rate_pct": 68.0,
+    "active_agent_rate_pct": 64.0,
     "agent_count": 100,
-    "epoch": 27,
-    "gini": 0.076688,
-    "inflation_pct": 0.223544,
+    "epoch": 28,
+    "gini": 0.079609,
+    "inflation_pct": 0.715834,
     "money_supply": 100027.7797,
-    "nominal_gdp": 417.913397,
+    "nominal_gdp": 402.781427,
     "policy_rate_pct": 3.0,
-    "price_index": 95.837865,
-    "transaction_count": 68,
-    "velocity": 0.004177973
+    "price_index": 96.523905,
+    "transaction_count": 66,
+    "velocity": 0.004026696
   },
   "money_supply": 100027.7797,
   "policy_rate_pct": 3.0,
-  "previous_state_hash": "183fcdb7a17c72546db6218580cd88fd021bb933e065ad5989a0b5f1eaafe0b3",
-  "state_hash": "3ac394974d950aa2a2c303308c0235ca207f548dbee2a3d2f74e2bcf80c31ede",
+  "previous_state_hash": "3ac394974d950aa2a2c303308c0235ca207f548dbee2a3d2f74e2bcf80c31ede",
+  "state_hash": "e3744e0084098f61c0ab5bfd4cc2ebd5bd269965c56aeccb9200504c4afe6139",
   "top_agents": [
     {
       "agent_id": "agent-0023",
-      "balance": 1407.20062,
+      "balance": 1424.497936,
       "purchases": 3,
-      "sales": 40,
-      "specialty": "research"
-    },
-    {
-      "agent_id": "agent-0016",
-      "balance": 1381.781866,
-      "purchases": 4,
-      "sales": 48,
-      "specialty": "security"
-    },
-    {
-      "agent_id": "agent-0076",
-      "balance": 1307.923742,
-      "purchases": 10,
-      "sales": 36,
-      "specialty": "security"
-    },
-    {
-      "agent_id": "agent-0064",
-      "balance": 1303.002956,
-      "purchases": 9,
-      "sales": 44,
-      "specialty": "code"
-    },
-    {
-      "agent_id": "agent-0053",
-      "balance": 1275.897598,
-      "purchases": 24,
       "sales": 42,
       "specialty": "research"
     },
     {
+      "agent_id": "agent-0016",
+      "balance": 1399.851728,
+      "purchases": 4,
+      "sales": 50,
+      "specialty": "security"
+    },
+    {
+      "agent_id": "agent-0076",
+      "balance": 1327.359471,
+      "purchases": 10,
+      "sales": 37,
+      "specialty": "security"
+    },
+    {
+      "agent_id": "agent-0064",
+      "balance": 1319.85198,
+      "purchases": 9,
+      "sales": 46,
+      "specialty": "code"
+    },
+    {
       "agent_id": "agent-0036",
-      "balance": 1274.105057,
+      "balance": 1297.989277,
       "purchases": 15,
-      "sales": 36,
+      "sales": 38,
       "specialty": "security"
     },
     {
       "agent_id": "agent-0025",
-      "balance": 1271.202061,
+      "balance": 1284.218627,
       "purchases": 8,
-      "sales": 44,
+      "sales": 45,
       "specialty": "audit"
+    },
+    {
+      "agent_id": "agent-0053",
+      "balance": 1281.298804,
+      "purchases": 25,
+      "sales": 45,
+      "specialty": "research"
     },
     {
       "agent_id": "agent-0056",
@@ -81,16 +81,16 @@
     },
     {
       "agent_id": "agent-0096",
-      "balance": 1236.937835,
+      "balance": 1258.072016,
       "purchases": 13,
-      "sales": 29,
+      "sales": 32,
       "specialty": "security"
     },
     {
       "agent_id": "agent-0057",
-      "balance": 1203.42259,
-      "purchases": 20,
-      "sales": 52,
+      "balance": 1193.783551,
+      "purchases": 22,
+      "sales": 54,
       "specialty": "planning"
     }
   ]
