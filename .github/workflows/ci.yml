@@ -87,6 +87,7 @@ jobs:
           fi
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser.mjs
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-world.mjs
+          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-game-revamp.mjs
 
   deploy-cloudflare:
     name: Deploy Cloudflare production
