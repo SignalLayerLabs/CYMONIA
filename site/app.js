@@ -365,6 +365,10 @@ async function loadResearch() {
     $("researchContent").hidden = false;
     renderStudy();
   } catch (error) {
+    // Do not cache a snapshot that failed rendering/validation. Retry must
+    // perform a fresh fetch instead of reusing poisoned in-memory data.
+    model.study = null;
+    $("researchContent").hidden = true;
     $("researchError").hidden = false;
     console.error("CYMONIA research data:", error);
   } finally {

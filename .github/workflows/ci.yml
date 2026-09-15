@@ -66,6 +66,18 @@ jobs:
           python -m http.server 8765 --directory site >/tmp/cymonia-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
-          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8765/ >/dev/null && break; sleep 0.5; done
+          SERVER_READY=0
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null 2>&1; then
+              SERVER_READY=1
+              break
+            fi
+            sleep 0.5
+          done
+          if [ "$SERVER_READY" -ne 1 ]; then
+            echo "Static test server did not become ready"
+            cat /tmp/cymonia-http.log || true
+            exit 1
+          fi
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser.mjs
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-world.mjs
