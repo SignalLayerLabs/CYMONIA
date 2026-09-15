@@ -73,7 +73,9 @@ body[data-rts-mode="build"] .world-stage{box-shadow:inset 0 0 100px #805c1928,0 
 /* Desktop RTS control deck: keep camera controls beside, never behind, the minimap. */
 @media (min-width: 821px) {
   .game-rts-active .world-controls {
-    right: 204px;
-    bottom: 14px;
+    left: auto;
+    right: 14px;
+    top: 118px;
+    bottom: auto;
   }
 }
