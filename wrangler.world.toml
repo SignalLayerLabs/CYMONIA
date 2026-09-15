@@ -1,0 +1,17 @@
+name = "cymonia-sovereign-world"
+main = "worker/src/index.js"
+compatibility_date = "2026-09-01"
+
+[ai]
+binding = "AI"
+
+[vars]
+BRAIN_MODEL = "@cf/zai-org/glm-4.7-flash"
+
+[[durable_objects.bindings]]
+name = "WORLD"
+class_name = "SovereignWorld"
+
+[[migrations]]
+tag = "sovereign-v2-genesis"
+new_sqlite_classes = ["SovereignWorld"]

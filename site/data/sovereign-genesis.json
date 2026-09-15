@@ -1,0 +1,5658 @@
+{
+  "kind": "GENESIS_REPLAY",
+  "generated_at": "2026-09-15T00:00:00.000Z",
+  "world": {
+    "version": 2,
+    "worldId": "sovereign-20260915",
+    "clock": {
+      "realEpochMs": 1789430400000,
+      "worldMinute": 0
+    },
+    "environment": {
+      "temperatureC": 18,
+      "precipitation": 0,
+      "soilMoisture": 0.55,
+      "seasonPhase": 0,
+      "dayPhase": 0,
+      "pollution": 0,
+      "pathogenPressure": 0.012,
+      "naturalReservoirs": {
+        "waterKg": 9000000,
+        "biomassKg": 1000000,
+        "mineralKg": 1000000
+      },
+      "metabolicMatterKg": 0
+    },
+    "citizens": [
+      {
+        "id": "genesis:001",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10885362,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 54.176370463054624,
+          "y": 50.13803656445816
+        },
+        "body": {
+          "hydration": 93.50967512163334,
+          "calories": 93.15392704843543,
+          "sleepPressure": 19.83614347409457,
+          "health": 100,
+          "ageMinutes": 15768000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.9834198637399822,
+          "riskTolerance": 0.19890887616202235,
+          "socialDrive": 0.8633457666728646,
+          "aggression": 0.04555545779876411,
+          "empathy": 0.9973355729598552,
+          "noveltySeeking": 0.23350949911400676,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.48585944110527635,
+          "confidence": 0.81038611815311
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:001"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:002",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13982203,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.955032180096374,
+          "y": 51.52660264414606
+        },
+        "body": {
+          "hydration": 82.28965222649276,
+          "calories": 91.41608772613108,
+          "sleepPressure": 16.82623526547104,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.9862620320636779,
+          "riskTolerance": 0.6678273030556738,
+          "socialDrive": 0.784473649924621,
+          "aggression": 0.4258896917570382,
+          "empathy": 0.8998838492436334,
+          "noveltySeeking": 0.7486300345044583,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3292116139084101,
+          "confidence": 0.5147400368470698
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:002"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:003",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14771349,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.61453055669424,
+          "y": 52.50324206274681
+        },
+        "body": {
+          "hydration": 96.62269826093689,
+          "calories": 83.26037108828314,
+          "sleepPressure": 10.960155877983198,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3938179116230458,
+          "riskTolerance": 0.8372315394226462,
+          "socialDrive": 0.7363584071863443,
+          "aggression": 0.5320648733060807,
+          "empathy": 0.5285146082518623,
+          "noveltySeeking": 0.9394421137403697,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.21632256582379342,
+          "confidence": 0.38758026449941096
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:003"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:004",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10974873,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 52.37078500349753,
+          "y": 53.31516714268235
+        },
+        "body": {
+          "hydration": 96.14413852151483,
+          "calories": 96.32701756712049,
+          "sleepPressure": 17.49910103273578,
+          "health": 100,
+          "ageMinutes": 16293600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.59425825253129,
+          "riskTolerance": 0.5376268515828997,
+          "socialDrive": 0.1559124058112502,
+          "aggression": 0.24059889740310608,
+          "empathy": 0.3789752971148118,
+          "noveltySeeking": 0.9788262711372226,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.31951229730620984,
+          "confidence": 0.7758820560760795
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:004"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:005",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16190348,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 51.54213618091178,
+          "y": 53.858768495764004
+        },
+        "body": {
+          "hydration": 89.76989080011845,
+          "calories": 94.98040127730928,
+          "sleepPressure": 14.339395030401647,
+          "health": 100,
+          "ageMinutes": 11563200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.2601300152018666,
+          "riskTolerance": 0.41258210875093937,
+          "socialDrive": 0.412348446669057,
+          "aggression": 0.01634986060671508,
+          "empathy": 0.8370567583711818,
+          "noveltySeeking": 0.06863271724432707,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4892793888226152,
+          "confidence": 0.7867052217945456
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:005"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:006",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17178388,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.24554792037234,
+          "y": 54.255150709953156
+        },
+        "body": {
+          "hydration": 94.01852533384226,
+          "calories": 84.6460266544018,
+          "sleepPressure": 8.263976154848933,
+          "health": 100,
+          "ageMinutes": 12088800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.12344669620506465,
+          "riskTolerance": 0.39516622200608253,
+          "socialDrive": 0.5312116716522723,
+          "aggression": 0.08462048526853323,
+          "empathy": 0.8282912076567299,
+          "noveltySeeking": 0.8623364670202136,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3290808199904859,
+          "confidence": 0.8759787415154279
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:006"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:007",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15950223,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 49.0966678390758,
+          "y": 54.04450979366468
+        },
+        "body": {
+          "hydration": 87.10252366308123,
+          "calories": 82.77676881686784,
+          "sleepPressure": 13.994207694195211,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7208642482291907,
+          "riskTolerance": 0.7695300069171935,
+          "socialDrive": 0.042750054970383644,
+          "aggression": 0.4739691850729286,
+          "empathy": 0.6872917379718273,
+          "noveltySeeking": 0.7925073921214789,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.45066237375140195,
+          "confidence": 0.399904049327597
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:007"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:008",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16357044,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 47.93823535743422,
+          "y": 53.33738319757265
+        },
+        "body": {
+          "hydration": 90.52740330505185,
+          "calories": 90.75467765261419,
+          "sleepPressure": 6.183212990872562,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7755086743272841,
+          "riskTolerance": 0.07730699353851378,
+          "socialDrive": 0.7129380269907415,
+          "aggression": 0.24519223538227378,
+          "empathy": 0.8897785853594542,
+          "noveltySeeking": 0.2781472478527576,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.43353453651070595,
+          "confidence": 0.75841486598365
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:008"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:009",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16989511,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 47.02823990150484,
+          "y": 52.45992280232467
+        },
+        "body": {
+          "hydration": 85.82860804442316,
+          "calories": 85.98080223472789,
+          "sleepPressure": 16.146775325760245,
+          "health": 100,
+          "ageMinutes": 16819200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.4293542359955609,
+          "riskTolerance": 0.21383546921424568,
+          "socialDrive": 0.9496923219412565,
+          "aggression": 0.1997316112741828,
+          "empathy": 0.9193190650315956,
+          "noveltySeeking": 0.29625723068602383,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5240826992318035,
+          "confidence": 0.7561079647857696
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:009"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:010",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13138112,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.38199190428911,
+          "y": 51.58929495983629
+        },
+        "body": {
+          "hydration": 86.56464215298183,
+          "calories": 96.14961377973668,
+          "sleepPressure": 6.991794395726174,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6349037529435009,
+          "riskTolerance": 0.9045440156478435,
+          "socialDrive": 0.8536180090159178,
+          "aggression": 0.32350872606039044,
+          "empathy": 0.463108770980034,
+          "noveltySeeking": 0.6810520812869072,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5988322811201214,
+          "confidence": 0.7402768837753684
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:010"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:011",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10300133,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.076466845162216,
+          "y": 50.167674829531464
+        },
+        "body": {
+          "hydration": 83.58296254579909,
+          "calories": 93.20413275551982,
+          "sleepPressure": 16.478725167689845,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.21850346308201551,
+          "riskTolerance": 0.4367691071238369,
+          "socialDrive": 0.9394105349201709,
+          "aggression": 0.3296309569850564,
+          "empathy": 0.598595006891992,
+          "noveltySeeking": 0.6597225917503238,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.43692212654277685,
+          "confidence": 0.30274621658027173
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:011"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:012",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14409891,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.36680265969096,
+          "y": 48.78013402731286
+        },
+        "body": {
+          "hydration": 96.61557172937319,
+          "calories": 89.23315037088469,
+          "sleepPressure": 6.9038340682163835,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3862224027980119,
+          "riskTolerance": 0.2054647970944643,
+          "socialDrive": 0.8143819831311703,
+          "aggression": 0.5533120541833341,
+          "empathy": 0.581003169878386,
+          "noveltySeeking": 0.39630056894384325,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3585396145470441,
+          "confidence": 0.6987668316811323
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:012"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:013",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13454051,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.876040004055376,
+          "y": 47.79693703095682
+        },
+        "body": {
+          "hydration": 90.00119902938604,
+          "calories": 85.22320899460465,
+          "sleepPressure": 7.988099635113031,
+          "health": 100,
+          "ageMinutes": 12088800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6398009660188109,
+          "riskTolerance": 0.0980789486784488,
+          "socialDrive": 0.5108893148135394,
+          "aggression": 0.2975689665880054,
+          "empathy": 0.805403536511585,
+          "noveltySeeking": 0.1866250371094793,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.45030234791338447,
+          "confidence": 0.7188490628264844
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:013"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:014",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15923121,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 47.85926456687294,
+          "y": 46.83491362310144
+        },
+        "body": {
+          "hydration": 93.0626555478666,
+          "calories": 87.69273711065762,
+          "sleepPressure": 11.632480244152248,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.32676322013139725,
+          "riskTolerance": 0.9836745711509138,
+          "socialDrive": 0.6309652412310243,
+          "aggression": 0.33702118168585,
+          "empathy": 0.8725570500362665,
+          "noveltySeeking": 0.8278554906137288,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.29590617595240476,
+          "confidence": 0.7021626650355757
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:014"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:015",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14260049,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 49.01864024927037,
+          "y": 46.28742630543618
+        },
+        "body": {
+          "hydration": 91.05517179751769,
+          "calories": 82.45687949284911,
+          "sleepPressure": 19.436544912168756,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6308289794251323,
+          "riskTolerance": 0.2765179246198386,
+          "socialDrive": 0.1254891511052847,
+          "aggression": 0.0739821286406368,
+          "empathy": 0.8343945552711375,
+          "noveltySeeking": 0.1817924971692264,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2221758638508618,
+          "confidence": 0.7826194322202354
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:015"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:016",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14214084,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.35608217595145,
+          "y": 46.01973859798163
+        },
+        "body": {
+          "hydration": 87.5119378247764,
+          "calories": 93.54022870934568,
+          "sleepPressure": 16.711124137509614,
+          "health": 100,
+          "ageMinutes": 12088800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.27890229993499815,
+          "riskTolerance": 0.9987029917538166,
+          "socialDrive": 0.6651201825588942,
+          "aggression": 0.02593039716593921,
+          "empathy": 0.5366558114299551,
+          "noveltySeeking": 0.037525630090385675,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.31942641567438845,
+          "confidence": 0.48830935084260996
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:016"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:017",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16578787,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 51.34576880899129,
+          "y": 46.454613998219955
+        },
+        "body": {
+          "hydration": 85.07463265722618,
+          "calories": 90.09808092191815,
+          "sleepPressure": 10.01351616694592,
+          "health": 100,
+          "ageMinutes": 12614400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7742281558457762,
+          "riskTolerance": 0.24374854750931263,
+          "socialDrive": 0.012719078687950969,
+          "aggression": 0.22565953508019446,
+          "empathy": 0.5523420875775628,
+          "noveltySeeking": 0.8563933859113604,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3202454688027501,
+          "confidence": 0.526788879185915
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:017"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:018",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14171794,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 52.63945942518048,
+          "y": 46.841985051847416
+        },
+        "body": {
+          "hydration": 88.13445040537044,
+          "calories": 82.83925409242511,
+          "sleepPressure": 14.10897349473089,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6921248540747911,
+          "riskTolerance": 0.09168566577136517,
+          "socialDrive": 0.2120577113237232,
+          "aggression": 0.28646363806910813,
+          "empathy": 0.8689462219947017,
+          "noveltySeeking": 0.15250456565991044,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.49876606008037927,
+          "confidence": 0.712893291329965
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:018"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:019",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11667594,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.36699810563457,
+          "y": 47.65843025160275
+        },
+        "body": {
+          "hydration": 84.37913634860888,
+          "calories": 82.19238017033786,
+          "sleepPressure": 11.371041493257508,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.514784750295803,
+          "riskTolerance": 0.3625335078686476,
+          "socialDrive": 0.8794909380376339,
+          "aggression": 0.1734453124925494,
+          "empathy": 0.6559586080606095,
+          "noveltySeeking": 0.8099475782364607,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5352385791949927,
+          "confidence": 0.515744853252545
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:019"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:020",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10650580,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 54.01016387439834,
+          "y": 48.77405628557445
+        },
+        "body": {
+          "hydration": 83.41460180166177,
+          "calories": 87.99768115906045,
+          "sleepPressure": 8.165898531442508,
+          "health": 100,
+          "ageMinutes": 17344800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.998496116604656,
+          "riskTolerance": 0.39866082929074764,
+          "socialDrive": 0.9723285255022347,
+          "aggression": 0.38392303381115195,
+          "empathy": 0.6906919533619658,
+          "noveltySeeking": 0.05403465870767832,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5203961666673422,
+          "confidence": 0.33496476835571226
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:020"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:021",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17491040,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 56.531514214631166,
+          "y": 50.149506970960644
+        },
+        "body": {
+          "hydration": 92.35378531203605,
+          "calories": 91.93102416396141,
+          "sleepPressure": 6.231516676489264,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7174868583679199,
+          "riskTolerance": 0.01970258867368102,
+          "socialDrive": 0.1616323576308787,
+          "aggression": 0.5273764781188219,
+          "empathy": 0.9988113771891222,
+          "noveltySeeking": 0.6672396638896316,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2656173199415207,
+          "confidence": 0.4268060760106891
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:021"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:022",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16636596,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 56.215752920939785,
+          "y": 52.343225159290306
+        },
+        "body": {
+          "hydration": 87.91878954786807,
+          "calories": 96.03357532690279,
+          "sleepPressure": 14.991576069733128,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3624876900576055,
+          "riskTolerance": 0.2632879705633968,
+          "socialDrive": 0.6632847278378904,
+          "aggression": 0.10328714651986956,
+          "empathy": 0.5513885386404581,
+          "noveltySeeking": 0.03461890225298703,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.464655442442745,
+          "confidence": 0.42840182525105774
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:022"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:023",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13307075,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 55.32747702876019,
+          "y": 53.76459315295887
+        },
+        "body": {
+          "hydration": 94.68710759934038,
+          "calories": 86.9787086516153,
+          "sleepPressure": 19.966121311299503,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.03714654454961419,
+          "riskTolerance": 0.7902942826040089,
+          "socialDrive": 0.4413832323625684,
+          "aggression": 0.20581901231780647,
+          "empathy": 0.35641937759937714,
+          "noveltySeeking": 0.35102566448040307,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.49678962798789145,
+          "confidence": 0.48558093630708754
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:023"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:024",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17657114,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.87897250985351,
+          "y": 55.46317949693564
+        },
+        "body": {
+          "hydration": 87.7794654101599,
+          "calories": 83.38493635691702,
+          "sleepPressure": 8.499460080638528,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6850931830704212,
+          "riskTolerance": 0.10520572308450937,
+          "socialDrive": 0.5773686321917921,
+          "aggression": 0.37216447619721293,
+          "empathy": 0.4582893764018081,
+          "noveltySeeking": 0.28787196543999016,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4630449949763715,
+          "confidence": 0.6769379574805499
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:024"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:025",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13786090,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 52.096154758035276,
+          "y": 56.20430209055842
+        },
+        "body": {
+          "hydration": 91.81937440577894,
+          "calories": 95.38122780551203,
+          "sleepPressure": 11.050394895719364,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5768303277436644,
+          "riskTolerance": 0.11775065306574106,
+          "socialDrive": 0.902910185046494,
+          "aggression": 0.5172738059889525,
+          "empathy": 0.7336514608934521,
+          "noveltySeeking": 0.30947871902026236,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3666931204497814,
+          "confidence": 0.8241294236853718
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:025"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:026",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14665217,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.12292878357694,
+          "y": 56.5318714316003
+        },
+        "body": {
+          "hydration": 88.62803803454153,
+          "calories": 93.48688259301707,
+          "sleepPressure": 16.778207854367793,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3100901320576668,
+          "riskTolerance": 0.6465592316817492,
+          "socialDrive": 0.08758454001508653,
+          "aggression": 0.2436832176055759,
+          "empathy": 0.5860652045696042,
+          "noveltySeeking": 0.3666037851944566,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2666288172826171,
+          "confidence": 0.40396978044882415
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:026"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:027",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11432571,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 48.23954080373136,
+          "y": 56.00536901835652
+        },
+        "body": {
+          "hydration": 83.19634979055263,
+          "calories": 89.42615983006544,
+          "sleepPressure": 13.076126562664285,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.13994941534474492,
+          "riskTolerance": 0.7846021433360875,
+          "socialDrive": 0.09707019221968949,
+          "aggression": 0.2608836114406586,
+          "empathy": 0.763802251627203,
+          "noveltySeeking": 0.1098384887445718,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5311197342351079,
+          "confidence": 0.512620258005336
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:027"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:028",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16184342,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.30631365862119,
+          "y": 55.35916588853958
+        },
+        "body": {
+          "hydration": 90.97283693193458,
+          "calories": 86.69125066068955,
+          "sleepPressure": 17.324038139777258,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.028342808363959193,
+          "riskTolerance": 0.14815753628499806,
+          "socialDrive": 0.716728382743895,
+          "aggression": 0.08389261686243117,
+          "empathy": 0.3830956784891896,
+          "noveltySeeking": 0.8467356527689844,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.24710912397131324,
+          "confidence": 0.5974364989902824
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:028"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:029",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15071258,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 45.27672094760549,
+          "y": 53.91115555565429
+        },
+        "body": {
+          "hydration": 82.52693299134262,
+          "calories": 82.22940309601836,
+          "sleepPressure": 7.479836791753769,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.40578802675008774,
+          "riskTolerance": 0.2871047123335302,
+          "socialDrive": 0.34232919034548104,
+          "aggression": 0.27351036854088306,
+          "empathy": 0.4871464184718206,
+          "noveltySeeking": 0.44330219947732985,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5342258947901428,
+          "confidence": 0.7947679237928241
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:029"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:030",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17718143,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 44.09297975044398,
+          "y": 52.07126845864493
+        },
+        "body": {
+          "hydration": 94.58280546288006,
+          "calories": 90.69344904087484,
+          "sleepPressure": 18.093622195301577,
+          "health": 100,
+          "ageMinutes": 12088800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5370495966635644,
+          "riskTolerance": 0.4375734238419682,
+          "socialDrive": 0.8361358582042158,
+          "aggression": 0.28113530399277803,
+          "empathy": 0.3652158525073901,
+          "noveltySeeking": 0.9751453648786992,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.263182669505477,
+          "confidence": 0.7366528842598199
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:030"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:031",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15939494,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 43.86695217909292,
+          "y": 50.33824769249186
+        },
+        "body": {
+          "hydration": 94.82653552596457,
+          "calories": 90.27327706618235,
+          "sleepPressure": 14.111680636415258,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.22002118825912476,
+          "riskTolerance": 0.40575581626035273,
+          "socialDrive": 0.11081206635572016,
+          "aggression": 0.5385978756006807,
+          "empathy": 0.9714417235110886,
+          "noveltySeeking": 0.009839272825047374,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.40942392051219945,
+          "confidence": 0.47106040483340617
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:031"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:032",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15686671,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 44.10779886454044,
+          "y": 48.39540595442143
+        },
+        "body": {
+          "hydration": 83.72349767643027,
+          "calories": 93.03235932998359,
+          "sleepPressure": 10.793926850892603,
+          "health": 100,
+          "ageMinutes": 11563200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7956133550032973,
+          "riskTolerance": 0.3137642580550164,
+          "socialDrive": 0.4206900654826313,
+          "aggression": 0.1279941694345325,
+          "empathy": 0.9405276073724963,
+          "noveltySeeking": 0.428835853934288,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.372188588231802,
+          "confidence": 0.4667389975860715
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:032"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:033",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -12029786,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 45.25338763456878,
+          "y": 46.50663417235393
+        },
+        "body": {
+          "hydration": 90.8908215390984,
+          "calories": 92.13026717468165,
+          "sleepPressure": 5.626668157055974,
+          "health": 100,
+          "ageMinutes": 15242400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.1319352756254375,
+          "riskTolerance": 0.7624884145334363,
+          "socialDrive": 0.1572035700082779,
+          "aggression": 0.05910397251136601,
+          "empathy": 0.44133745405124497,
+          "noveltySeeking": 0.24961317074485123,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4244751787744463,
+          "confidence": 0.42910838183015587
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:033"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:034",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11949176,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.328924483642005,
+          "y": 45.20047975100663
+        },
+        "body": {
+          "hydration": 94.75005635223351,
+          "calories": 92.50217601121403,
+          "sleepPressure": 13.79381082369946,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.07408162439242005,
+          "riskTolerance": 0.6322859989013523,
+          "socialDrive": 0.8074742194730788,
+          "aggression": 0.17310365997254848,
+          "empathy": 0.44946230737259607,
+          "noveltySeeking": 0.7325966716744006,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3844947060570121,
+          "confidence": 0.7233637447468937
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:034"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:035",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -9538969,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 48.33350104868499,
+          "y": 44.339185267721106
+        },
+        "body": {
+          "hydration": 88.26026396988891,
+          "calories": 93.87188701122068,
+          "sleepPressure": 12.047407494392246,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6831554104574025,
+          "riskTolerance": 0.05352398310787976,
+          "socialDrive": 0.19376242207363248,
+          "aggression": 0.5428033432457596,
+          "empathy": 0.5976525351288728,
+          "noveltySeeking": 0.6146508129313588,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2180994554422796,
+          "confidence": 0.5924921626690776
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:035"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:036",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -12710750,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.17603017194197,
+          "y": 43.84771782672033
+        },
+        "body": {
+          "hydration": 93.02372394059785,
+          "calories": 95.01473436644301,
+          "sleepPressure": 7.669524324592203,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.45964820054359734,
+          "riskTolerance": 0.7047633905895054,
+          "socialDrive": 0.17360674147494137,
+          "aggression": 0.28787244684062896,
+          "empathy": 0.4712036585435271,
+          "noveltySeeking": 0.4297108019236475,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.40809770505875353,
+          "confidence": 0.3722098918631673
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:036"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:037",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17114749,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 52.28566876955243,
+          "y": 44.1213230646558
+        },
+        "body": {
+          "hydration": 83.53829458053224,
+          "calories": 95.71141663752496,
+          "sleepPressure": 15.727964757243171,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.48598550260066986,
+          "riskTolerance": 0.9341433215886354,
+          "socialDrive": 0.6017341832630336,
+          "aggression": 0.41747884573414923,
+          "empathy": 0.5170512865297496,
+          "noveltySeeking": 0.6337895109318197,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5822406081482768,
+          "confidence": 0.36851464631035924
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:037"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:038",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -12226163,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 54.0061411005221,
+          "y": 44.934085942824304
+        },
+        "body": {
+          "hydration": 89.42363236146048,
+          "calories": 89.67712449189276,
+          "sleepPressure": 6.985093951225281,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.8044684075284749,
+          "riskTolerance": 0.8426728411577642,
+          "socialDrive": 0.6740030567161739,
+          "aggression": 0.31942896405234933,
+          "empathy": 0.5962642475962638,
+          "noveltySeeking": 0.18234400590881705,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3427943644113839,
+          "confidence": 0.8538395481649785
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:038"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:039",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14655861,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 55.285869056711974,
+          "y": 46.37283650238442
+        },
+        "body": {
+          "hydration": 88.40788507414982,
+          "calories": 91.43752669962123,
+          "sleepPressure": 6.71964424662292,
+          "health": 100,
+          "ageMinutes": 12614400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.8768635310698301,
+          "riskTolerance": 0.15764709119684994,
+          "socialDrive": 0.4372931169345975,
+          "aggression": 0.06515688244253397,
+          "empathy": 0.6759602791746147,
+          "noveltySeeking": 0.8173314891755581,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5643709273077548,
+          "confidence": 0.7497114566154778
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:039"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:040",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15129778,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 56.35715829288886,
+          "y": 48.110469564442454
+        },
+        "body": {
+          "hydration": 96.50294133741409,
+          "calories": 93.72243790468201,
+          "sleepPressure": 15.952477749669924,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6010963206645101,
+          "riskTolerance": 0.25247069890610874,
+          "socialDrive": 0.7664951728656888,
+          "aggression": 0.2991701012011617,
+          "empathy": 0.5357888134894893,
+          "noveltySeeking": 0.7252152501605451,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4629958177916706,
+          "confidence": 0.5755499015562235
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:040"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:041",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13850709,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 58.88230265248567,
+          "y": 50.17817001817748
+        },
+        "body": {
+          "hydration": 84.54138103453442,
+          "calories": 88.80600061547011,
+          "sleepPressure": 11.584068906959146,
+          "health": 100,
+          "ageMinutes": 12088800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3680174662731588,
+          "riskTolerance": 0.7753195438999683,
+          "socialDrive": 0.24269907898269594,
+          "aggression": 0.4915130811743438,
+          "empathy": 0.6604904498322867,
+          "noveltySeeking": 0.2651790108066052,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3767985435202718,
+          "confidence": 0.41716435574926436
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:041"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:042",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11768378,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 58.24356250855239,
+          "y": 52.74387226273261
+        },
+        "body": {
+          "hydration": 89.01435336843133,
+          "calories": 96.12635444197804,
+          "sleepPressure": 18.31656496040523,
+          "health": 100,
+          "ageMinutes": 15768000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6589741359930485,
+          "riskTolerance": 0.9518577912822366,
+          "socialDrive": 0.8412609654478729,
+          "aggression": 0.08292548255994915,
+          "empathy": 0.860317825502716,
+          "noveltySeeking": 0.12727258983068168,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2267208168283105,
+          "confidence": 0.7805087867192924
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:042"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:043",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14781841,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 57.128776711979434,
+          "y": 55.34703501657085
+        },
+        "body": {
+          "hydration": 87.69751836825162,
+          "calories": 89.84157134126872,
+          "sleepPressure": 17.19781716936268,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7838522742968053,
+          "riskTolerance": 0.6523954905569553,
+          "socialDrive": 0.7329289801418781,
+          "aggression": 0.018070296524092554,
+          "empathy": 0.5155300585320219,
+          "noveltySeeking": 0.32706142496317625,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3465326148085296,
+          "confidence": 0.6107591412495821
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:043"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:044",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -12184916,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 55.086910174959016,
+          "y": 57.24425155512013
+        },
+        "body": {
+          "hydration": 93.86184739461169,
+          "calories": 88.3736032822635,
+          "sleepPressure": 18.603868811624125,
+          "health": 100,
+          "ageMinutes": 15768000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.20425038179382682,
+          "riskTolerance": 0.5251748072914779,
+          "socialDrive": 0.12348849419504404,
+          "aggression": 0.42830253727734086,
+          "empathy": 0.7442649354226887,
+          "noveltySeeking": 0.4418285971041769,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.42643881719559434,
+          "confidence": 0.3266779725439846
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:044"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:045",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14543737,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 52.855363572490894,
+          "y": 58.37726889540539
+        },
+        "body": {
+          "hydration": 83.3649295119103,
+          "calories": 86.66462090029381,
+          "sleepPressure": 6.285605932353064,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.07000194187276065,
+          "riskTolerance": 0.8081524812150747,
+          "socialDrive": 0.13636317267082632,
+          "aggression": 0.37541479761712254,
+          "empathy": 0.48713568786624817,
+          "noveltySeeking": 0.24263176159001887,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.26872576773166656,
+          "confidence": 0.7734566202387214
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:045"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:046",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14558366,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.172291421424596,
+          "y": 58.909561288915576
+        },
+        "body": {
+          "hydration": 82.867045231862,
+          "calories": 95.37420421070419,
+          "sleepPressure": 10.49774433253333,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6687892519403249,
+          "riskTolerance": 0.3898909082636237,
+          "socialDrive": 0.4129281425848603,
+          "aggression": 0.1700097246095538,
+          "empathy": 0.378917298966553,
+          "noveltySeeking": 0.34424911136738956,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.44419360086321835,
+          "confidence": 0.7290050048846751
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:046"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:047",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10961234,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 47.577767768400236,
+          "y": 58.24730364763277
+        },
+        "body": {
+          "hydration": 83.13675408880226,
+          "calories": 91.00578185915947,
+          "sleepPressure": 12.87835570401512,
+          "health": 100,
+          "ageMinutes": 16819200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.45692098257131875,
+          "riskTolerance": 0.918736649909988,
+          "socialDrive": 0.5466510027181357,
+          "aggression": 0.35657285135239364,
+          "empathy": 0.9857851953711361,
+          "noveltySeeking": 0.3741896329447627,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3674795222468674,
+          "confidence": 0.64892791332677
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:047"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:048",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17345357,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 45.145961166839434,
+          "y": 56.988541476251115
+        },
+        "body": {
+          "hydration": 83.0724746179767,
+          "calories": 85.22831816971302,
+          "sleepPressure": 7.846657484769821,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6766572899650782,
+          "riskTolerance": 0.5044017673935741,
+          "socialDrive": 0.3108989151660353,
+          "aggression": 0.052038053143769504,
+          "empathy": 0.6238880881690421,
+          "noveltySeeking": 0.3756724284030497,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4537547851912678,
+          "confidence": 0.7289975156541914
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:048"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:049",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15853109,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 43.043774386672744,
+          "y": 55.25055276126103
+        },
+        "body": {
+          "hydration": 84.92686189408414,
+          "calories": 95.41900474275462,
+          "sleepPressure": 17.16932430397719,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.04312670021317899,
+          "riskTolerance": 0.2759955108631402,
+          "socialDrive": 0.968352681491524,
+          "aggression": 0.257709634071216,
+          "empathy": 0.526967739185784,
+          "noveltySeeking": 0.4542259769514203,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3577239905484021,
+          "confidence": 0.4024909535888582
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:049"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:050",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17843888,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 42.12558070571064,
+          "y": 52.820551930190554
+        },
+        "body": {
+          "hydration": 86.45067694992758,
+          "calories": 92.04568514530547,
+          "sleepPressure": 14.326705317944288,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3647459470666945,
+          "riskTolerance": 0.9968788244295865,
+          "socialDrive": 0.7277206073049456,
+          "aggression": 0.058057720726355906,
+          "empathy": 0.5942763897473924,
+          "noveltySeeking": 0.5547087048180401,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.570844584517181,
+          "confidence": 0.3537392207421362
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:050"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:051",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13560764,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 41.40832491638139,
+          "y": 50.00092386305332
+        },
+        "body": {
+          "hydration": 83.52372467448004,
+          "calories": 88.958061568439,
+          "sleepPressure": 10.259837589692324,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.600521901389584,
+          "riskTolerance": 0.8823991790413857,
+          "socialDrive": 0.9015225637704134,
+          "aggression": 0.4534844176378101,
+          "empathy": 0.4350912748486735,
+          "noveltySeeking": 0.3388014994561672,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.27530269492417575,
+          "confidence": 0.5137666299473495
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:051"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:052",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14409530,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 42.11134796404182,
+          "y": 47.45401065087921
+        },
+        "body": {
+          "hydration": 82.46867158729583,
+          "calories": 92.091965055326,
+          "sleepPressure": 12.153544607572258,
+          "health": 100,
+          "ageMinutes": 15242400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.9892505796160549,
+          "riskTolerance": 0.6895662588067353,
+          "socialDrive": 0.8960816226899624,
+          "aggression": 0.34055372360162434,
+          "empathy": 0.4928592190495692,
+          "noveltySeeking": 0.6258192178793252,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5254676411859691,
+          "confidence": 0.42010054565034805
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:052"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:053",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10979877,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 43.38551358141981,
+          "y": 45.28135590536086
+        },
+        "body": {
+          "hydration": 83.64574211346917,
+          "calories": 85.29053030349314,
+          "sleepPressure": 5.183206781512126,
+          "health": 100,
+          "ageMinutes": 15242400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5181315841618925,
+          "riskTolerance": 0.5570079635363072,
+          "socialDrive": 0.07964549423195422,
+          "aggression": 0.28593798307701945,
+          "empathy": 0.3848970422754064,
+          "noveltySeeking": 0.5994580360129476,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2609350442886353,
+          "confidence": 0.5581197044346482
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:053"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:054",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15181707,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 45.00961461767121,
+          "y": 43.240974498996955
+        },
+        "body": {
+          "hydration": 84.32376052998006,
+          "calories": 88.52492816792801,
+          "sleepPressure": 14.216218569781631,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.17845117207616568,
+          "riskTolerance": 0.6258098087273538,
+          "socialDrive": 0.3028220108244568,
+          "aggression": 0.4214406451676041,
+          "empathy": 0.9242130149505101,
+          "noveltySeeking": 0.27559285471215844,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.29429029682651164,
+          "confidence": 0.715363705996424
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:054"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:055",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15161424,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 47.47964020323984,
+          "y": 41.94415316852643
+        },
+        "body": {
+          "hydration": 91.94643985643052,
+          "calories": 84.25198147003539,
+          "sleepPressure": 7.862541743088514,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.530524437315762,
+          "riskTolerance": 0.7495774284470826,
+          "socialDrive": 0.9495750872883946,
+          "aggression": 0.04646045886911452,
+          "empathy": 0.9106482182978652,
+          "noveltySeeking": 0.19517314829863608,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.46976266903802755,
+          "confidence": 0.40540299997664986
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:055"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:056",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17704810,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.20815259255469,
+          "y": 41.48559082662687
+        },
+        "body": {
+          "hydration": 94.22429228015244,
+          "calories": 84.7365749294404,
+          "sleepPressure": 11.338530930224806,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.19481440144591033,
+          "riskTolerance": 0.5487759150564671,
+          "socialDrive": 0.7546075915452093,
+          "aggression": 0.30110804974101485,
+          "empathy": 0.8044681704603136,
+          "noveltySeeking": 0.06121926172636449,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2923978266306222,
+          "confidence": 0.7667725177947431
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:056"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:057",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10727504,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.0330730129122,
+          "y": 42.009115369719396
+        },
+        "body": {
+          "hydration": 96.72513831919059,
+          "calories": 82.03120072302409,
+          "sleepPressure": 10.508659271290526,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.1801083202008158,
+          "riskTolerance": 0.8093083871062845,
+          "socialDrive": 0.6493352318648249,
+          "aggression": 0.25786672909744085,
+          "empathy": 0.762144754594192,
+          "noveltySeeking": 0.9790940778329968,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4755259136669338,
+          "confidence": 0.8026375346817076
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:057"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:058",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -9661992,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 55.20579606563286,
+          "y": 43.174489676198434
+        },
+        "body": {
+          "hydration": 89.25574343465269,
+          "calories": 94.51475495286286,
+          "sleepPressure": 19.019860773114488,
+          "health": 100,
+          "ageMinutes": 12614400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.8720550353173167,
+          "riskTolerance": 0.1008780871052295,
+          "socialDrive": 0.8234063785057515,
+          "aggression": 0.5095011016353964,
+          "empathy": 0.9897548739681952,
+          "noveltySeeking": 0.2982719149440527,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.41212627142667774,
+          "confidence": 0.4259928829036653
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:058"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:059",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14682537,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 57.12118232185908,
+          "y": 45.19903764325692
+        },
+        "body": {
+          "hydration": 92.41528480593115,
+          "calories": 95.16933976835571,
+          "sleepPressure": 7.52540574176237,
+          "health": 100,
+          "ageMinutes": 16819200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.8375906073488295,
+          "riskTolerance": 0.7933675246313214,
+          "socialDrive": 0.3956963112577796,
+          "aggression": 0.10889292466454208,
+          "empathy": 0.46068154777167364,
+          "noveltySeeking": 0.024652177933603525,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3363688471727073,
+          "confidence": 0.8111492648720742
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:059"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:060",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -18164350,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 58.39712306558253,
+          "y": 47.395075563239374
+        },
+        "body": {
+          "hydration": 87.9286979038734,
+          "calories": 91.23544458462857,
+          "sleepPressure": 19.138174476101995,
+          "health": 100,
+          "ageMinutes": 9460800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3821169282309711,
+          "riskTolerance": 0.7427093358710408,
+          "socialDrive": 0.9683394157327712,
+          "aggression": 0.5803332209587097,
+          "empathy": 0.37865343570010734,
+          "noveltySeeking": 0.6238556397147477,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5160446082241834,
+          "confidence": 0.8524486135225742
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:060"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:061",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10781796,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 61.047026300337166,
+          "y": 50.25589771084488
+        },
+        "body": {
+          "hydration": 93.3799972482957,
+          "calories": 91.84284372767434,
+          "sleepPressure": 19.083665426587686,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.8620889680460095,
+          "riskTolerance": 0.009014569455757737,
+          "socialDrive": 0.5584075562655926,
+          "aggression": 0.060381559934467074,
+          "empathy": 0.5591350748552941,
+          "noveltySeeking": 0.49080637167207897,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4322007828392089,
+          "confidence": 0.5387559233698993
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:061"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:062",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -9585967,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 60.57578744294019,
+          "y": 53.67689459560437
+        },
+        "body": {
+          "hydration": 93.00619909237139,
+          "calories": 87.51318402169272,
+          "sleepPressure": 15.181721991393715,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.18408344849012792,
+          "riskTolerance": 0.5889399226289243,
+          "socialDrive": 0.7811555147636682,
+          "aggression": 0.1362502987962216,
+          "empathy": 0.7228757044184022,
+          "noveltySeeking": 0.6037094919010997,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.42458121199160814,
+          "confidence": 0.6739124294836074
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:062"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:063",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14949615,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 59.10140051491556,
+          "y": 56.5272554518593
+        },
+        "body": {
+          "hydration": 87.33607492106967,
+          "calories": 91.81044926098548,
+          "sleepPressure": 14.229852405842394,
+          "health": 100,
+          "ageMinutes": 16293600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.9723711607512087,
+          "riskTolerance": 0.0493417545221746,
+          "socialDrive": 0.03381000505760312,
+          "aggression": 0.571584478346631,
+          "empathy": 0.7330675229313783,
+          "noveltySeeking": 0.07698989636264741,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.46086226738989355,
+          "confidence": 0.7477650969754904
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:063"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:064",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15476872,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 56.44311827448508,
+          "y": 59.1476039101742
+        },
+        "body": {
+          "hydration": 84.74012062116526,
+          "calories": 91.0369497705251,
+          "sleepPressure": 13.939869219902903,
+          "health": 100,
+          "ageMinutes": 12614400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.19461398641578853,
+          "riskTolerance": 0.6836254009976983,
+          "socialDrive": 0.2548572469968349,
+          "aggression": 0.5268528648186475,
+          "empathy": 0.47913155824644493,
+          "noveltySeeking": 0.5737296831794083,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5940740242600442,
+          "confidence": 0.6046876971144228
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:064"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:065",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16884905,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.43584041235967,
+          "y": 60.464088573417534
+        },
+        "body": {
+          "hydration": 95.22952605900355,
+          "calories": 88.83789606555365,
+          "sleepPressure": 10.674438490532339,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.12546542123891413,
+          "riskTolerance": 0.9459661433938891,
+          "socialDrive": 0.706861853832379,
+          "aggression": 0.10941072036512196,
+          "empathy": 0.6259683985146693,
+          "noveltySeeking": 0.33929683407768607,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4644818346947432,
+          "confidence": 0.7684965955093503
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:065"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:066",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -18119420,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.01546536516398,
+          "y": 61.274807032383976
+        },
+        "body": {
+          "hydration": 95.3081037120428,
+          "calories": 89.91126905241981,
+          "sleepPressure": 13.353800040204078,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6867875724565238,
+          "riskTolerance": 0.25712406169623137,
+          "socialDrive": 0.6250388908665627,
+          "aggression": 0.45057689356617625,
+          "empathy": 0.46119143132818863,
+          "noveltySeeking": 0.3650084442924708,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2303522172383964,
+          "confidence": 0.4570049756672233
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:066"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:067",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11562787,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.74476097986105,
+          "y": 60.599272603186684
+        },
+        "body": {
+          "hydration": 92.59777548653074,
+          "calories": 88.54025870026089,
+          "sleepPressure": 5.47682473435998,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.4412130997516215,
+          "riskTolerance": 0.3500874610617757,
+          "socialDrive": 0.8249533148482442,
+          "aggression": 0.14670189139433204,
+          "empathy": 0.4234137683990411,
+          "noveltySeeking": 0.08004423510283232,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2977673921734095,
+          "confidence": 0.5928931953851133
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:067"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:068",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17584264,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 43.66921054842571,
+          "y": 59.15576917588709
+        },
+        "body": {
+          "hydration": 85.08986008167267,
+          "calories": 95.24378888006322,
+          "sleepPressure": 12.576328568393365,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.2227871350478381,
+          "riskTolerance": 0.2730739994440228,
+          "socialDrive": 0.28372991690412164,
+          "aggression": 0.04768579294905066,
+          "empathy": 0.8046159980818629,
+          "noveltySeeking": 0.7000553712714463,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.34977642185986046,
+          "confidence": 0.7281490710563958
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:068"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:069",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17437535,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 41.20170792840423,
+          "y": 56.54540535499653
+        },
+        "body": {
+          "hydration": 92.67082331515849,
+          "calories": 95.3574895572383,
+          "sleepPressure": 11.197993725072592,
+          "health": 100,
+          "ageMinutes": 13140000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.070163105847314,
+          "riskTolerance": 0.2494388127233833,
+          "socialDrive": 0.2538968527223915,
+          "aggression": 0.13607789310626686,
+          "empathy": 0.8575857734307647,
+          "noveltySeeking": 0.5683148715179414,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3142332717776299,
+          "confidence": 0.8998702288605271
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:069"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:070",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13612807,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 39.65206289345501,
+          "y": 53.73263005543498
+        },
+        "body": {
+          "hydration": 96.32408293359913,
+          "calories": 95.08886688668281,
+          "sleepPressure": 19.07128356746398,
+          "health": 100,
+          "ageMinutes": 15768000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.3969338268507272,
+          "riskTolerance": 0.6664209614973515,
+          "socialDrive": 0.9156193807721138,
+          "aggression": 0.16671465723775328,
+          "empathy": 0.4518940473208204,
+          "noveltySeeking": 0.7181361436378211,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.45196428103372455,
+          "confidence": 0.8921190559398382
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:070"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:071",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16633722,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 39.304630109854045,
+          "y": 50.16985442554578
+        },
+        "body": {
+          "hydration": 94.6088214374613,
+          "calories": 82.47262463602237,
+          "sleepPressure": 14.458924217615277,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5113275533076376,
+          "riskTolerance": 0.4005826972424984,
+          "socialDrive": 0.4848541284445673,
+          "aggression": 0.3256421049591154,
+          "empathy": 0.9838453551055863,
+          "noveltySeeking": 0.4389355587773025,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5683240096084774,
+          "confidence": 0.3206476354971528
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:071"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:072",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17817647,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 39.964907149114744,
+          "y": 46.885423394441624
+        },
+        "body": {
+          "hydration": 94.22047669114545,
+          "calories": 90.42993078520522,
+          "sleepPressure": 6.776378338690847,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.03727624868042767,
+          "riskTolerance": 0.8577246558852494,
+          "socialDrive": 0.5481135635636747,
+          "aggression": 0.3318086279556155,
+          "empathy": 0.39621787050273266,
+          "noveltySeeking": 0.6878239505458623,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.59702592715621,
+          "confidence": 0.7574163728859276
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:072"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:073",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15298139,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 41.348113414701096,
+          "y": 43.98065032037596
+        },
+        "body": {
+          "hydration": 94.91778179700486,
+          "calories": 83.82310317759402,
+          "sleepPressure": 10.47811567899771,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.35375209152698517,
+          "riskTolerance": 0.0996644243132323,
+          "socialDrive": 0.2061779226642102,
+          "aggression": 0.5287028151098638,
+          "empathy": 0.7296505198581145,
+          "noveltySeeking": 0.6210223874077201,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3519147315993905,
+          "confidence": 0.689273783750832
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:073"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:074",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16484582,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 43.72450900041187,
+          "y": 41.485830238238
+        },
+        "body": {
+          "hydration": 91.49448315659538,
+          "calories": 93.08347234665416,
+          "sleepPressure": 14.5191132533364,
+          "health": 100,
+          "ageMinutes": 16819200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.2469222203362733,
+          "riskTolerance": 0.23891593515872955,
+          "socialDrive": 0.7893441505730152,
+          "aggression": 0.04627842474728822,
+          "empathy": 0.9302695918711834,
+          "noveltySeeking": 0.5563426637090743,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.26392851285636426,
+          "confidence": 0.4607727520633489
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:074"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:075",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13268991,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.91615747265519,
+          "y": 39.815426781010906
+        },
+        "body": {
+          "hydration": 93.1746404983569,
+          "calories": 85.79795595887117,
+          "sleepPressure": 12.326194532215595,
+          "health": 100,
+          "ageMinutes": 12088800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.581160964909941,
+          "riskTolerance": 0.057950092712417245,
+          "socialDrive": 0.1666223555803299,
+          "aggression": 0.32632079520262774,
+          "empathy": 0.37712458667811005,
+          "noveltySeeking": 0.7844101092778146,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3332781236618757,
+          "confidence": 0.4952392660081386
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:075"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:076",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16375166,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.13749615047127,
+          "y": 39.190468293149024
+        },
+        "body": {
+          "hydration": 92.92682225629687,
+          "calories": 89.1937030844856,
+          "sleepPressure": 12.97869818052277,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.993422657251358,
+          "riskTolerance": 0.8752566874027252,
+          "socialDrive": 0.69661495834589,
+          "aggression": 0.14307579472661017,
+          "empathy": 0.468373886286281,
+          "noveltySeeking": 0.11290376237593591,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.35530878454446796,
+          "confidence": 0.6674133867491037
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:076"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:077",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11340107,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 53.650472312457836,
+          "y": 39.64863490814446
+        },
+        "body": {
+          "hydration": 84.98061431618407,
+          "calories": 92.99663555738516,
+          "sleepPressure": 9.55311336205341,
+          "health": 100,
+          "ageMinutes": 9460800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.48266778443939984,
+          "riskTolerance": 0.48665942973457277,
+          "socialDrive": 0.5062311552464962,
+          "aggression": 0.4803687945473939,
+          "empathy": 0.768588489445392,
+          "noveltySeeking": 0.6547044476028532,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5339997049421072,
+          "confidence": 0.4270502488128841
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:077"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:078",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11749464,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 56.65294297821199,
+          "y": 41.418271125629566
+        },
+        "body": {
+          "hydration": 93.49568224325776,
+          "calories": 96.35850358218886,
+          "sleepPressure": 19.38112153322436,
+          "health": 100,
+          "ageMinutes": 9460800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.35440769977867603,
+          "riskTolerance": 0.5977312989998609,
+          "socialDrive": 0.5334232407622039,
+          "aggression": 0.5423058460000902,
+          "empathy": 0.5364260949892923,
+          "noveltySeeking": 0.7081465509254485,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.35001495135948063,
+          "confidence": 0.8302872166503221
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:078"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:079",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15026966,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 58.966406764965484,
+          "y": 43.962366405228764
+        },
+        "body": {
+          "hydration": 82.60069287312217,
+          "calories": 90.60267893178388,
+          "sleepPressure": 9.414322774391621,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7732563419267535,
+          "riskTolerance": 0.4914786731824279,
+          "socialDrive": 0.8513124382589012,
+          "aggression": 0.23715459387749432,
+          "empathy": 0.593505393830128,
+          "noveltySeeking": 0.06251240661367774,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.31644710637629037,
+          "confidence": 0.3257583748083562
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:079"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:080",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17426599,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 60.46600168460878,
+          "y": 46.76621673103424
+        },
+        "body": {
+          "hydration": 83.5678546752315,
+          "calories": 85.54006648994982,
+          "sleepPressure": 17.040676744654775,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6816938705742359,
+          "riskTolerance": 0.8907874384894967,
+          "socialDrive": 0.6442546669859439,
+          "aggression": 0.5917004305869341,
+          "empathy": 0.35215784345054996,
+          "noveltySeeking": 0.40879143588244915,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.43337105587124825,
+          "confidence": 0.45106954830698665
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:080"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:081",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14984344,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 63.55566631387919,
+          "y": 50.35908587798476
+        },
+        "body": {
+          "hydration": 92.73105890187435,
+          "calories": 83.73649632837623,
+          "sleepPressure": 13.153188809519634,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.03360699024051428,
+          "riskTolerance": 0.546253549400717,
+          "socialDrive": 0.057262174086645246,
+          "aggression": 0.08366037737578154,
+          "empathy": 0.7902949472307228,
+          "noveltySeeking": 0.3286119387485087,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.42372593004256487,
+          "confidence": 0.6105236938688904
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:081"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:082",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13721820,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 62.9263177293788,
+          "y": 54.30180074523243
+        },
+        "body": {
+          "hydration": 96.09951470792294,
+          "calories": 84.96325541567057,
+          "sleepPressure": 13.537123766727746,
+          "health": 100,
+          "ageMinutes": 15768000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.07944593555293977,
+          "riskTolerance": 0.04210323398001492,
+          "socialDrive": 0.6521657626144588,
+          "aggression": 0.38847644976340234,
+          "empathy": 0.42802443708060306,
+          "noveltySeeking": 0.696760474704206,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.48581009171903133,
+          "confidence": 0.6373708393424748
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:082"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:083",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17171531,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 60.77469529571983,
+          "y": 57.8092109161448
+        },
+        "body": {
+          "hydration": 96.51836015563458,
+          "calories": 85.82251349277794,
+          "sleepPressure": 16.21064688428305,
+          "health": 100,
+          "ageMinutes": 14716800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6238191861193627,
+          "riskTolerance": 0.3072355429176241,
+          "socialDrive": 0.6936974495183676,
+          "aggression": 0.5072006339672953,
+          "empathy": 0.6565098575083539,
+          "noveltySeeking": 0.4289766636211425,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3283731355331838,
+          "confidence": 0.6702206794638186
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:083"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:084",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13870144,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 58.154777142314266,
+          "y": 60.79832740125286
+        },
+        "body": {
+          "hydration": 88.58452487899922,
+          "calories": 90.58607124187984,
+          "sleepPressure": 13.913218358065933,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5160246456507593,
+          "riskTolerance": 0.5099229558836669,
+          "socialDrive": 0.6423501854296774,
+          "aggression": 0.1233128220308572,
+          "empathy": 0.4898565073381178,
+          "noveltySeeking": 0.6283737721387297,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3783833420835436,
+          "confidence": 0.42080721370875834
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:084"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:085",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -12360506,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 54.14978429113555,
+          "y": 62.92639948515849
+        },
+        "body": {
+          "hydration": 83.629310073331,
+          "calories": 96.17955123819411,
+          "sleepPressure": 16.04521769331768,
+          "health": 100,
+          "ageMinutes": 11037600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.7474853747989982,
+          "riskTolerance": 0.9848384491633624,
+          "socialDrive": 0.7879443080164492,
+          "aggression": 0.578786944784224,
+          "empathy": 0.780781332985498,
+          "noveltySeeking": 0.7732835423666984,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3538808955810964,
+          "confidence": 0.422284250613302
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:085"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:086",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -17635754,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.382817574124786,
+          "y": 63.24493791740388
+        },
+        "body": {
+          "hydration": 87.41154133039527,
+          "calories": 84.89685234427452,
+          "sleepPressure": 7.121227290481329,
+          "health": 100,
+          "ageMinutes": 17870400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.9003308522514999,
+          "riskTolerance": 0.9995889072306454,
+          "socialDrive": 0.6197719573974609,
+          "aggression": 0.5427070079371333,
+          "empathy": 0.744552898663096,
+          "noveltySeeking": 0.94075020076707,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.3235491883940995,
+          "confidence": 0.8038887368515133
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:086"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:087",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14583391,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 45.94957163420466,
+          "y": 62.696456505122356
+        },
+        "body": {
+          "hydration": 92.16458754078485,
+          "calories": 84.85699974745512,
+          "sleepPressure": 17.512514787958935,
+          "health": 100,
+          "ageMinutes": 17344800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.09565783687867224,
+          "riskTolerance": 0.5862715868279338,
+          "socialDrive": 0.48526731645688415,
+          "aggression": 0.22145488439127803,
+          "empathy": 0.4021735739195719,
+          "noveltySeeking": 0.5490232990123332,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4714085574261844,
+          "confidence": 0.3899333860259503
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:087"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:088",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13394414,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 42.5567726368997,
+          "y": 60.76366225571412
+        },
+        "body": {
+          "hydration": 95.21661937749013,
+          "calories": 96.11712020402774,
+          "sleepPressure": 15.77525349915959,
+          "health": 100,
+          "ageMinutes": 16293600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6763577901292592,
+          "riskTolerance": 0.572238334454596,
+          "socialDrive": 0.7652752010617405,
+          "aggression": 0.4916948530822992,
+          "empathy": 0.626659480901435,
+          "noveltySeeking": 0.40357356145977974,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5955016215331852,
+          "confidence": 0.5627740500960499
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:088"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:089",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -13564019,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 39.53098589622376,
+          "y": 57.767499207986546
+        },
+        "body": {
+          "hydration": 83.2192093883641,
+          "calories": 88.48569053038955,
+          "sleepPressure": 6.74159656628035,
+          "health": 100,
+          "ageMinutes": 9986400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5263841815758497,
+          "riskTolerance": 0.03611911367624998,
+          "socialDrive": 0.6451271290425211,
+          "aggression": 0.49834790169261395,
+          "empathy": 0.9031786993611604,
+          "noveltySeeking": 0.2372729335911572,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.49282604828476906,
+          "confidence": 0.7476981715299189
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:089"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:090",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14968146,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 37.48254665029539,
+          "y": 54.26636880037415
+        },
+        "body": {
+          "hydration": 83.2476186233107,
+          "calories": 87.07342290366068,
+          "sleepPressure": 8.42273879563436,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.2629746659658849,
+          "riskTolerance": 0.35882543842308223,
+          "socialDrive": 0.6888236813247204,
+          "aggression": 0.3461517468094826,
+          "empathy": 0.8478787314845249,
+          "noveltySeeking": 0.19892840506508946,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.22995097720995547,
+          "confidence": 0.7477680327370763
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:090"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:091",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -9968603,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 36.92848969409242,
+          "y": 50.169978957809505
+        },
+        "body": {
+          "hydration": 86.15267343167216,
+          "calories": 86.60687132319435,
+          "sleepPressure": 12.690530437976122,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.12034162227064371,
+          "riskTolerance": 0.7662427399773151,
+          "socialDrive": 0.6308816443197429,
+          "aggression": 0.2470889175776392,
+          "empathy": 0.41400728843873363,
+          "noveltySeeking": 0.5219871802255511,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.5522641783580184,
+          "confidence": 0.4779717820230871
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:091"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:092",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16743519,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 37.75795044550045,
+          "y": 46.27319721498486
+        },
+        "body": {
+          "hydration": 89.37389307236299,
+          "calories": 96.60020253201947,
+          "sleepPressure": 12.304877386195585,
+          "health": 100,
+          "ageMinutes": 13665600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.21391188213601708,
+          "riskTolerance": 0.016763010527938604,
+          "socialDrive": 0.5510486906860024,
+          "aggression": 0.010143826017156243,
+          "empathy": 0.40755226453766225,
+          "noveltySeeking": 0.16968262009322643,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.21352183213457465,
+          "confidence": 0.5154779667500407
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:092"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:093",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -10388328,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 39.34245348100511,
+          "y": 42.5755506899189
+        },
+        "body": {
+          "hydration": 83.25333467265591,
+          "calories": 87.24846846004948,
+          "sleepPressure": 13.7132897390984,
+          "health": 100,
+          "ageMinutes": 12614400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.5557894702069461,
+          "riskTolerance": 0.618191183777526,
+          "socialDrive": 0.4473838184494525,
+          "aggression": 0.10886390707455575,
+          "empathy": 0.936884671205189,
+          "noveltySeeking": 0.13100254349410534,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.4929352584294975,
+          "confidence": 0.6216825320385396
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:093"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:094",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14717089,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 42.44980413447877,
+          "y": 39.620658826296754
+        },
+        "body": {
+          "hydration": 88.57704551122151,
+          "calories": 92.65637545660138,
+          "sleepPressure": 11.303085670806468,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.9727640827186406,
+          "riskTolerance": 0.49720447207801044,
+          "socialDrive": 0.6416265130974352,
+          "aggression": 0.3428464275319129,
+          "empathy": 0.8538094839430415,
+          "noveltySeeking": 0.0690876585431397,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.28953066878020767,
+          "confidence": 0.5060766952112317
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:094"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:095",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -11701410,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 46.20546730517369,
+          "y": 37.634202401389615
+        },
+        "body": {
+          "hydration": 83.02979984134436,
+          "calories": 86.04493319918402,
+          "sleepPressure": 14.518968812189996,
+          "health": 100,
+          "ageMinutes": 11563200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.4076666447799653,
+          "riskTolerance": 0.6418160200119019,
+          "socialDrive": 0.8292486758437008,
+          "aggression": 0.5845801012124866,
+          "empathy": 0.5584880148293451,
+          "noveltySeeking": 0.3902265375945717,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2635561843402684,
+          "confidence": 0.7174987873993814
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:095"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:096",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -15830907,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 50.134251112770286,
+          "y": 36.927798515744506
+        },
+        "body": {
+          "hydration": 83.134945563972,
+          "calories": 84.86430898006074,
+          "sleepPressure": 5.626469006529078,
+          "health": 100,
+          "ageMinutes": 10512000,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.16285881120711565,
+          "riskTolerance": 0.28876633080653846,
+          "socialDrive": 0.7304197018966079,
+          "aggression": 0.20672859814949332,
+          "empathy": 0.8684405963867903,
+          "noveltySeeking": 0.9375337942037731,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.37102659856900577,
+          "confidence": 0.6793087533675134
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:096"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:097",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -16537772,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 54.24610632431733,
+          "y": 37.53688396630181
+        },
+        "body": {
+          "hydration": 92.5990097601898,
+          "calories": 86.60518050473183,
+          "sleepPressure": 16.9312278192956,
+          "health": 100,
+          "ageMinutes": 17344800,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6264772887807339,
+          "riskTolerance": 0.9580738001968712,
+          "socialDrive": 0.6092393407598138,
+          "aggression": 0.2777678443584591,
+          "empathy": 0.5466246385942213,
+          "noveltySeeking": 0.6024537056218833,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.22232662895694377,
+          "confidence": 0.3056308415718377
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:097"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:098",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14252307,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 58.055188642537246,
+          "y": 39.44549354559702
+        },
+        "body": {
+          "hydration": 86.54566407133825,
+          "calories": 86.34965278720483,
+          "sleepPressure": 16.36084134806879,
+          "health": 100,
+          "ageMinutes": 12614400,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.8065012977458537,
+          "riskTolerance": 0.6349334954284132,
+          "socialDrive": 0.5720752191264182,
+          "aggression": 0.43749190773814917,
+          "empathy": 0.9771905690198764,
+          "noveltySeeking": 0.42849966208450496,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.20402932874858382,
+          "confidence": 0.5915118413977325
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:098"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:099",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14915699,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 60.88946356221142,
+          "y": 42.6123955958504
+        },
+        "body": {
+          "hydration": 95.96305836504325,
+          "calories": 92.74374068295583,
+          "sleepPressure": 14.676635232754052,
+          "health": 100,
+          "ageMinutes": 16293600,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6270433880854398,
+          "riskTolerance": 0.6407291875220835,
+          "socialDrive": 0.6925690188072622,
+          "aggression": 0.48355478793382645,
+          "empathy": 0.6178895048564299,
+          "noveltySeeking": 0.054710083873942494,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.2170197288505733,
+          "confidence": 0.7750889912713319
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:099"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      },
+      {
+        "id": "genesis:100",
+        "kind": "GENESIS",
+        "selfName": null,
+        "observerDisplayName": null,
+        "alive": true,
+        "birthWorldMinute": -14921117,
+        "deathWorldMinute": null,
+        "position": {
+          "x": 62.764610552365646,
+          "y": 45.983686642376306
+        },
+        "body": {
+          "hydration": 93.05863679898903,
+          "calories": 96.60418742499314,
+          "sleepPressure": 14.787270319648087,
+          "health": 100,
+          "ageMinutes": 14191200,
+          "diseases": 0,
+          "injuries": 0
+        },
+        "psychology": {
+          "curiosity": 0.6131011655088514,
+          "riskTolerance": 0.30703926808200777,
+          "socialDrive": 0.3501195430289954,
+          "aggression": 0.5921044014394283,
+          "empathy": 0.3658489193418063,
+          "noveltySeeking": 0.6525692748837173,
+          "stress": 0,
+          "fear": 0,
+          "attachment": 0.40095334528014065,
+          "confidence": 0.8192914945073426
+        },
+        "knowledge": [],
+        "language": {
+          "primitiveSignals": [
+            "attention",
+            "danger",
+            "need",
+            "point",
+            "accept",
+            "reject"
+          ],
+          "lexicon": {}
+        },
+        "knownEntityIds": [
+          "genesis:100"
+        ],
+        "relationships": {},
+        "possessions": [],
+        "activeGoal": null,
+        "currentAction": null
+      }
+    ],
+    "objects": [
+      {
+        "id": "obj:endowment:food",
+        "kind": "resource_bundle",
+        "quantity": 2400,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 50,
+          "y": 50
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:water-vessels",
+        "kind": "container_bundle",
+        "quantity": 100,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 50,
+          "y": 50
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:timber",
+        "kind": "raw_material",
+        "quantity": 600,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 51,
+          "y": 50
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:stone",
+        "kind": "raw_material",
+        "quantity": 400,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 49,
+          "y": 50
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:01",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 55,
+          "y": 50
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:02",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 55.282754963085075,
+          "y": 53.05
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:03",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 53.6,
+          "y": 56.23538290724796
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:04",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 50,
+          "y": 55
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:05",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 46.95,
+          "y": 55.282754963085075
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:06",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 43.76461709275204,
+          "y": 53.6
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:07",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 45,
+          "y": 50
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:08",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 44.717245036914925,
+          "y": 46.95
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:09",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 46.4,
+          "y": 43.76461709275204
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:10",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 50,
+          "y": 45
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:11",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 53.05,
+          "y": 44.717245036914925
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      },
+      {
+        "id": "obj:endowment:shelter:12",
+        "kind": "temporary_shelter",
+        "quantity": 1,
+        "holderId": "commons:genesis",
+        "position": {
+          "x": 56.23538290724795,
+          "y": 46.4
+        },
+        "condition": 1,
+        "provenance": {
+          "type": "GENESIS_ENDOWMENT"
+        }
+      }
+    ],
+    "resourceDeposits": [
+      {
+        "id": "dep:5ad898de",
+        "type": "water",
+        "quantity": 1000000,
+        "position": {
+          "x": 44,
+          "y": 48
+        }
+      },
+      {
+        "id": "dep:5bd89a71",
+        "type": "food",
+        "quantity": 900,
+        "position": {
+          "x": 55,
+          "y": 46
+        }
+      },
+      {
+        "id": "dep:58d895b8",
+        "type": "timber",
+        "quantity": 15000,
+        "position": {
+          "x": 61,
+          "y": 54
+        }
+      },
+      {
+        "id": "dep:59d8974b",
+        "type": "stone",
+        "quantity": 45000,
+        "position": {
+          "x": 36,
+          "y": 61
+        }
+      },
+      {
+        "id": "dep:5ed89f2a",
+        "type": "clay",
+        "quantity": 12000,
+        "position": {
+          "x": 43,
+          "y": 53
+        }
+      },
+      {
+        "id": "dep:5fd8a0bd",
+        "type": "ore",
+        "quantity": 8000,
+        "position": {
+          "x": 32,
+          "y": 31
+        }
+      }
+    ],
+    "buildings": [],
+    "organizations": [],
+    "claims": [],
+    "projects": [],
+    "history": [
+      {
+        "eventId": "evt:e754a31f",
+        "worldMinute": 0,
+        "date": {
+          "year": 1,
+          "day": 1,
+          "hour": 0,
+          "minute": 0,
+          "label": "Y1 D1 00:00"
+        },
+        "category": "genesis",
+        "label": "Genesis: the first 100 inhabitants awaken",
+        "actorId": "world",
+        "payload": {
+          "population": 100,
+          "seed": 20260915,
+          "endowmentObjectIds": [
+            "obj:endowment:food",
+            "obj:endowment:water-vessels",
+            "obj:endowment:timber",
+            "obj:endowment:stone",
+            "obj:endowment:shelter:01",
+            "obj:endowment:shelter:02",
+            "obj:endowment:shelter:03",
+            "obj:endowment:shelter:04",
+            "obj:endowment:shelter:05",
+            "obj:endowment:shelter:06",
+            "obj:endowment:shelter:07",
+            "obj:endowment:shelter:08",
+            "obj:endowment:shelter:09",
+            "obj:endowment:shelter:10",
+            "obj:endowment:shelter:11",
+            "obj:endowment:shelter:12"
+          ],
+          "materialClosure": true,
+          "timeRatio": "1 real second = 1 world minute"
+        },
+        "observerOnly": true,
+        "era": "Observer Era 1 — Genesis: the first 100 inhabitants awaken"
+      }
+    ],
+    "ledgerHead": "4d5a8a57"
+  }
+}

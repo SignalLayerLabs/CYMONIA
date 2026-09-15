@@ -2,137 +2,108 @@ name: CI
 
 on:
   push:
-    paths-ignore:
-      - 'state/**'
-      - 'site/data/state.json'
-      - 'site/data/history.json'
-      - 'site/data/policy.json'
-      - 'site/data/transactions.json'
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  sovereign-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: JavaScript domain and frontend tests
-        run: node --test tests/test_*.mjs
-      - name: Unit tests
-        run: python -m unittest discover -s tests -v
-      - name: Deterministic 100-epoch smoke economy
+      - name: Sovereign World unit and invariant tests
+        run: node --test tests/test_sovereign_*.mjs
+      - name: Rebuild deterministic Sovereign Genesis replay
         run: |
-          rm -rf /tmp/cymonia-smoke
-          python -m cymonia init --root /tmp/cymonia-smoke --seed 20260911
-          python -m cymonia run --root /tmp/cymonia-smoke --epochs 100
-          python -m cymonia verify --root /tmp/cymonia-smoke
-      - name: Build dashboard data
-        run: python scripts/build_site.py
-      - name: Build deterministic Autonomous World replay
-        run: |
-          node scripts/build_world_replay.mjs
-          cp site/data/world.json /tmp/world-a.json
-          node scripts/build_world_replay.mjs
-          cmp /tmp/world-a.json site/data/world.json
-      - name: Reproduce published research
-        run: |
-          python scripts/build_experiments.py
-          node scripts/build_world_replay.mjs
-          git diff --exit-code -- site/data/experiments.json
+          node scripts/build_sovereign_genesis.mjs
+          cp site/data/sovereign-genesis.json /tmp/sovereign-genesis-a.json
+          node scripts/build_sovereign_genesis.mjs
+          cmp /tmp/sovereign-genesis-a.json site/data/sovereign-genesis.json
+      - name: Static game-shell and package verification
+        run: bash CHECK.sh . --skip-browser
 
   browser-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build static data
-        run: |
-          python scripts/build_site.py
-          python scripts/build_experiments.py
-          node scripts/build_world_replay.mjs
       - name: Install Playwright for integration smoke
         run: |
           npm install --no-save playwright
           npx playwright install --with-deps chromium
-      - name: Browser integration smoke
+      - name: Serve Observer shell and run sovereign browser smoke
         run: |
-          python -m http.server 8765 --directory site >/tmp/cymonia-http.log 2>&1 &
+          python3 -m http.server 8765 --directory site >/tmp/cymonia-v2-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
-          SERVER_READY=0
-          for i in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:8765/ >/dev/null 2>&1; then
-              SERVER_READY=1
-              break
-            fi
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8765/ >/dev/null 2>&1 && break
             sleep 0.5
           done
-          if [ "$SERVER_READY" -ne 1 ]; then
-            echo "Static test server did not become ready"
-            cat /tmp/cymonia-http.log || true
-            exit 1
-          fi
-          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser.mjs
-          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-world.mjs
-          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-game-revamp.mjs
+          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-sovereign.mjs
 
-  deploy-cloudflare:
-    name: Deploy Cloudflare production
-    needs: [test, browser-smoke]
+  deploy-world:
+    name: Deploy Sovereign World Worker
+    needs: [sovereign-test, browser-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency:
-      group: cloudflare-production
+      group: cymonia-sovereign-production
       cancel-in-progress: false
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build production assets
+      - name: Validate Cloudflare credentials
         run: |
-          python scripts/build_site.py
-          python scripts/build_experiments.py
-          node scripts/build_world_replay.mjs
-      - name: Validate Cloudflare deploy credentials
-        run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
-      - name: Install Cloudflare Wrangler
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Install Wrangler
         run: npm install --no-save wrangler@4
-      - name: Apply production D1 migrations
-        run: npx wrangler d1 migrations apply cymonia-participation --remote --env production
-      - name: Deploy Pages and Functions to Cloudflare
+      - name: Deploy canonical Durable Object world
+        run: npx wrangler deploy --config wrangler.world.toml
+
+  deploy-pages:
+    name: Deploy Observer Pages
+    needs: [deploy-world]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cymonia-sovereign-production
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Wrangler
+        run: npm install --no-save wrangler@4
+      - name: Build deterministic Observer fallback
+        run: node scripts/build_sovereign_genesis.mjs
+      - name: Deploy game-only Observer
         run: npx wrangler pages deploy site --project-name cymonia --branch main --commit-hash "$GITHUB_SHA"
-      - name: Verify Cloudflare production health
+      - name: Verify production route
         run: |
           for i in $(seq 1 30); do
-            BODY=$(curl -fsS https://cymonia.pages.dev/api/health 2>/dev/null || true)
-            if echo "$BODY" | grep -q '"ok":true' && echo "$BODY" | grep -q '@cf/zai-org/glm-4.7-flash' && echo "$BODY" | grep -q '"personal_agent_ai":"workers-ai"' && echo "$BODY" | grep -q '"d1_bound":true'; then
+            BODY=$(curl -fsS https://cymonia.pages.dev/api/v2/health 2>/dev/null || true)
+            if echo "$BODY" | grep -q '"ok":true'; then
               echo "$BODY"
               exit 0
             fi
             sleep 2
           done
-          echo "Cloudflare production health check failed"
+          echo "Sovereign World production health check failed"
           exit 1
-

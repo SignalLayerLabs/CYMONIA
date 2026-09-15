@@ -1,0 +1,5 @@
+import {hash32,stableId} from './rng.js';
+import {appendEvent} from './ledger.js';
+export function advanceDisease(world,citizen,fromMinute,toMinute){if(!citizen.alive)return;const delta=Math.max(0,toMinute-fromMinute);for(const d of citizen.body.diseases){d.progress=Math.min(1,d.progress+delta/Math.max(1,d.durationMinutes));const severity=d.severity*(.6+(.8-citizen.genome.immuneResilience)*.5);citizen.body.health=Math.max(0,citizen.body.health-severity*delta/1440);}
+  citizen.body.diseases=citizen.body.diseases.filter(d=>d.progress<1);
+  const day=Math.floor(toMinute/1440),pressure=Number(world.environment.pathogenPressure||.015);if(!citizen.body.diseases.length&&(hash32(`${citizen.id}|${day}|exposure`)%10000)/10000<pressure){const disease={id:stableId('pathogen',citizen.id,day),severity:.05+(hash32(`${citizen.id}|${day}|sev`)%30)/100,durationMinutes:(2+(hash32(`${day}|dur`)%9))*1440,progress:0};citizen.body.diseases.push(disease);appendEvent(world,'DISEASE_ONSET',citizen.id,{diseaseId:disease.id,severity:disease.severity},[],toMinute);}}

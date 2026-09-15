@@ -13,7 +13,6 @@ import { errorResponse, json, readJson, redirect, requireActor, safeReturnTo, se
 import {
   advancePersistentWorld,
   approveAgentStrategy,
-  ensureHumanWorldCitizen,
   getAgentProfile,
   getWorldNews,
   getWorldPublic,
@@ -130,7 +129,6 @@ async function authCallback(request, env) {
   if (!userResponse.ok) throw new Error("github_identity_lookup_failed");
   const githubUser = await userResponse.json();
   const human = await upsertHumanFromGitHub(db(env), githubUser);
-  await ensureHumanWorldCitizen(db(env), human.actor);
   const rawSession = createOpaqueToken(32);
   const sessionHash = await hashSecretToken(rawSession, String(env.SESSION_HASH_SECRET || ""));
   await createSession(db(env), human.actor.id, sessionHash, sqlTimestamp(Date.now() + 7 * 24 * 60 * 60 * 1000));

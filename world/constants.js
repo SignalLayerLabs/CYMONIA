@@ -1,0 +1,9 @@
+export const WORLD_VERSION=2;
+export const REAL_MS_PER_WORLD_MINUTE=1000;
+export const WORLD_MINUTES_PER_DAY=1440;
+export const WORLD_MINUTES_PER_YEAR=525600;
+export const GENESIS_POPULATION=100;
+export const PRIMITIVE_SIGNALS=Object.freeze(['attention','danger','need','point','accept','reject']);
+export const ACTION_TYPES=Object.freeze(new Set(['MOVE','OBSERVE','REST','SLEEP','EAT','DRINK','GATHER','CARRY','CUT','DIG','HEAT','COOL','MIX','ASSEMBLE','BUILD','CARE','TEACH','COMMUNICATE','EXPERIMENT','ATTACK','DEFEND','TRANSFER','PROMISE','CLAIM','REPRODUCE']));
+export const SAFE_REFLEX_ACTIONS=Object.freeze(new Set(['MOVE','OBSERVE','REST','SLEEP','EAT','DRINK','COMMUNICATE']));
+export const GENESIS_FORBIDDEN_SOCIAL_CONCEPTS=Object.freeze(['government','police','court','bank','company','currency','religion','nation','marriage','tax','rent','wage','english','italian']);
