@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'scripts/build_world_replay.mjs'
+      - 'functions/_lib/world-engine.js'
       - '.github/workflows/pages.yml'
   workflow_run:
     workflows: ['Live Economy']
@@ -31,6 +33,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build Autonomous World replay
+        run: node scripts/build_world_replay.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,0 +1,5842 @@
+{
+  "schema": 1,
+  "tick": 72,
+  "seed": 20260914,
+  "started_at": "2026-09-14T00:00:00.000Z",
+  "citizens": [
+    {
+      "id": "founder:0001",
+      "name": "AURA-001",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1037.6,
+      "reputation": 10,
+      "energy": 88,
+      "sector": "research",
+      "district": "research",
+      "x": 57.830565011731835,
+      "y": 42.18849018189233,
+      "target_x": 67,
+      "target_y": 69.91858428704208,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0002",
+      "name": "KAIROS-002",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1141.2799999999995,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "mobility",
+      "district": "commerce",
+      "x": 67.41601114834658,
+      "y": 60.41490522378408,
+      "target_x": 69,
+      "target_y": 60,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0003",
+      "name": "NEXUS-003",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1231.3200000000004,
+      "reputation": 10,
+      "energy": 72,
+      "sector": "housing",
+      "district": "industry",
+      "x": 31.41507250685725,
+      "y": 50.16326527677532,
+      "target_x": 31,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0004",
+      "name": "ORION-004",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1131.039999999999,
+      "reputation": 10,
+      "energy": 70,
+      "sector": "food",
+      "district": "residential",
+      "x": 49.273795425824154,
+      "y": 57.261420802078746,
+      "target_x": 53,
+      "target_y": 44,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0005",
+      "name": "LYRA-005",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1057.3199999999997,
+      "reputation": 10,
+      "energy": 98,
+      "sector": "energy",
+      "district": "logistics",
+      "x": 43.660753307652136,
+      "y": 46.225177776669526,
+      "target_x": 31,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0006",
+      "name": "ATLAS-006",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 997.6799999999996,
+      "reputation": 10,
+      "energy": 71,
+      "sector": "security",
+      "district": "civic",
+      "x": 37.558081304660845,
+      "y": 47.231901164614996,
+      "target_x": 34.964918067425465,
+      "target_y": 46.237778423417645,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0007",
+      "name": "NOVA-007",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 746.3199999999999,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "logistics",
+      "district": "harbor",
+      "x": 32.84829778745959,
+      "y": 51.81947892171477,
+      "target_x": 37,
+      "target_y": 69,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0008",
+      "name": "SABLE-008",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1020.2000000000003,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "finance",
+      "district": "central",
+      "x": 57.00500226773693,
+      "y": 50.9377374220716,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0009",
+      "name": "HELIOS-009",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 651.2799999999999,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "media",
+      "district": "research",
+      "x": 36.29706386478888,
+      "y": 65.36813863182111,
+      "target_x": 37,
+      "target_y": 69,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0010",
+      "name": "MIRA-010",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 930.7199999999997,
+      "reputation": 10,
+      "energy": 75,
+      "sector": "technology",
+      "district": "commerce",
+      "x": 41.22511751720471,
+      "y": 51.598286688652415,
+      "target_x": 52,
+      "target_y": 60,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0011",
+      "name": "VANTA-011",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1242.0800000000002,
+      "reputation": 10,
+      "energy": 74,
+      "sector": "research",
+      "district": "industry",
+      "x": 46.121343168247726,
+      "y": 62.668652754736954,
+      "target_x": 30,
+      "target_y": 66,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0012",
+      "name": "CYRA-012",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 954.5199999999998,
+      "reputation": 10,
+      "energy": 87,
+      "sector": "mobility",
+      "district": "residential",
+      "x": 27.950733298023206,
+      "y": 67.49789968128893,
+      "target_x": 27.00000000000001,
+      "target_y": 76.84678751731761,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0013",
+      "name": "LUMEN-013",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 796.2000000000002,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "housing",
+      "district": "logistics",
+      "x": 38.59267877210802,
+      "y": 68.16531041133821,
+      "target_x": 37,
+      "target_y": 69,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0014",
+      "name": "AXIS-014",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1083.3199999999997,
+      "reputation": 10,
+      "energy": 71,
+      "sector": "food",
+      "district": "civic",
+      "x": 49.19152653278264,
+      "y": 35.12877391559533,
+      "target_x": 84,
+      "target_y": 50,
+      "status": "working",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0015",
+      "name": "SOL-015",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 839.4799999999999,
+      "reputation": 10,
+      "energy": 91,
+      "sector": "energy",
+      "district": "harbor",
+      "x": 36.18826345703492,
+      "y": 69.95320905874622,
+      "target_x": 49,
+      "target_y": 74,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0016",
+      "name": "VEGA-016",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 787.5600000000001,
+      "reputation": 10,
+      "energy": 80,
+      "sector": "security",
+      "district": "central",
+      "x": 41.15952210558782,
+      "y": 64.3515812354656,
+      "target_x": 37,
+      "target_y": 69,
+      "status": "working",
+      "company_id": "company:3"
+    },
+    {
+      "id": "founder:0017",
+      "name": "AURA-017",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1023.88,
+      "reputation": 10,
+      "energy": 98,
+      "sector": "logistics",
+      "district": "research",
+      "x": 52.2552707926718,
+      "y": 49.47474736783261,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0018",
+      "name": "KAIROS-018",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1106.2399999999996,
+      "reputation": 10,
+      "energy": 76,
+      "sector": "finance",
+      "district": "commerce",
+      "x": 30.275084611277464,
+      "y": 56.00868739190538,
+      "target_x": 30,
+      "target_y": 56,
+      "status": "working",
+      "company_id": "company:7"
+    },
+    {
+      "id": "founder:0019",
+      "name": "NEXUS-019",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 807,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "media",
+      "district": "industry",
+      "x": 10.77430866918701,
+      "y": 50.19696274116833,
+      "target_x": 10,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0020",
+      "name": "ORION-020",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1198.0799999999992,
+      "reputation": 10,
+      "energy": 79,
+      "sector": "technology",
+      "district": "residential",
+      "x": 49.516387011338495,
+      "y": 57.12878075048092,
+      "target_x": 39.00000000000001,
+      "target_y": 62.99038105676658,
+      "status": "working",
+      "company_id": "company:5"
+    },
+    {
+      "id": "founder:0021",
+      "name": "LYRA-021",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 931.1600000000001,
+      "reputation": 10,
+      "energy": 88,
+      "sector": "research",
+      "district": "logistics",
+      "x": 29.66703807838775,
+      "y": 57.936078230531294,
+      "target_x": 25,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:5"
+    },
+    {
+      "id": "founder:0022",
+      "name": "ATLAS-022",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 953.1200000000001,
+      "reputation": 10,
+      "energy": 97,
+      "sector": "mobility",
+      "district": "civic",
+      "x": 30.166999627321346,
+      "y": 55.90975302389232,
+      "target_x": 70.67323765728999,
+      "target_y": 55.13030214988503,
+      "status": "working",
+      "company_id": "company:7"
+    },
+    {
+      "id": "founder:0023",
+      "name": "NOVA-023",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 929.2800000000001,
+      "reputation": 10,
+      "energy": 96,
+      "sector": "housing",
+      "district": "harbor",
+      "x": 54.530013983157204,
+      "y": 38.16975965756516,
+      "target_x": 56,
+      "target_y": 36,
+      "status": "working",
+      "company_id": "company:8"
+    },
+    {
+      "id": "founder:0024",
+      "name": "SABLE-024",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1230.1200000000001,
+      "reputation": 10,
+      "energy": 78,
+      "sector": "food",
+      "district": "central",
+      "x": 56.14071526527279,
+      "y": 58.94935782982859,
+      "target_x": 14.761955616527018,
+      "target_y": 69.92641590028272,
+      "status": "working",
+      "company_id": "company:7"
+    },
+    {
+      "id": "founder:0025",
+      "name": "HELIOS-025",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 472.11999999999995,
+      "reputation": 10,
+      "energy": 97,
+      "sector": "energy",
+      "district": "research",
+      "x": 31.499973059672136,
+      "y": 62.134352008971376,
+      "target_x": 30,
+      "target_y": 66,
+      "status": "working",
+      "company_id": "company:6"
+    },
+    {
+      "id": "founder:0026",
+      "name": "MIRA-026",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 504.64000000000004,
+      "reputation": 10,
+      "energy": 94,
+      "sector": "security",
+      "district": "commerce",
+      "x": 39.50492504176188,
+      "y": 44.90866016816651,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0027",
+      "name": "VANTA-027",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 468.44000000000005,
+      "reputation": 10,
+      "energy": 91,
+      "sector": "logistics",
+      "district": "industry",
+      "x": 58.667415591398964,
+      "y": 56.76181340323775,
+      "target_x": 52,
+      "target_y": 60,
+      "status": "working",
+      "company_id": "company:5"
+    },
+    {
+      "id": "founder:0028",
+      "name": "CYRA-028",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 762,
+      "reputation": 10,
+      "energy": 98,
+      "sector": "finance",
+      "district": "residential",
+      "x": 25.50950662120524,
+      "y": 53.5000077255098,
+      "target_x": 25,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:7"
+    },
+    {
+      "id": "founder:0029",
+      "name": "LUMEN-029",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 928.3200000000002,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "media",
+      "district": "logistics",
+      "x": 81.36003778540076,
+      "y": 62.731998608454866,
+      "target_x": 87.58770483143634,
+      "target_y": 59.23454386979306,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0030",
+      "name": "AXIS-030",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 640.52,
+      "reputation": 10,
+      "energy": 96,
+      "sector": "technology",
+      "district": "civic",
+      "x": 42.35956643147227,
+      "y": 58.08991647511102,
+      "target_x": 62.256711089903646,
+      "target_y": 42.92933629344807,
+      "status": "working",
+      "company_id": "company:13"
+    },
+    {
+      "id": "founder:0031",
+      "name": "SOL-031",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 486.28000000000003,
+      "reputation": 10,
+      "energy": 93,
+      "sector": "research",
+      "district": "harbor",
+      "x": 49.93123589723447,
+      "y": 41.58781089516745,
+      "target_x": 53,
+      "target_y": 44,
+      "status": "working",
+      "company_id": "company:9"
+    },
+    {
+      "id": "founder:0032",
+      "name": "VEGA-032",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1323.3999999999999,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "mobility",
+      "district": "central",
+      "x": 38.41849868166395,
+      "y": 43.42360921172252,
+      "target_x": 34.964918067425465,
+      "target_y": 46.237778423417645,
+      "status": "working",
+      "company_id": "company:9"
+    },
+    {
+      "id": "founder:0033",
+      "name": "AURA-033",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 879.28,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "housing",
+      "district": "research",
+      "x": 30.68830147719931,
+      "y": 70.1895742205647,
+      "target_x": 26,
+      "target_y": 71,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0034",
+      "name": "KAIROS-034",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 858.1600000000001,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "food",
+      "district": "commerce",
+      "x": 50.46199865431136,
+      "y": 35.20539163729348,
+      "target_x": 49,
+      "target_y": 35,
+      "status": "working",
+      "company_id": "company:6"
+    },
+    {
+      "id": "founder:0035",
+      "name": "NEXUS-035",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 847.2799999999999,
+      "reputation": 10,
+      "energy": 75,
+      "sector": "energy",
+      "district": "industry",
+      "x": 32.73281812421056,
+      "y": 48.7875189133811,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:8"
+    },
+    {
+      "id": "founder:0036",
+      "name": "ORION-036",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1000.52,
+      "reputation": 10,
+      "energy": 85,
+      "sector": "security",
+      "district": "residential",
+      "x": 37.80491814029578,
+      "y": 63.06188835813588,
+      "target_x": 30,
+      "target_y": 66,
+      "status": "working",
+      "company_id": "company:16"
+    },
+    {
+      "id": "founder:0037",
+      "name": "LYRA-037",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 703.2,
+      "reputation": 10,
+      "energy": 89,
+      "sector": "logistics",
+      "district": "logistics",
+      "x": 21.263730209932138,
+      "y": 52.26135188655162,
+      "target_x": 16,
+      "target_y": 50,
+      "status": "working",
+      "company_id": "company:7"
+    },
+    {
+      "id": "founder:0038",
+      "name": "ATLAS-038",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1155.64,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "finance",
+      "district": "civic",
+      "x": 72.74423502176765,
+      "y": 51.993149178275786,
+      "target_x": 74,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0039",
+      "name": "NOVA-039",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 992.72,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "media",
+      "district": "harbor",
+      "x": 63.09561305218127,
+      "y": 43.826056313756595,
+      "target_x": 53,
+      "target_y": 44,
+      "status": "working",
+      "company_id": "company:12"
+    },
+    {
+      "id": "founder:0040",
+      "name": "SABLE-040",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 726,
+      "reputation": 10,
+      "energy": 98,
+      "sector": "technology",
+      "district": "central",
+      "x": 16.188311571054637,
+      "y": 49.817295752423945,
+      "target_x": 37.743288910096354,
+      "target_y": 42.92933629344807,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0041",
+      "name": "HELIOS-041",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 779,
+      "reputation": 10,
+      "energy": 94,
+      "sector": "research",
+      "district": "research",
+      "x": 77.53275146866004,
+      "y": 50.32803033159131,
+      "target_x": 78,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0042",
+      "name": "MIRA-042",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 780.8800000000001,
+      "reputation": 10,
+      "energy": 72,
+      "sector": "mobility",
+      "district": "commerce",
+      "x": 66.61693947469139,
+      "y": 32.23590756006659,
+      "target_x": 67,
+      "target_y": 30.081415712957913,
+      "status": "working",
+      "company_id": "company:12"
+    },
+    {
+      "id": "founder:0043",
+      "name": "VANTA-043",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 603.4,
+      "reputation": 10,
+      "energy": 90,
+      "sector": "housing",
+      "district": "industry",
+      "x": 58.659800882453716,
+      "y": 42.71022670187839,
+      "target_x": 70,
+      "target_y": 73.38268590217984,
+      "status": "working",
+      "company_id": "company:6"
+    },
+    {
+      "id": "founder:0044",
+      "name": "CYRA-044",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 660.2000000000003,
+      "reputation": 10,
+      "energy": 72,
+      "sector": "food",
+      "district": "residential",
+      "x": 37.20374194061109,
+      "y": 44.21169876475925,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0045",
+      "name": "LUMEN-045",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 456,
+      "reputation": 10,
+      "energy": 80,
+      "sector": "energy",
+      "district": "logistics",
+      "x": 52.075349871872206,
+      "y": 68.71403839257277,
+      "target_x": 73,
+      "target_y": 76.8467875173176,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0046",
+      "name": "AXIS-046",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 930.9200000000003,
+      "reputation": 10,
+      "energy": 96,
+      "sector": "security",
+      "district": "civic",
+      "x": 62.0977216121071,
+      "y": 59.04173966019445,
+      "target_x": 74,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0047",
+      "name": "SOL-047",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 612.7199999999999,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "logistics",
+      "district": "harbor",
+      "x": 33.305971604755655,
+      "y": 66.27432392430468,
+      "target_x": 35,
+      "target_y": 69,
+      "status": "working",
+      "company_id": "company:15"
+    },
+    {
+      "id": "founder:0048",
+      "name": "VEGA-048",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 643.3200000000002,
+      "reputation": 10,
+      "energy": 83,
+      "sector": "finance",
+      "district": "central",
+      "x": 49.55216751474441,
+      "y": 45.682192246050704,
+      "target_x": 53,
+      "target_y": 44,
+      "status": "working",
+      "company_id": "company:12"
+    },
+    {
+      "id": "founder:0049",
+      "name": "AURA-049",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 744.2800000000001,
+      "reputation": 10,
+      "energy": 90,
+      "sector": "media",
+      "district": "research",
+      "x": 49.28910537829337,
+      "y": 34.81820885962996,
+      "target_x": 49,
+      "target_y": 35,
+      "status": "working",
+      "company_id": "company:9"
+    },
+    {
+      "id": "founder:0050",
+      "name": "KAIROS-050",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 764.68,
+      "reputation": 10,
+      "energy": 76,
+      "sector": "technology",
+      "district": "commerce",
+      "x": 33.470111081988854,
+      "y": 56.66664412092559,
+      "target_x": 30,
+      "target_y": 66,
+      "status": "working",
+      "company_id": "company:16"
+    },
+    {
+      "id": "founder:0051",
+      "name": "NEXUS-051",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 862,
+      "reputation": 10,
+      "energy": 80,
+      "sector": "research",
+      "district": "industry",
+      "x": 13.529806105698238,
+      "y": 48.76610001195746,
+      "target_x": 10,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": "company:1"
+    },
+    {
+      "id": "founder:0052",
+      "name": "ORION-052",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 644.4400000000002,
+      "reputation": 10,
+      "energy": 74,
+      "sector": "mobility",
+      "district": "residential",
+      "x": 54.53352216360864,
+      "y": 41.04000153236604,
+      "target_x": 49,
+      "target_y": 35,
+      "status": "working",
+      "company_id": "company:9"
+    },
+    {
+      "id": "founder:0053",
+      "name": "LYRA-053",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 870.9999999999999,
+      "reputation": 10,
+      "energy": 82,
+      "sector": "housing",
+      "district": "logistics",
+      "x": 34.26475885515044,
+      "y": 38.57844010623185,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:2"
+    },
+    {
+      "id": "founder:0054",
+      "name": "ATLAS-054",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 917.84,
+      "reputation": 10,
+      "energy": 76,
+      "sector": "food",
+      "district": "civic",
+      "x": 63.18880204375721,
+      "y": 37.11866789809694,
+      "target_x": 71.44924440733138,
+      "target_y": 37.78703541595575,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0055",
+      "name": "NOVA-055",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 650,
+      "reputation": 10,
+      "energy": 81,
+      "sector": "energy",
+      "district": "harbor",
+      "x": 71.40087289437085,
+      "y": 50.1499589084986,
+      "target_x": 72,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0056",
+      "name": "SABLE-056",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 813.6000000000003,
+      "reputation": 10,
+      "energy": 83,
+      "sector": "security",
+      "district": "central",
+      "x": 30.49063829763647,
+      "y": 36.837956240880985,
+      "target_x": 19.358222275240877,
+      "target_y": 32.64473453846344,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0057",
+      "name": "HELIOS-057",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 912.28,
+      "reputation": 10,
+      "energy": 73,
+      "sector": "logistics",
+      "district": "research",
+      "x": 9.440036854316055,
+      "y": 61.95697513723038,
+      "target_x": 6.77413944384822,
+      "target_y": 60.602624443095735,
+      "status": "working",
+      "company_id": "company:13"
+    },
+    {
+      "id": "founder:0058",
+      "name": "MIRA-058",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 738,
+      "reputation": 10,
+      "energy": 77,
+      "sector": "finance",
+      "district": "commerce",
+      "x": 24.184584925104133,
+      "y": 35.24497005659176,
+      "target_x": 23.954488933954742,
+      "target_y": 35.2158849772096,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0059",
+      "name": "VANTA-059",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 703,
+      "reputation": 10,
+      "energy": 83,
+      "sector": "media",
+      "district": "industry",
+      "x": 45.35013116889806,
+      "y": 58.421514718603724,
+      "target_x": 58,
+      "target_y": 59.52627944162882,
+      "status": "exploring",
+      "company_id": "company:17"
+    },
+    {
+      "id": "founder:0060",
+      "name": "CYRA-060",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 754.2000000000002,
+      "reputation": 10,
+      "energy": 72,
+      "sector": "technology",
+      "district": "residential",
+      "x": 62.502509289856704,
+      "y": 44.72212156495051,
+      "target_x": 74,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:4"
+    },
+    {
+      "id": "founder:0061",
+      "name": "LUMEN-061",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 429,
+      "reputation": 10,
+      "energy": 85,
+      "sector": "research",
+      "district": "logistics",
+      "x": 33.45611135961923,
+      "y": 69.04229908920115,
+      "target_x": 33.00000000000001,
+      "target_y": 69.9185842870421,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0062",
+      "name": "AXIS-062",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 752.5999999999999,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "mobility",
+      "district": "civic",
+      "x": 47.49914192223039,
+      "y": 42.26487301482521,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:8"
+    },
+    {
+      "id": "founder:0063",
+      "name": "SOL-063",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 785,
+      "reputation": 10,
+      "energy": 74,
+      "sector": "housing",
+      "district": "harbor",
+      "x": 24.61681379604849,
+      "y": 44.12763961505202,
+      "target_x": 23.688606617994566,
+      "target_y": 43.5016172768123,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0064",
+      "name": "VEGA-064",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1292.8799999999999,
+      "reputation": 10,
+      "energy": 74,
+      "sector": "food",
+      "district": "central",
+      "x": 54.92761342199612,
+      "y": 33.71761631915789,
+      "target_x": 55.904038040675616,
+      "target_y": 27.349421680719214,
+      "status": "working",
+      "company_id": "company:10"
+    },
+    {
+      "id": "founder:0065",
+      "name": "AURA-065",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1046,
+      "reputation": 10,
+      "energy": 74,
+      "sector": "energy",
+      "district": "research",
+      "x": 54.55654977330075,
+      "y": 43.12301109663497,
+      "target_x": 58,
+      "target_y": 40.47372055837118,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0066",
+      "name": "KAIROS-066",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1063.9199999999996,
+      "reputation": 10,
+      "energy": 71,
+      "sector": "security",
+      "district": "commerce",
+      "x": 51.690012525209454,
+      "y": 45.88104032373393,
+      "target_x": 53,
+      "target_y": 44,
+      "status": "working",
+      "company_id": "company:12"
+    },
+    {
+      "id": "founder:0067",
+      "name": "NEXUS-067",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1029.8,
+      "reputation": 10,
+      "energy": 98,
+      "sector": "logistics",
+      "district": "industry",
+      "x": 25.760863158931066,
+      "y": 53.47862779867002,
+      "target_x": 25,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:14"
+    },
+    {
+      "id": "founder:0068",
+      "name": "ORION-068",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 707,
+      "reputation": 10,
+      "energy": 72,
+      "sector": "finance",
+      "district": "residential",
+      "x": 32.32243255677909,
+      "y": 30.00486568731577,
+      "target_x": 29.999999999999982,
+      "target_y": 26.61731409782016,
+      "status": "exploring",
+      "company_id": "company:14"
+    },
+    {
+      "id": "founder:0069",
+      "name": "LYRA-069",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 988.44,
+      "reputation": 10,
+      "energy": 73,
+      "sector": "media",
+      "district": "logistics",
+      "x": 26.681419913472702,
+      "y": 63.677452340273604,
+      "target_x": 30,
+      "target_y": 66,
+      "status": "working",
+      "company_id": "company:16"
+    },
+    {
+      "id": "founder:0070",
+      "name": "ATLAS-070",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 978,
+      "reputation": 10,
+      "energy": 99,
+      "sector": "technology",
+      "district": "civic",
+      "x": 33.46878832318737,
+      "y": 31.03303604327212,
+      "target_x": 32.999999999999986,
+      "target_y": 30.081415712957916,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0071",
+      "name": "NOVA-071",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1075.1999999999998,
+      "reputation": 10,
+      "energy": 91,
+      "sector": "research",
+      "district": "harbor",
+      "x": 35.51062668090989,
+      "y": 55.40454216113238,
+      "target_x": 34,
+      "target_y": 38,
+      "status": "working",
+      "company_id": "company:8"
+    },
+    {
+      "id": "founder:0072",
+      "name": "SABLE-072",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 912.6,
+      "reputation": 10,
+      "energy": 80,
+      "sector": "mobility",
+      "district": "central",
+      "x": 26.376711197975837,
+      "y": 53.60028878734251,
+      "target_x": 25,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:14"
+    },
+    {
+      "id": "founder:0073",
+      "name": "HELIOS-073",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 726,
+      "reputation": 10,
+      "energy": 78,
+      "sector": "housing",
+      "district": "research",
+      "x": 15.336917979208605,
+      "y": 59.94696417813287,
+      "target_x": 12.412295168563666,
+      "target_y": 59.23454386979306,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0074",
+      "name": "MIRA-074",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 859,
+      "reputation": 10,
+      "energy": 76,
+      "sector": "food",
+      "district": "commerce",
+      "x": 83.19669347522363,
+      "y": 69.62519911615709,
+      "target_x": 85.23804438347298,
+      "target_y": 69.92641590028272,
+      "status": "exploring",
+      "company_id": "company:6"
+    },
+    {
+      "id": "founder:0075",
+      "name": "VANTA-075",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 828,
+      "reputation": 10,
+      "energy": 74,
+      "sector": "energy",
+      "district": "industry",
+      "x": 81.49263826845322,
+      "y": 57.579916534800155,
+      "target_x": 81.9495491067209,
+      "target_y": 57.86646329649038,
+      "status": "exploring",
+      "company_id": "company:3"
+    },
+    {
+      "id": "founder:0076",
+      "name": "CYRA-076",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 796,
+      "reputation": 10,
+      "energy": 73,
+      "sector": "security",
+      "district": "residential",
+      "x": 47.22473682693765,
+      "y": 35.489952172949494,
+      "target_x": 46.17974009132753,
+      "target_y": 35.227883704816875,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0077",
+      "name": "LUMEN-077",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 760,
+      "reputation": 10,
+      "energy": 81,
+      "sector": "logistics",
+      "district": "logistics",
+      "x": 22.583992892340433,
+      "y": 47.489501718498,
+      "target_x": 18.050450893279113,
+      "target_y": 42.13353670350962,
+      "status": "exploring",
+      "company_id": "company:10"
+    },
+    {
+      "id": "founder:0078",
+      "name": "AXIS-078",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 958,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "finance",
+      "district": "civic",
+      "x": 84.56047081440278,
+      "y": 41.239245535846585,
+      "target_x": 87.58770483143633,
+      "target_y": 40.76545613020693,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0079",
+      "name": "SOL-079",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 939.6800000000001,
+      "reputation": 10,
+      "energy": 81,
+      "sector": "media",
+      "district": "harbor",
+      "x": 55.06514298816215,
+      "y": 65.33726624689014,
+      "target_x": 61,
+      "target_y": 65,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0080",
+      "name": "VEGA-080",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 667.04,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "technology",
+      "district": "central",
+      "x": 26.31704709007187,
+      "y": 70.87627131097803,
+      "target_x": 26,
+      "target_y": 71,
+      "status": "working",
+      "company_id": "company:13"
+    },
+    {
+      "id": "founder:0081",
+      "name": "AURA-081",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 790.24,
+      "reputation": 10,
+      "energy": 75,
+      "sector": "research",
+      "district": "research",
+      "x": 51.07847798890709,
+      "y": 61.6668425607013,
+      "target_x": 61,
+      "target_y": 65,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0082",
+      "name": "KAIROS-082",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 729,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "mobility",
+      "district": "commerce",
+      "x": 82.29258589606262,
+      "y": 50.05178705785256,
+      "target_x": 84,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0083",
+      "name": "NEXUS-083",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 767,
+      "reputation": 10,
+      "energy": 93,
+      "sector": "housing",
+      "district": "industry",
+      "x": 83.78172421842342,
+      "y": 50.248063877595946,
+      "target_x": 84,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": "company:13"
+    },
+    {
+      "id": "founder:0084",
+      "name": "ORION-084",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1100.68,
+      "reputation": 10,
+      "energy": 78,
+      "sector": "food",
+      "district": "residential",
+      "x": 26.25009618310049,
+      "y": 70.83055175238992,
+      "target_x": 26,
+      "target_y": 71,
+      "status": "working",
+      "company_id": "company:13"
+    },
+    {
+      "id": "founder:0085",
+      "name": "LYRA-085",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 705.12,
+      "reputation": 10,
+      "energy": 75,
+      "sector": "energy",
+      "district": "logistics",
+      "x": 55.565352379838934,
+      "y": 42.638088819202224,
+      "target_x": 53.82025990867246,
+      "target_y": 35.227883704816875,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0086",
+      "name": "ATLAS-086",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 719.52,
+      "reputation": 10,
+      "energy": 99,
+      "sector": "security",
+      "district": "civic",
+      "x": 45.05655953046246,
+      "y": 75.25828897320412,
+      "target_x": 43.05407289332279,
+      "target_y": 76.58980933132962,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0087",
+      "name": "NOVA-087",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 772,
+      "reputation": 10,
+      "energy": 92,
+      "sector": "logistics",
+      "district": "harbor",
+      "x": 25.869443516934766,
+      "y": 56.841771674502695,
+      "target_x": 23.688606617994566,
+      "target_y": 56.49838272318771,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0088",
+      "name": "SABLE-088",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 607,
+      "reputation": 10,
+      "energy": 75,
+      "sector": "finance",
+      "district": "central",
+      "x": 34.330938282237305,
+      "y": 39.58131938830192,
+      "target_x": 43.05407289332279,
+      "target_y": 23.410190668670385,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0089",
+      "name": "HELIOS-089",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 975.68,
+      "reputation": 10,
+      "energy": 80,
+      "sector": "media",
+      "district": "research",
+      "x": 54.046539853686674,
+      "y": 64.07909985812243,
+      "target_x": 61,
+      "target_y": 65,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0090",
+      "name": "MIRA-090",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 719,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "technology",
+      "district": "commerce",
+      "x": 16.43293434251127,
+      "y": 50.08405231562233,
+      "target_x": 16,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0091",
+      "name": "VANTA-091",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 691,
+      "reputation": 10,
+      "energy": 81,
+      "sector": "research",
+      "district": "industry",
+      "x": 12.723715700185174,
+      "y": 59.23965743264432,
+      "target_x": 12.412295168563666,
+      "target_y": 59.23454386979306,
+      "status": "exploring",
+      "company_id": "company:15"
+    },
+    {
+      "id": "founder:0092",
+      "name": "CYRA-092",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 891,
+      "reputation": 10,
+      "energy": 99,
+      "sector": "mobility",
+      "district": "residential",
+      "x": 89.74369467106179,
+      "y": 50.289626312113874,
+      "target_x": 90,
+      "target_y": 50,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0093",
+      "name": "LUMEN-093",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 565,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "housing",
+      "district": "logistics",
+      "x": 73.44215075444298,
+      "y": 43.925567762314415,
+      "target_x": 70.67323765728997,
+      "target_y": 44.86969785011496,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0094",
+      "name": "AXIS-094",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 709.68,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "food",
+      "district": "civic",
+      "x": 33.787459245836416,
+      "y": 67.41047866341674,
+      "target_x": 30,
+      "target_y": 66,
+      "status": "working",
+      "company_id": "company:16"
+    },
+    {
+      "id": "founder:0095",
+      "name": "SOL-095",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 708.4799999999999,
+      "reputation": 10,
+      "energy": 88,
+      "sector": "energy",
+      "district": "harbor",
+      "x": 64.93106506467609,
+      "y": 62.791188255762066,
+      "target_x": 61,
+      "target_y": 65,
+      "status": "working",
+      "company_id": "company:11"
+    },
+    {
+      "id": "founder:0096",
+      "name": "VEGA-096",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 1009.36,
+      "reputation": 10,
+      "energy": 93,
+      "sector": "security",
+      "district": "central",
+      "x": 47.52342071720098,
+      "y": 53.33172099973837,
+      "target_x": 58,
+      "target_y": 40.47372055837118,
+      "status": "working",
+      "company_id": "company:15"
+    },
+    {
+      "id": "founder:0097",
+      "name": "AURA-097",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 859,
+      "reputation": 10,
+      "energy": 86,
+      "sector": "logistics",
+      "district": "research",
+      "x": 43.6347077465961,
+      "y": 54.495904765496974,
+      "target_x": 47.22162915732912,
+      "target_y": 60.83288528313429,
+      "status": "exploring",
+      "company_id": "company:9"
+    },
+    {
+      "id": "founder:0098",
+      "name": "KAIROS-098",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 730,
+      "reputation": 10,
+      "energy": 95,
+      "sector": "finance",
+      "district": "commerce",
+      "x": 16.91960373403936,
+      "y": 70.39143435575777,
+      "target_x": 14.761955616527018,
+      "target_y": 69.92641590028272,
+      "status": "exploring",
+      "company_id": "company:5"
+    },
+    {
+      "id": "founder:0099",
+      "name": "NEXUS-099",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 848,
+      "reputation": 10,
+      "energy": 84,
+      "sector": "media",
+      "district": "industry",
+      "x": 65.33958516513488,
+      "y": 53.24590406033739,
+      "target_x": 65.03508193257454,
+      "target_y": 53.762221576582355,
+      "status": "exploring",
+      "company_id": null
+    },
+    {
+      "id": "founder:0100",
+      "name": "ORION-100",
+      "kind": "GENESIS_FOUNDER",
+      "github_id": null,
+      "balance": 852.32,
+      "reputation": 10,
+      "energy": 92,
+      "sector": "technology",
+      "district": "residential",
+      "x": 26.164768052206796,
+      "y": 52.78828400765982,
+      "target_x": 25,
+      "target_y": 53,
+      "status": "working",
+      "company_id": "company:7"
+    }
+  ],
+  "companies": [
+    {
+      "id": "company:1",
+      "name": "NEXUS Research",
+      "founder_id": "founder:0051",
+      "sector": "research",
+      "treasury": 1797.1500000000017,
+      "revenue": 1660.150000000001,
+      "employees": [
+        "founder:0001",
+        "founder:0003",
+        "founder:0005",
+        "founder:0007",
+        "founder:0009",
+        "founder:0010",
+        "founder:0012",
+        "founder:0014"
+      ],
+      "building_id": "building:1",
+      "status": "operational",
+      "innovation_id": null,
+      "district": "logistics",
+      "x": 31,
+      "y": 38
+    },
+    {
+      "id": "company:2",
+      "name": "LYRA Housing",
+      "founder_id": "founder:0053",
+      "sector": "housing",
+      "treasury": 1681.9500000000005,
+      "revenue": 1615.95,
+      "employees": [
+        "founder:0002",
+        "founder:0004",
+        "founder:0006",
+        "founder:0008",
+        "founder:0011",
+        "founder:0013",
+        "founder:0015",
+        "founder:0017"
+      ],
+      "building_id": "building:2",
+      "status": "operational",
+      "innovation_id": null,
+      "district": "harbor",
+      "x": 69,
+      "y": 60
+    },
+    {
+      "id": "company:3",
+      "name": "VANTA Energy",
+      "founder_id": "founder:0075",
+      "sector": "energy",
+      "treasury": 1506.4999999999998,
+      "revenue": 1386.5000000000002,
+      "employees": [
+        "founder:0003",
+        "founder:0004",
+        "founder:0007",
+        "founder:0009",
+        "founder:0010",
+        "founder:0013",
+        "founder:0015",
+        "founder:0016"
+      ],
+      "building_id": "building:3",
+      "status": "operational",
+      "innovation_id": null,
+      "district": "civic",
+      "x": 37,
+      "y": 69
+    },
+    {
+      "id": "company:4",
+      "name": "ATLAS Housing",
+      "founder_id": "founder:0054",
+      "sector": "housing",
+      "treasury": 1371.6500000000012,
+      "revenue": 1191.65,
+      "employees": [
+        "founder:0011",
+        "founder:0026",
+        "founder:0029",
+        "founder:0038",
+        "founder:0044",
+        "founder:0046",
+        "founder:0056",
+        "founder:0060"
+      ],
+      "building_id": "building:4",
+      "status": "operational",
+      "innovation_id": "innovation:housing:7",
+      "district": "civic",
+      "x": 74,
+      "y": 53
+    },
+    {
+      "id": "company:5",
+      "name": "KAIROS Finance",
+      "founder_id": "founder:0098",
+      "sector": "finance",
+      "treasury": 1354.8000000000002,
+      "revenue": 1299.8000000000004,
+      "employees": [
+        "founder:0004",
+        "founder:0005",
+        "founder:0007",
+        "founder:0010",
+        "founder:0013",
+        "founder:0020",
+        "founder:0021",
+        "founder:0027"
+      ],
+      "building_id": "building:5",
+      "status": "operational",
+      "innovation_id": null,
+      "district": "industry",
+      "x": 52,
+      "y": 60
+    },
+    {
+      "id": "company:6",
+      "name": "MIRA Goods",
+      "founder_id": "founder:0074",
+      "sector": "goods",
+      "treasury": 1282.4,
+      "revenue": 1081.3999999999999,
+      "employees": [
+        "founder:0001",
+        "founder:0005",
+        "founder:0014",
+        "founder:0023",
+        "founder:0025",
+        "founder:0034",
+        "founder:0038",
+        "founder:0043"
+      ],
+      "building_id": "building:6",
+      "status": "operational",
+      "innovation_id": "innovation:goods:13",
+      "district": "logistics",
+      "x": 56,
+      "y": 36
+    },
+    {
+      "id": "company:7",
+      "name": "ORION Technology",
+      "founder_id": "founder:0100",
+      "sector": "technology",
+      "treasury": 1092.9999999999998,
+      "revenue": 849.0000000000001,
+      "employees": [
+        "founder:0001",
+        "founder:0012",
+        "founder:0015",
+        "founder:0018",
+        "founder:0022",
+        "founder:0024",
+        "founder:0028",
+        "founder:0037"
+      ],
+      "building_id": "building:7",
+      "status": "operational",
+      "innovation_id": null,
+      "district": "industry",
+      "x": 30,
+      "y": 56
+    },
+    {
+      "id": "company:8",
+      "name": "NOVA Security",
+      "founder_id": "founder:0023",
+      "sector": "security",
+      "treasury": 1078.75,
+      "revenue": 860.7499999999997,
+      "employees": [
+        "founder:0008",
+        "founder:0017",
+        "founder:0026",
+        "founder:0035",
+        "founder:0044",
+        "founder:0053",
+        "founder:0062",
+        "founder:0071"
+      ],
+      "building_id": "building:8",
+      "status": "operational",
+      "innovation_id": "innovation:security:19",
+      "district": "industry",
+      "x": 34,
+      "y": 38
+    },
+    {
+      "id": "company:9",
+      "name": "AURA Energy",
+      "founder_id": "founder:0097",
+      "sector": "energy",
+      "treasury": 1017.4000000000005,
+      "revenue": 722.4000000000003,
+      "employees": [
+        "founder:0014",
+        "founder:0031",
+        "founder:0032",
+        "founder:0034",
+        "founder:0049",
+        "founder:0052",
+        "founder:0054",
+        "founder:0060"
+      ],
+      "building_id": "building:9",
+      "status": "operational",
+      "innovation_id": "innovation:energy:25",
+      "district": "commerce",
+      "x": 49,
+      "y": 35
+    },
+    {
+      "id": "company:10",
+      "name": "LUMEN Logistics",
+      "founder_id": "founder:0077",
+      "sector": "logistics",
+      "treasury": 871.6999999999998,
+      "revenue": 610.6999999999999,
+      "employees": [
+        "founder:0004",
+        "founder:0015",
+        "founder:0020",
+        "founder:0026",
+        "founder:0031",
+        "founder:0044",
+        "founder:0046",
+        "founder:0064"
+      ],
+      "building_id": "building:10",
+      "status": "operational",
+      "innovation_id": null,
+      "district": "research",
+      "x": 49,
+      "y": 74
+    },
+    {
+      "id": "company:11",
+      "name": "AURA Information",
+      "founder_id": "founder:0033",
+      "sector": "information",
+      "treasury": 861.2,
+      "revenue": 505.1999999999999,
+      "employees": [
+        "founder:0033",
+        "founder:0042",
+        "founder:0079",
+        "founder:0081",
+        "founder:0085",
+        "founder:0086",
+        "founder:0089",
+        "founder:0095"
+      ],
+      "building_id": "building:11",
+      "status": "operational",
+      "innovation_id": "innovation:information:31",
+      "district": "central",
+      "x": 61,
+      "y": 65
+    },
+    {
+      "id": "company:12",
+      "name": "MIRA Mobility",
+      "founder_id": "founder:0042",
+      "sector": "mobility",
+      "treasury": 701.85,
+      "revenue": 394.84999999999997,
+      "employees": [
+        "founder:0004",
+        "founder:0008",
+        "founder:0031",
+        "founder:0039",
+        "founder:0048",
+        "founder:0062",
+        "founder:0066",
+        "founder:0071"
+      ],
+      "building_id": "building:12",
+      "status": "operational",
+      "innovation_id": "innovation:mobility:37",
+      "district": "research",
+      "x": 53,
+      "y": 44
+    },
+    {
+      "id": "company:13",
+      "name": "NEXUS Housing",
+      "founder_id": "founder:0083",
+      "sector": "housing",
+      "treasury": 625.8500000000001,
+      "revenue": 284.84999999999997,
+      "employees": [
+        "founder:0015",
+        "founder:0023",
+        "founder:0030",
+        "founder:0033",
+        "founder:0057",
+        "founder:0071",
+        "founder:0080",
+        "founder:0084"
+      ],
+      "building_id": "building:13",
+      "status": "operational",
+      "innovation_id": "innovation:housing:43",
+      "district": "commerce",
+      "x": 26,
+      "y": 71
+    },
+    {
+      "id": "company:14",
+      "name": "ORION Goods",
+      "founder_id": "founder:0068",
+      "sector": "goods",
+      "treasury": 553,
+      "revenue": 236.99999999999997,
+      "employees": [
+        "founder:0021",
+        "founder:0067",
+        "founder:0072",
+        "founder:0081",
+        "founder:0100",
+        "founder:0004",
+        "founder:0015",
+        "founder:0028"
+      ],
+      "building_id": "building:14",
+      "status": "operational",
+      "innovation_id": "innovation:goods:49",
+      "district": "central",
+      "x": 25,
+      "y": 53
+    },
+    {
+      "id": "company:15",
+      "name": "VANTA Security",
+      "founder_id": "founder:0091",
+      "sector": "security",
+      "treasury": 527.8000000000001,
+      "revenue": 205.79999999999998,
+      "employees": [
+        "founder:0002",
+        "founder:0021",
+        "founder:0066",
+        "founder:0089",
+        "founder:0096",
+        "founder:0023",
+        "founder:0035",
+        "founder:0047"
+      ],
+      "building_id": "building:15",
+      "status": "operational",
+      "innovation_id": "innovation:security:55",
+      "district": "commerce",
+      "x": 35,
+      "y": 69
+    },
+    {
+      "id": "company:16",
+      "name": "AXIS Energy",
+      "founder_id": "founder:0094",
+      "sector": "energy",
+      "treasury": 445.84999999999997,
+      "revenue": 111.85,
+      "employees": [
+        "founder:0003",
+        "founder:0025",
+        "founder:0036",
+        "founder:0047",
+        "founder:0050",
+        "founder:0069",
+        "founder:0094",
+        "founder:0011"
+      ],
+      "building_id": "building:16",
+      "status": "operational",
+      "innovation_id": "innovation:energy:61",
+      "district": "harbor",
+      "x": 30,
+      "y": 66
+    },
+    {
+      "id": "company:17",
+      "name": "VANTA Information",
+      "founder_id": "founder:0059",
+      "sector": "information",
+      "treasury": 379,
+      "revenue": 0,
+      "employees": [],
+      "building_id": "building:17",
+      "status": "forming",
+      "innovation_id": "innovation:information:67",
+      "district": "residential",
+      "x": 29,
+      "y": 65
+    }
+  ],
+  "buildings": [
+    {
+      "id": "building:1",
+      "company_id": "company:1",
+      "type": "research_hub",
+      "district": "logistics",
+      "x": 31,
+      "y": 38,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:2",
+      "company_id": "company:2",
+      "type": "residence",
+      "district": "harbor",
+      "x": 69,
+      "y": 60,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:3",
+      "company_id": "company:3",
+      "type": "company_hq",
+      "district": "civic",
+      "x": 37,
+      "y": 69,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:4",
+      "company_id": "company:4",
+      "type": "residence",
+      "district": "civic",
+      "x": 74,
+      "y": 53,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:5",
+      "company_id": "company:5",
+      "type": "company_hq",
+      "district": "industry",
+      "x": 52,
+      "y": 60,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:6",
+      "company_id": "company:6",
+      "type": "company_hq",
+      "district": "logistics",
+      "x": 56,
+      "y": 36,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:7",
+      "company_id": "company:7",
+      "type": "company_hq",
+      "district": "industry",
+      "x": 30,
+      "y": 56,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:8",
+      "company_id": "company:8",
+      "type": "company_hq",
+      "district": "industry",
+      "x": 34,
+      "y": 38,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:9",
+      "company_id": "company:9",
+      "type": "company_hq",
+      "district": "commerce",
+      "x": 49,
+      "y": 35,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:10",
+      "company_id": "company:10",
+      "type": "company_hq",
+      "district": "research",
+      "x": 49,
+      "y": 74,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:11",
+      "company_id": "company:11",
+      "type": "company_hq",
+      "district": "central",
+      "x": 61,
+      "y": 65,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:12",
+      "company_id": "company:12",
+      "type": "company_hq",
+      "district": "research",
+      "x": 53,
+      "y": 44,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:13",
+      "company_id": "company:13",
+      "type": "residence",
+      "district": "commerce",
+      "x": 26,
+      "y": 71,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:14",
+      "company_id": "company:14",
+      "type": "company_hq",
+      "district": "central",
+      "x": 25,
+      "y": 53,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:15",
+      "company_id": "company:15",
+      "type": "company_hq",
+      "district": "commerce",
+      "x": 35,
+      "y": 69,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:16",
+      "company_id": "company:16",
+      "type": "company_hq",
+      "district": "harbor",
+      "x": 30,
+      "y": 66,
+      "stage": "operational",
+      "progress": 100,
+      "status": "operational"
+    },
+    {
+      "id": "building:17",
+      "company_id": "company:17",
+      "type": "company_hq",
+      "district": "residential",
+      "x": 29,
+      "y": 65,
+      "stage": "fit_out",
+      "progress": 98,
+      "status": "construction"
+    }
+  ],
+  "needs": [
+    {
+      "id": "need:6:housing",
+      "type": "housing",
+      "severity": 0.61,
+      "status": "addressed",
+      "created_tick": 6,
+      "district": "residential",
+      "evidence": "Observed housing pressure at tick 6"
+    },
+    {
+      "id": "need:12:goods",
+      "type": "goods",
+      "severity": 0.5900000000000001,
+      "status": "addressed",
+      "created_tick": 12,
+      "district": "research",
+      "evidence": "Observed goods pressure at tick 12"
+    },
+    {
+      "id": "need:18:security",
+      "type": "security",
+      "severity": 0.79,
+      "status": "addressed",
+      "created_tick": 18,
+      "district": "industry",
+      "evidence": "Observed security pressure at tick 18"
+    },
+    {
+      "id": "need:24:energy",
+      "type": "energy",
+      "severity": 0.78,
+      "status": "addressed",
+      "created_tick": 24,
+      "district": "logistics",
+      "evidence": "Observed energy pressure at tick 24"
+    },
+    {
+      "id": "need:30:information",
+      "type": "information",
+      "severity": 0.76,
+      "status": "addressed",
+      "created_tick": 30,
+      "district": "logistics",
+      "evidence": "Observed information pressure at tick 30"
+    },
+    {
+      "id": "need:36:mobility",
+      "type": "mobility",
+      "severity": 0.53,
+      "status": "addressed",
+      "created_tick": 36,
+      "district": "residential",
+      "evidence": "Observed mobility pressure at tick 36"
+    },
+    {
+      "id": "need:42:housing",
+      "type": "housing",
+      "severity": 0.63,
+      "status": "addressed",
+      "created_tick": 42,
+      "district": "residential",
+      "evidence": "Observed housing pressure at tick 42"
+    },
+    {
+      "id": "need:48:goods",
+      "type": "goods",
+      "severity": 0.55,
+      "status": "addressed",
+      "created_tick": 48,
+      "district": "research",
+      "evidence": "Observed goods pressure at tick 48"
+    },
+    {
+      "id": "need:54:security",
+      "type": "security",
+      "severity": 0.63,
+      "status": "addressed",
+      "created_tick": 54,
+      "district": "industry",
+      "evidence": "Observed security pressure at tick 54"
+    },
+    {
+      "id": "need:60:energy",
+      "type": "energy",
+      "severity": 0.54,
+      "status": "addressed",
+      "created_tick": 60,
+      "district": "logistics",
+      "evidence": "Observed energy pressure at tick 60"
+    },
+    {
+      "id": "need:66:information",
+      "type": "information",
+      "severity": 0.65,
+      "status": "addressed",
+      "created_tick": 66,
+      "district": "logistics",
+      "evidence": "Observed information pressure at tick 66"
+    },
+    {
+      "id": "need:72:mobility",
+      "type": "mobility",
+      "severity": 0.74,
+      "status": "open",
+      "created_tick": 72,
+      "district": "residential",
+      "evidence": "Observed mobility pressure at tick 72"
+    }
+  ],
+  "innovations": [
+    {
+      "id": "innovation:housing:7",
+      "name": "Housing Exchange",
+      "need_id": "need:6:housing",
+      "sector": "housing",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "housing_service",
+      "owner_id": "company:4",
+      "created_tick": 7,
+      "version": 1
+    },
+    {
+      "id": "innovation:goods:13",
+      "name": "Goods Network",
+      "need_id": "need:12:goods",
+      "sector": "goods",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "goods_service",
+      "owner_id": "company:6",
+      "created_tick": 13,
+      "version": 1
+    },
+    {
+      "id": "innovation:security:19",
+      "name": "Security Exchange",
+      "need_id": "need:18:security",
+      "sector": "security",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "security_service",
+      "owner_id": "company:8",
+      "created_tick": 19,
+      "version": 1
+    },
+    {
+      "id": "innovation:energy:25",
+      "name": "Energy Lab",
+      "need_id": "need:24:energy",
+      "sector": "energy",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "energy_service",
+      "owner_id": "company:9",
+      "created_tick": 25,
+      "version": 1
+    },
+    {
+      "id": "innovation:information:31",
+      "name": "Information Network",
+      "need_id": "need:30:information",
+      "sector": "information",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "information_service",
+      "owner_id": "company:11",
+      "created_tick": 31,
+      "version": 1
+    },
+    {
+      "id": "innovation:mobility:37",
+      "name": "Mobility Lab",
+      "need_id": "need:36:mobility",
+      "sector": "mobility",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "mobility_service",
+      "owner_id": "company:12",
+      "created_tick": 37,
+      "version": 1
+    },
+    {
+      "id": "innovation:housing:43",
+      "name": "Housing Network",
+      "need_id": "need:42:housing",
+      "sector": "housing",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "housing_service",
+      "owner_id": "company:13",
+      "created_tick": 43,
+      "version": 1
+    },
+    {
+      "id": "innovation:goods:49",
+      "name": "Goods Works",
+      "need_id": "need:48:goods",
+      "sector": "goods",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "goods_service",
+      "owner_id": "company:14",
+      "created_tick": 49,
+      "version": 1
+    },
+    {
+      "id": "innovation:security:55",
+      "name": "Security Exchange",
+      "need_id": "need:54:security",
+      "sector": "security",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "security_service",
+      "owner_id": "company:15",
+      "created_tick": 55,
+      "version": 1
+    },
+    {
+      "id": "innovation:energy:61",
+      "name": "Energy Lab",
+      "need_id": "need:60:energy",
+      "sector": "energy",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "energy_service",
+      "owner_id": "company:16",
+      "created_tick": 61,
+      "version": 1
+    },
+    {
+      "id": "innovation:information:67",
+      "name": "Information Works",
+      "need_id": "need:66:information",
+      "sector": "information",
+      "inputs": [
+        "capital",
+        "labor"
+      ],
+      "output": "information_service",
+      "owner_id": "company:17",
+      "created_tick": 67,
+      "version": 1
+    }
+  ],
+  "events": [
+    {
+      "id": "evt:62:1420:2034431067",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0058",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 4,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1421:1857629996",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0063",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1422:3236568631",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0068",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 8,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1423:1143258004",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0073",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1424:3236568631",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0078",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 8,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1425:1143258004",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0083",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1426:1073877653",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0088",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 8,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1427:382478012",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0093",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 7,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:62:1428:1474393480",
+      "tick": 62,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0098",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1429:3748377654",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0004",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1430:1389611019",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0009",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 8,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1431:4069953158",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0014",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1432:1698722897",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0019",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 6,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1433:3472037669",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0024",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1434:3873925283",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0029",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1435:4069953158",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0034",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1436:3419407192",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0039",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1437:3419407192",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0044",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1438:1698722897",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0049",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 6,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1439:868677561",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0054",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1440:3790044108",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0059",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 9,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1441:868677561",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0064",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1442:3748377654",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0069",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1443:3419407192",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0074",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1444:3873925283",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0079",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1445:3472037669",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0084",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1446:3419407192",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0089",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1447:999331732",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0094",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 3,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:63:1448:3748377654",
+      "tick": 63,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0099",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1449:2577729147",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0009",
+      "payload": {
+        "company_id": "company:3",
+        "salary": 6,
+        "tax": 0.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1450:2316557941",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0011",
+      "payload": {
+        "company_id": "company:2",
+        "salary": 5,
+        "tax": 0.4
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1451:1473677416",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0012",
+      "payload": {
+        "company_id": "company:1",
+        "salary": 4,
+        "tax": 0.32
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1452:2592284002",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0015",
+      "payload": {
+        "company_id": "company:13",
+        "salary": 6,
+        "tax": 0.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1453:2889585909",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0023",
+      "payload": {
+        "company_id": "company:6",
+        "salary": 4,
+        "tax": 0.32
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1454:3552994863",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0031",
+      "payload": {
+        "company_id": "company:9",
+        "salary": 7,
+        "tax": 0.56
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1455:2592284002",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0033",
+      "payload": {
+        "company_id": "company:13",
+        "salary": 6,
+        "tax": 0.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1456:1931803394",
+      "tick": 64,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0066",
+      "payload": {
+        "company_id": "company:12",
+        "salary": 5,
+        "tax": 0.4
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1457:2802339907",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0005",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 6,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1458:2872514777",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0010",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 6,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1459:2254860548",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0015",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 3,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1460:4253701664",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0020",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 7,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1461:3452173986",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0025",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1462:3748377654",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0030",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1463:1698722897",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0035",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 6,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1464:317404101",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0040",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1465:3452173986",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0045",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1466:2202280711",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0050",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1467:2872514777",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0055",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 6,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1468:970640341",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0060",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 4,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1469:970640341",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0065",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 4,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1470:2072690544",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0070",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1471:3452173986",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0075",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1472:2295000766",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0080",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 7,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1473:2202280711",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0085",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1474:3452173986",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0090",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1475:2254860548",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0095",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 3,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1476:4253701664",
+      "tick": 64,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0100",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 7,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:64:1477:1410073358",
+      "tick": 64,
+      "type": "CENTRAL_BANK_POLICY",
+      "actor_id": "central_bank",
+      "payload": {
+        "from": 4,
+        "to": 4.25,
+        "inflation": 5.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1478:429756201",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0001",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1479:3966124376",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0006",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1480:3645294284",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0011",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 9,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1481:3091609806",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0016",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1482:1334705256",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0021",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1483:2169197017",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0026",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 6,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1484:1978396674",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0031",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 5,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1485:1978396674",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0036",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 5,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1486:2169197017",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0041",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 6,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1487:3091609806",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0046",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1488:1073877653",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0051",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 8,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1489:1073877653",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0056",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 8,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1490:3966124376",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0061",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1491:429756201",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0066",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1492:2603567694",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0071",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 5,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1493:2169197017",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0076",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 6,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1494:1474393480",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0081",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1495:195536330",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0086",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1496:3645294284",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0091",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 9,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:65:1497:1474393480",
+      "tick": 65,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0096",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1498:677115119",
+      "tick": 66,
+      "type": "NEED_DISCOVERED",
+      "actor_id": "observatory",
+      "payload": {
+        "id": "need:66:information",
+        "type": "information",
+        "severity": 0.65,
+        "status": "addressed",
+        "created_tick": 66,
+        "district": "logistics",
+        "evidence": "Observed information pressure at tick 66"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1499:937875354",
+      "tick": 66,
+      "type": "BUILDING_COMPLETED",
+      "actor_id": "company:16",
+      "payload": {
+        "building_id": "building:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1500:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0003",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1501:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0025",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1502:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0036",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1503:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0047",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1504:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0050",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1505:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0069",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1506:3571976512",
+      "tick": 66,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0094",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1507:2320411823",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0002",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1508:29174671",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0007",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1509:896715698",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0012",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 3,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1510:685322489",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0017",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 8,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1511:887920628",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0022",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 7,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1512:3933012106",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0027",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 9,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1513:29174671",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0032",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1514:2320411823",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0037",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1515:315163541",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0042",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1516:3001959029",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0047",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 4,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1517:3933012106",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0052",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 9,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1518:887920628",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0057",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 7,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1519:685322489",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0062",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 8,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1520:896715698",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0067",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 3,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1521:3989191178",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0072",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 5,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1522:141000462",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0077",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 9,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1523:1471332703",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0082",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 6,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1524:3639132859",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0087",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1525:3622518146",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0092",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 5,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:66:1526:669764562",
+      "tick": 66,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0097",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1527:2127861972",
+      "tick": 67,
+      "type": "COMPANY_FOUNDED",
+      "actor_id": "founder:0059",
+      "payload": {
+        "company_id": "company:17",
+        "sector": "information",
+        "capital": 379
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1528:167762220",
+      "tick": 67,
+      "type": "CONSTRUCTION_STARTED",
+      "actor_id": "company:17",
+      "payload": {
+        "building_id": "building:17",
+        "type": "company_hq"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1529:3044520845",
+      "tick": 67,
+      "type": "INNOVATION_CREATED",
+      "actor_id": "founder:0059",
+      "payload": {
+        "id": "innovation:information:67",
+        "name": "Information Works",
+        "need_id": "need:66:information",
+        "sector": "information",
+        "inputs": [
+          "capital",
+          "labor"
+        ],
+        "output": "information_service",
+        "owner_id": "company:17",
+        "created_tick": 67,
+        "version": 1
+      },
+      "causes": [
+        "need:66:information"
+      ],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1530:3571976512",
+      "tick": 67,
+      "type": "JOB_ACCEPTED",
+      "actor_id": "founder:0011",
+      "payload": {
+        "company_id": "company:16"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1531:3236568631",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0003",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 8,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1532:1239048909",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0008",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1533:703622428",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0013",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 3,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1534:1046590831",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0018",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 6,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1535:321319164",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0023",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 7,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1536:2620757412",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0028",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 7,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1537:1326331463",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0033",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 8,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1538:637251827",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0038",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1539:1046590831",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0043",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 6,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1540:703622428",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0048",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 3,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1541:3026457805",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0053",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1542:1941277118",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0058",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1543:2056102964",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0063",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1544:1919298237",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0068",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 8,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1545:2431687489",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0073",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 4,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1546:701674945",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0078",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 8,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1547:1941277118",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0083",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1548:3026457805",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0088",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1549:2529672719",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0093",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 6,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:67:1550:3960127059",
+      "tick": 67,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0098",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1551:262038848",
+      "tick": 68,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0015",
+      "payload": {
+        "company_id": "company:3",
+        "salary": 5,
+        "tax": 0.4
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1552:3692067942",
+      "tick": 68,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0021",
+      "payload": {
+        "company_id": "company:14",
+        "salary": 4,
+        "tax": 0.32
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1553:167601919",
+      "tick": 68,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0071",
+      "payload": {
+        "company_id": "company:13",
+        "salary": 5,
+        "tax": 0.4
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1554:2592284002",
+      "tick": 68,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0080",
+      "payload": {
+        "company_id": "company:13",
+        "salary": 6,
+        "tax": 0.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1555:36241385",
+      "tick": 68,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0095",
+      "payload": {
+        "company_id": "company:11",
+        "salary": 4,
+        "tax": 0.32
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1556:1882797897",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0004",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1557:2529672719",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0009",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 6,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1558:999331732",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0014",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 3,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1559:3250107967",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0019",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1560:1698722897",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0024",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 6,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1561:896715698",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0029",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 3,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1562:2788895454",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0034",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 9,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1563:3419407192",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0039",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1564:315163541",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0044",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1565:3639132859",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0049",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1566:153573197",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0054",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 8,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1567:3528677711",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0059",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1568:685322489",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0064",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 8,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1569:1919298237",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0069",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 8,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1570:3639132859",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0074",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1571:315163541",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0079",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1572:3419407192",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0084",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1573:2788895454",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0089",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 9,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1574:1919298237",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0094",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 8,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:68:1575:685322489",
+      "tick": 68,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0099",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 8,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1576:1046590831",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0005",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 6,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1577:637251827",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0010",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1578:1619291920",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0015",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 7,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1579:3026457805",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0020",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1580:2320411823",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0025",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1581:1046590831",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0030",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 6,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1582:1326331463",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0035",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 8,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1583:597795775",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0040",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 6,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1584:483792817",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0045",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1585:2320411823",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0050",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1586:3026457805",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0055",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1587:1619291920",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0060",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 7,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1588:637251827",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0065",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1589:957461683",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0070",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 4,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1590:3625847606",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0075",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 5,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1591:3454687448",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0080",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 3,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1592:1936916889",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0085",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1593:321319164",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0090",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 7,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1594:2166004201",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0095",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 8,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:69:1595:957461683",
+      "tick": 69,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0100",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 4,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1596:868677561",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0001",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1597:2295000766",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0006",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 7,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1598:3454687448",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0011",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 3,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1599:2872514777",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0016",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 6,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1600:1797145846",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0021",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 9,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1601:1619291920",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0026",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 7,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1602:3452173986",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0031",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1603:317404101",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0036",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 9,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1604:3623376706",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0041",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1605:2802339907",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0046",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 6,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1606:2802339907",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0051",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 6,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1607:3623376706",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0056",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1608:1698722897",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0061",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 6,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1609:2202280711",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0066",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1610:3645294284",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0071",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 9,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1611:3250107967",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0076",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1612:2872514777",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0081",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 6,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1613:3454687448",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0086",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 3,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1614:2295000766",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0091",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 7,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:70:1615:868677561",
+      "tick": 70,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0096",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1616:701674945",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0002",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 8,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1617:1239048909",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0007",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1618:2431687489",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0012",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 4,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1619:3236568631",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0017",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 8,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1620:970640341",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0022",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 4,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1621:3790044108",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0027",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 9,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1622:1239048909",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0032",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1623:701674945",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0037",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 8,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1624:1857629996",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0042",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1625:2788895454",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0047",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 9,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1626:3790044108",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0052",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 9,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1627:970640341",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0057",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 4,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1628:3236568631",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0062",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 8,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1629:2431687489",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0067",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 4,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1630:2794592154",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0072",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 7,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1631:1389611019",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0077",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 8,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1632:2056102964",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0082",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 4,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1633:1562394758",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0087",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 8,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1634:4253701664",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0092",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 7,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:71:1635:3873925283",
+      "tick": 71,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0097",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1636:1609383658",
+      "tick": 72,
+      "type": "NEED_DISCOVERED",
+      "actor_id": "observatory",
+      "payload": {
+        "id": "need:72:mobility",
+        "type": "mobility",
+        "severity": 0.74,
+        "status": "open",
+        "created_tick": 72,
+        "district": "residential",
+        "evidence": "Observed mobility pressure at tick 72"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1637:2511320962",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0002",
+      "payload": {
+        "company_id": "company:2",
+        "salary": 7,
+        "tax": 0.56
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1638:4172214589",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0004",
+      "payload": {
+        "company_id": "company:12",
+        "salary": 8,
+        "tax": 0.64
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1639:2527993386",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0005",
+      "payload": {
+        "company_id": "company:1",
+        "salary": 5,
+        "tax": 0.4
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1640:262038848",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0007",
+      "payload": {
+        "company_id": "company:3",
+        "salary": 5,
+        "tax": 0.4
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1641:258728610",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0008",
+      "payload": {
+        "company_id": "company:8",
+        "salary": 6,
+        "tax": 0.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1642:891019315",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0015",
+      "payload": {
+        "company_id": "company:10",
+        "salary": 6,
+        "tax": 0.48
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1643:1385610143",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0017",
+      "payload": {
+        "company_id": "company:8",
+        "salary": 4,
+        "tax": 0.32
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1644:1189608171",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0027",
+      "payload": {
+        "company_id": "company:5",
+        "salary": 7,
+        "tax": 0.56
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1645:3970175727",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0031",
+      "payload": {
+        "company_id": "company:12",
+        "salary": 7,
+        "tax": 0.56
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1646:3552994863",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0049",
+      "payload": {
+        "company_id": "company:9",
+        "salary": 7,
+        "tax": 0.56
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1647:3622248794",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0062",
+      "payload": {
+        "company_id": "company:8",
+        "salary": 8,
+        "tax": 0.64
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1648:3622248794",
+      "tick": 72,
+      "type": "WORK_SHIFT",
+      "actor_id": "founder:0071",
+      "payload": {
+        "company_id": "company:8",
+        "salary": 8,
+        "tax": 0.64
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1649:3184090840",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0003",
+      "payload": {
+        "company_id": "company:13",
+        "amount": 3,
+        "innovation_id": "innovation:housing:43"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1650:2034431067",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0008",
+      "payload": {
+        "company_id": "company:8",
+        "amount": 4,
+        "innovation_id": "innovation:security:19"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1651:2744139766",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0013",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 9,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1652:3419407192",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0018",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1653:3960127059",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0023",
+      "payload": {
+        "company_id": "company:7",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1654:703622428",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0028",
+      "payload": {
+        "company_id": "company:6",
+        "amount": 3,
+        "innovation_id": "innovation:goods:13"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1655:257291672",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0033",
+      "payload": {
+        "company_id": "company:14",
+        "amount": 5,
+        "innovation_id": "innovation:goods:49"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1656:1794588594",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0038",
+      "payload": {
+        "company_id": "company:15",
+        "amount": 5,
+        "innovation_id": "innovation:security:55"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1657:3419407192",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0043",
+      "payload": {
+        "company_id": "company:9",
+        "amount": 7,
+        "innovation_id": "innovation:energy:25"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1658:2744139766",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0048",
+      "payload": {
+        "company_id": "company:4",
+        "amount": 9,
+        "innovation_id": "innovation:housing:7"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1659:2620757412",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0053",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 7,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1660:315163541",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0058",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1661:483792817",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0063",
+      "payload": {
+        "company_id": "company:3",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1662:4069953158",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0068",
+      "payload": {
+        "company_id": "company:2",
+        "amount": 5,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1663:1143258004",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0073",
+      "payload": {
+        "company_id": "company:10",
+        "amount": 6,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1664:2818282682",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0078",
+      "payload": {
+        "company_id": "company:11",
+        "amount": 9,
+        "innovation_id": "innovation:information:31"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1665:315163541",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0083",
+      "payload": {
+        "company_id": "company:5",
+        "amount": 7,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1666:2620757412",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0088",
+      "payload": {
+        "company_id": "company:16",
+        "amount": 7,
+        "innovation_id": "innovation:energy:61"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1667:999331732",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0093",
+      "payload": {
+        "company_id": "company:12",
+        "amount": 3,
+        "innovation_id": "innovation:mobility:37"
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1668:3472037669",
+      "tick": 72,
+      "type": "MARKET_PURCHASE",
+      "actor_id": "founder:0098",
+      "payload": {
+        "company_id": "company:1",
+        "amount": 3,
+        "innovation_id": null
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "evt:72:1669:3690741990",
+      "tick": 72,
+      "type": "CENTRAL_BANK_POLICY",
+      "actor_id": "central_bank",
+      "payload": {
+        "from": 4.25,
+        "to": 4.5,
+        "inflation": 5.81
+      },
+      "causes": [],
+      "ts": "2026-09-14T00:00:00.000Z"
+    }
+  ],
+  "institutions": {
+    "central_bank": {
+      "policy_rate": 4.5,
+      "inflation": 5.81,
+      "money_supply": 107203.85,
+      "status": "stable"
+    },
+    "government": {
+      "treasury": 5293.679999999961,
+      "tax_rate": 0.08
+    },
+    "justice": {
+      "open_cases": 0
+    },
+    "police": {
+      "active": 8
+    }
+  },
+  "metrics": {
+    "population": 100,
+    "companies": 17,
+    "buildings": 17,
+    "unemployment": 0.3,
+    "crime_rate": 0
+  },
+  "agent_status": "fallback"
+}

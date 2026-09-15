@@ -1,0 +1,23 @@
+/* Cinematic world controls and responsive stage. */
+.world-stage:before,.world-stage:after{display:none}
+.world-shell{border-radius:0 0 18px 18px}
+.world-controls{flex-wrap:wrap;right:12px;pointer-events:none}
+.world-controls button{pointer-events:auto;border-radius:5px;box-shadow:0 3px 12px #0004}
+.world-controls button[aria-pressed=true]{border-color:#dec581;color:#ffe8b3;background:#374139}
+.world-stage canvas#liveCanvas{cursor:grab;outline-offset:-3px}
+.world-stage canvas#liveCanvas:focus-visible{outline:2px solid #e3c985}
+.world-stage:fullscreen{width:100vw;height:100vh}
+.world-stage:fullscreen canvas#liveCanvas{width:100vw;height:100vh}
+.world-institutions{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:12px;border-bottom:1px solid #29404a}
+.world-institutions button{background:#17282d;border:1px solid #4c5c58;color:#d8d4b8;border-radius:4px;padding:8px 2px;font:10px system-ui;cursor:pointer}
+.world-institutions button:hover{background:#33413a;border-color:#d0b57d}
+.mini-shell{border-radius:6px;pointer-events:auto}
+.mini-shell canvas{cursor:crosshair}
+.world-truth{border-radius:5px}
+.world-mode small{line-height:1.5}
+.live-inspector h3{text-transform:capitalize;font-size:25px;overflow-wrap:anywhere}
+.world-card .world-leaders strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:1400px){.world-shell{grid-template-columns:minmax(0,1fr) 310px}.world-stage,.world-stage canvas#liveCanvas{height:720px;min-height:720px}}
+@media(max-width:640px){.world-controls{left:10px;top:10px;gap:4px}.world-controls button{min-width:34px;padding:0 7px;height:34px}.world-controls button:nth-child(3){display:block}.mini-shell{left:10px;bottom:10px;width:112px;padding:6px}.mini-shell canvas{height:70px}.mini-shell span{font-size:7px}.world-hud>div{padding:10px}.agent-panel{position:fixed;top:70px;max-height:calc(100dvh - 90px)}.world-institutions button{padding:10px 4px}}
+
+.world-enter{display:inline-flex;align-items:center;gap:24px;color:#efdbab;border:1px solid #746d50;border-radius:5px;padding:11px 15px;text-decoration:none;font:600 12px system-ui;background:#27342d}.world-enter:hover{background:#3b4636;border-color:#cabb87}

@@ -26,3 +26,10 @@ For the initial public release, open a GitHub security advisory if the repositor
 ## Future external-value boundary
 
 A move from experimental Genesis units to any externally transferable or tradeable representation requires a separate threat model, independent audit, key-management design, consensus/settlement analysis and legal/regulatory review. Passing the Genesis test suite is not evidence that such a system is safe for real funds.
+
+
+## Autonomous World trust boundary
+
+CymScript is data, not executable user code. Reports that demonstrate arbitrary-code execution, cross-Citizen strategy modification, unauthorized world advancement, balance mutation outside deterministic settlement, or exposure of OAuth/session secrets are security-sensitive.
+
+The public `/api/world`, `/api/world/news`, and `/api/world/why/*` endpoints are observation-only. `/api/agent/*` requires the owning session. World advancement requires a scheduler credential or the repository's remote-D1 automation.
