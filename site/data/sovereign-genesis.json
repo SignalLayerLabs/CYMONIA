@@ -42,6 +42,10 @@
           "sleepPressure": 19.83614347409457,
           "health": 100,
           "ageMinutes": 15768000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -95,6 +99,10 @@
           "sleepPressure": 16.82623526547104,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -148,6 +156,10 @@
           "sleepPressure": 10.960155877983198,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -201,6 +213,10 @@
           "sleepPressure": 17.49910103273578,
           "health": 100,
           "ageMinutes": 16293600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -254,6 +270,10 @@
           "sleepPressure": 14.339395030401647,
           "health": 100,
           "ageMinutes": 11563200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -307,6 +327,10 @@
           "sleepPressure": 8.263976154848933,
           "health": 100,
           "ageMinutes": 12088800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -360,6 +384,10 @@
           "sleepPressure": 13.994207694195211,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -413,6 +441,10 @@
           "sleepPressure": 6.183212990872562,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -466,6 +498,10 @@
           "sleepPressure": 16.146775325760245,
           "health": 100,
           "ageMinutes": 16819200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -519,6 +555,10 @@
           "sleepPressure": 6.991794395726174,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -572,6 +612,10 @@
           "sleepPressure": 16.478725167689845,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -625,6 +669,10 @@
           "sleepPressure": 6.9038340682163835,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -678,6 +726,10 @@
           "sleepPressure": 7.988099635113031,
           "health": 100,
           "ageMinutes": 12088800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -731,6 +783,10 @@
           "sleepPressure": 11.632480244152248,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -784,6 +840,10 @@
           "sleepPressure": 19.436544912168756,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -837,6 +897,10 @@
           "sleepPressure": 16.711124137509614,
           "health": 100,
           "ageMinutes": 12088800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -890,6 +954,10 @@
           "sleepPressure": 10.01351616694592,
           "health": 100,
           "ageMinutes": 12614400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -943,6 +1011,10 @@
           "sleepPressure": 14.10897349473089,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -996,6 +1068,10 @@
           "sleepPressure": 11.371041493257508,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1049,6 +1125,10 @@
           "sleepPressure": 8.165898531442508,
           "health": 100,
           "ageMinutes": 17344800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1102,6 +1182,10 @@
           "sleepPressure": 6.231516676489264,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1155,6 +1239,10 @@
           "sleepPressure": 14.991576069733128,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1208,6 +1296,10 @@
           "sleepPressure": 19.966121311299503,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1261,6 +1353,10 @@
           "sleepPressure": 8.499460080638528,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1314,6 +1410,10 @@
           "sleepPressure": 11.050394895719364,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1367,6 +1467,10 @@
           "sleepPressure": 16.778207854367793,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1420,6 +1524,10 @@
           "sleepPressure": 13.076126562664285,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1473,6 +1581,10 @@
           "sleepPressure": 17.324038139777258,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1526,6 +1638,10 @@
           "sleepPressure": 7.479836791753769,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1579,6 +1695,10 @@
           "sleepPressure": 18.093622195301577,
           "health": 100,
           "ageMinutes": 12088800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1632,6 +1752,10 @@
           "sleepPressure": 14.111680636415258,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1685,6 +1809,10 @@
           "sleepPressure": 10.793926850892603,
           "health": 100,
           "ageMinutes": 11563200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1738,6 +1866,10 @@
           "sleepPressure": 5.626668157055974,
           "health": 100,
           "ageMinutes": 15242400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1791,6 +1923,10 @@
           "sleepPressure": 13.79381082369946,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1844,6 +1980,10 @@
           "sleepPressure": 12.047407494392246,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1897,6 +2037,10 @@
           "sleepPressure": 7.669524324592203,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -1950,6 +2094,10 @@
           "sleepPressure": 15.727964757243171,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2003,6 +2151,10 @@
           "sleepPressure": 6.985093951225281,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2056,6 +2208,10 @@
           "sleepPressure": 6.71964424662292,
           "health": 100,
           "ageMinutes": 12614400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2109,6 +2265,10 @@
           "sleepPressure": 15.952477749669924,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2162,6 +2322,10 @@
           "sleepPressure": 11.584068906959146,
           "health": 100,
           "ageMinutes": 12088800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2215,6 +2379,10 @@
           "sleepPressure": 18.31656496040523,
           "health": 100,
           "ageMinutes": 15768000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2268,6 +2436,10 @@
           "sleepPressure": 17.19781716936268,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2321,6 +2493,10 @@
           "sleepPressure": 18.603868811624125,
           "health": 100,
           "ageMinutes": 15768000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2374,6 +2550,10 @@
           "sleepPressure": 6.285605932353064,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2427,6 +2607,10 @@
           "sleepPressure": 10.49774433253333,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2480,6 +2664,10 @@
           "sleepPressure": 12.87835570401512,
           "health": 100,
           "ageMinutes": 16819200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2533,6 +2721,10 @@
           "sleepPressure": 7.846657484769821,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2586,6 +2778,10 @@
           "sleepPressure": 17.16932430397719,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2639,6 +2835,10 @@
           "sleepPressure": 14.326705317944288,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2692,6 +2892,10 @@
           "sleepPressure": 10.259837589692324,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2745,6 +2949,10 @@
           "sleepPressure": 12.153544607572258,
           "health": 100,
           "ageMinutes": 15242400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2798,6 +3006,10 @@
           "sleepPressure": 5.183206781512126,
           "health": 100,
           "ageMinutes": 15242400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2851,6 +3063,10 @@
           "sleepPressure": 14.216218569781631,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2904,6 +3120,10 @@
           "sleepPressure": 7.862541743088514,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -2957,6 +3177,10 @@
           "sleepPressure": 11.338530930224806,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3010,6 +3234,10 @@
           "sleepPressure": 10.508659271290526,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3063,6 +3291,10 @@
           "sleepPressure": 19.019860773114488,
           "health": 100,
           "ageMinutes": 12614400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3116,6 +3348,10 @@
           "sleepPressure": 7.52540574176237,
           "health": 100,
           "ageMinutes": 16819200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3169,6 +3405,10 @@
           "sleepPressure": 19.138174476101995,
           "health": 100,
           "ageMinutes": 9460800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3222,6 +3462,10 @@
           "sleepPressure": 19.083665426587686,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3275,6 +3519,10 @@
           "sleepPressure": 15.181721991393715,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3328,6 +3576,10 @@
           "sleepPressure": 14.229852405842394,
           "health": 100,
           "ageMinutes": 16293600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3381,6 +3633,10 @@
           "sleepPressure": 13.939869219902903,
           "health": 100,
           "ageMinutes": 12614400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3434,6 +3690,10 @@
           "sleepPressure": 10.674438490532339,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3487,6 +3747,10 @@
           "sleepPressure": 13.353800040204078,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3540,6 +3804,10 @@
           "sleepPressure": 5.47682473435998,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3593,6 +3861,10 @@
           "sleepPressure": 12.576328568393365,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3646,6 +3918,10 @@
           "sleepPressure": 11.197993725072592,
           "health": 100,
           "ageMinutes": 13140000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3699,6 +3975,10 @@
           "sleepPressure": 19.07128356746398,
           "health": 100,
           "ageMinutes": 15768000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3752,6 +4032,10 @@
           "sleepPressure": 14.458924217615277,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3805,6 +4089,10 @@
           "sleepPressure": 6.776378338690847,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3858,6 +4146,10 @@
           "sleepPressure": 10.47811567899771,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3911,6 +4203,10 @@
           "sleepPressure": 14.5191132533364,
           "health": 100,
           "ageMinutes": 16819200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -3964,6 +4260,10 @@
           "sleepPressure": 12.326194532215595,
           "health": 100,
           "ageMinutes": 12088800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4017,6 +4317,10 @@
           "sleepPressure": 12.97869818052277,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4070,6 +4374,10 @@
           "sleepPressure": 9.55311336205341,
           "health": 100,
           "ageMinutes": 9460800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4123,6 +4431,10 @@
           "sleepPressure": 19.38112153322436,
           "health": 100,
           "ageMinutes": 9460800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4176,6 +4488,10 @@
           "sleepPressure": 9.414322774391621,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4229,6 +4545,10 @@
           "sleepPressure": 17.040676744654775,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4282,6 +4602,10 @@
           "sleepPressure": 13.153188809519634,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4335,6 +4659,10 @@
           "sleepPressure": 13.537123766727746,
           "health": 100,
           "ageMinutes": 15768000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4388,6 +4716,10 @@
           "sleepPressure": 16.21064688428305,
           "health": 100,
           "ageMinutes": 14716800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4441,6 +4773,10 @@
           "sleepPressure": 13.913218358065933,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4494,6 +4830,10 @@
           "sleepPressure": 16.04521769331768,
           "health": 100,
           "ageMinutes": 11037600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4547,6 +4887,10 @@
           "sleepPressure": 7.121227290481329,
           "health": 100,
           "ageMinutes": 17870400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4600,6 +4944,10 @@
           "sleepPressure": 17.512514787958935,
           "health": 100,
           "ageMinutes": 17344800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4653,6 +5001,10 @@
           "sleepPressure": 15.77525349915959,
           "health": 100,
           "ageMinutes": 16293600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4706,6 +5058,10 @@
           "sleepPressure": 6.74159656628035,
           "health": 100,
           "ageMinutes": 9986400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4759,6 +5115,10 @@
           "sleepPressure": 8.42273879563436,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4812,6 +5172,10 @@
           "sleepPressure": 12.690530437976122,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4865,6 +5229,10 @@
           "sleepPressure": 12.304877386195585,
           "health": 100,
           "ageMinutes": 13665600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4918,6 +5286,10 @@
           "sleepPressure": 13.7132897390984,
           "health": 100,
           "ageMinutes": 12614400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -4971,6 +5343,10 @@
           "sleepPressure": 11.303085670806468,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5024,6 +5400,10 @@
           "sleepPressure": 14.518968812189996,
           "health": 100,
           "ageMinutes": 11563200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5077,6 +5457,10 @@
           "sleepPressure": 5.626469006529078,
           "health": 100,
           "ageMinutes": 10512000,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5130,6 +5514,10 @@
           "sleepPressure": 16.9312278192956,
           "health": 100,
           "ageMinutes": 17344800,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5183,6 +5571,10 @@
           "sleepPressure": 16.36084134806879,
           "health": 100,
           "ageMinutes": 12614400,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5236,6 +5628,10 @@
           "sleepPressure": 14.676635232754052,
           "health": 100,
           "ageMinutes": 16293600,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5289,6 +5685,10 @@
           "sleepPressure": 14.787270319648087,
           "health": 100,
           "ageMinutes": 14191200,
+          "temperatureC": 36.6,
+          "exposure": null,
+          "reproductiveRole": "non_gestating",
+          "pregnancy": null,
           "diseases": 0,
           "injuries": 0
         },
@@ -5329,13 +5729,16 @@
       {
         "id": "obj:endowment:food",
         "kind": "resource_bundle",
+        "material": "food",
         "quantity": 2400,
+        "massPerUnitKg": 0.25,
         "holderId": "commons:genesis",
         "position": {
           "x": 50,
           "y": 50
         },
         "condition": 1,
+        "properties": null,
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5343,13 +5746,16 @@
       {
         "id": "obj:endowment:water-vessels",
         "kind": "container_bundle",
+        "material": "fiber",
         "quantity": 100,
+        "massPerUnitKg": 0.4,
         "holderId": "commons:genesis",
         "position": {
           "x": 50,
           "y": 50
         },
         "condition": 1,
+        "properties": null,
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5357,13 +5763,16 @@
       {
         "id": "obj:endowment:timber",
         "kind": "raw_material",
+        "material": "timber",
         "quantity": 600,
+        "massPerUnitKg": 1,
         "holderId": "commons:genesis",
         "position": {
           "x": 51,
           "y": 50
         },
         "condition": 1,
+        "properties": null,
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5371,13 +5780,16 @@
       {
         "id": "obj:endowment:stone",
         "kind": "raw_material",
+        "material": "stone",
         "quantity": 400,
+        "massPerUnitKg": 1,
         "holderId": "commons:genesis",
         "position": {
           "x": 49,
           "y": 50
         },
         "condition": 1,
+        "properties": null,
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5385,13 +5797,19 @@
       {
         "id": "obj:endowment:shelter:01",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 55,
           "y": 50
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5399,13 +5817,19 @@
       {
         "id": "obj:endowment:shelter:02",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 55.282754963085075,
           "y": 53.05
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5413,13 +5837,19 @@
       {
         "id": "obj:endowment:shelter:03",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 53.6,
           "y": 56.23538290724796
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5427,13 +5857,19 @@
       {
         "id": "obj:endowment:shelter:04",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 50,
           "y": 55
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5441,13 +5877,19 @@
       {
         "id": "obj:endowment:shelter:05",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 46.95,
           "y": 55.282754963085075
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5455,13 +5897,19 @@
       {
         "id": "obj:endowment:shelter:06",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 43.76461709275204,
           "y": 53.6
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5469,13 +5917,19 @@
       {
         "id": "obj:endowment:shelter:07",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 45,
           "y": 50
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5483,13 +5937,19 @@
       {
         "id": "obj:endowment:shelter:08",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 44.717245036914925,
           "y": 46.95
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5497,13 +5957,19 @@
       {
         "id": "obj:endowment:shelter:09",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 46.4,
           "y": 43.76461709275204
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5511,13 +5977,19 @@
       {
         "id": "obj:endowment:shelter:10",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 50,
           "y": 45
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5525,13 +5997,19 @@
       {
         "id": "obj:endowment:shelter:11",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 53.05,
           "y": 44.717245036914925
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5539,13 +6017,19 @@
       {
         "id": "obj:endowment:shelter:12",
         "kind": "temporary_shelter",
+        "material": "fiber",
         "quantity": 1,
+        "massPerUnitKg": 20,
         "holderId": "commons:genesis",
         "position": {
           "x": 56.23538290724795,
           "y": 46.4
         },
         "condition": 1,
+        "properties": {
+          "thermalProtection": 0.72,
+          "precipitationProtection": 0.86
+        },
         "provenance": {
           "type": "GENESIS_ENDOWMENT"
         }
@@ -5653,6 +6137,7 @@
         "era": "Observer Era 1 — Genesis: the first 100 inhabitants awaken"
       }
     ],
+    "recentLedger": [],
     "ledgerHead": "4d5a8a57"
   }
 }
