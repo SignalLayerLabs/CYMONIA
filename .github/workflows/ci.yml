@@ -75,7 +75,7 @@ jobs:
 
   deploy-pages:
     name: Deploy Observer Pages
-    needs: [sovereign-test, browser-smoke]
+    needs: [deploy-world]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency:
