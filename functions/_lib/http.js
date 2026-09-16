@@ -1,5 +1,5 @@
 import { AUTH_COOKIE_NAMES, hashSecretToken, parseCookies } from "./auth.js";
-import { getSessionActor } from "./store.js";
+import { getSessionActor } from "./identity.js";
 
 export function json(data, status = 200, extraHeaders = {}) {
   const headers = new Headers({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extraHeaders });
@@ -50,24 +50,14 @@ export async function requireActor(request, env) {
 }
 
 export function safeReturnTo(value) {
-  const candidate = String(value || "/#participate");
-  if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\")) return "/#participate";
+  const candidate = String(value || "/#world");
+  if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\")) return "/#world";
   return candidate.slice(0, 500);
 }
 
 export function errorResponse(error) {
   const status = Number(error?.status) || ({
-    contract_not_found: 404,
-    company_not_found: 404,
     authentication_required: 401,
-    contract_already_claimed: 409,
-    contract_not_claimable: 409,
-    contract_not_fundable: 409,
-    contract_not_owned_by_contributor: 403,
-    insufficient_earned_cym: 409,
-    treasury_insufficient_or_contract_invalid: 409,
-    treasury_steward_required: 403,
-    company_control_required: 403,
   }[error?.message] || (error instanceof TypeError || error instanceof RangeError ? 400 : 500));
   const message = status >= 500 ? "internal_error" : String(error?.message || "request_failed");
   if (status >= 500) console.error("CYMONIA API:", error);

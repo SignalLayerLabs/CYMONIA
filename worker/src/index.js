@@ -78,12 +78,12 @@ export function splitSnapshot(serialized,maxCodeUnits=SNAPSHOT_CHUNK_CODE_UNITS)
 export function joinSnapshot(parts){return parts.join('');}
 export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES){
   let target=worldMinuteAt(world,nowMs),recovered=false,skippedWorldMinutes=0;
-  const pristine=world.clock.worldMinute===0&&world.actions.length===0&&world.ledger.length<=2;
-  if(pristine&&target>maxCatchup){
-    skippedWorldMinutes=target;
-    world.clock.realEpochMs=nowMs-REAL_MS_PER_WORLD_MINUTE;
-    appendEvent(world,'RUNTIME_GENESIS_RECOVERED','world',{skippedWorldMinutes,reason:'unpersisted_runtime_outage'},[],0);
-    target=1;recovered=true;
+  const lag=Math.max(0,target-world.clock.worldMinute);
+  if(lag>maxCatchup){
+    skippedWorldMinutes=lag-1;
+    world.clock.realEpochMs=nowMs-(world.clock.worldMinute+1)*REAL_MS_PER_WORLD_MINUTE;
+    appendEvent(world,'RUNTIME_LAG_REBASED','world',{skippedWorldMinutes,reason:'runtime_outage'},[],world.clock.worldMinute);
+    target=world.clock.worldMinute+1;recovered=true;
   }
   const next=Math.min(target,world.clock.worldMinute+maxCatchup);
   const boundedNow=world.clock.realEpochMs+next*REAL_MS_PER_WORLD_MINUTE;
@@ -108,8 +108,11 @@ export class SovereignWorld {
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
         ensureRuntime(this.world);
         await this.persist({forceSeal:true});
-      }else ensureRuntime(this.world);
-      await this.ensureAlarm();
+      }else{
+        ensureRuntime(this.world);
+        if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
+      }
+      await this.ensureAlarm(true);
     });
   }
   initializeSQLite(){
@@ -166,9 +169,10 @@ export class SovereignWorld {
     if(!world||world.version!==2||!Array.isArray(world.citizens)||!Array.isArray(world.ledger))throw new Error('sovereign_world_state_invalid');
     return world;
   }
-  async ensureAlarm(){
+  async ensureAlarm(force=false){
     const current=await this.ctx.storage.getAlarm();
-    if(current===null)await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+    const next=Date.now()+ALARM_MS;
+    if(force||current===null||current< Date.now()||current>next+ALARM_MS)await this.ctx.storage.setAlarm(next);
   }
   persist(options={}){
     const pending=this.persistChain.then(()=>this.persistSnapshot(options));
@@ -204,22 +208,22 @@ export class SovereignWorld {
   }
   async tick(){
     await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
-    advanceWorldBounded(this.world,Date.now());
-    await this.processCognition(1);
+    const progress=advanceWorldBounded(this.world,Date.now());
     await this.persist();
     this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
+    if(!progress.recovered&&await this.processCognition(1))await this.persist();
   }
   async alarm(){await this.tick();}
   async processCognition(limit){
-    if(!this.env.AI?.run)return;
+    if(!this.env.AI?.run)return false;
     const budget=resetDailyBudget(this.world),dailyLimit=configuredDailyBudget(this.env),runtime=ensureRuntime(this.world);
-    if(Date.now()-Number(budget.lastFailureRealMs||0)<AI_RETRY_COOLDOWN_MS)return;
+    if(Date.now()-Number(budget.lastFailureRealMs||0)<AI_RETRY_COOLDOWN_MS)return false;
     if(budget.calls>=dailyLimit){
       if(budget.lastExhaustedDay!==budget.day){
         budget.lastExhaustedDay=budget.day;
         appendEvent(this.world,'COGNITION_DEFERRED','world',{reason:'ai_budget_exhausted',dailyLimit},[],this.world.clock.worldMinute);
       }
-      return;
+      return false;
     }
     const queue=this.world.cognitionQueue.sort((a,b)=>b.priority-a.priority);
     let used=0;
@@ -241,6 +245,7 @@ export class SovereignWorld {
       used++;
     }
     runtime.aiBudget=budget;
+    return used>0;
   }
   broadcast(message){
     const text=JSON.stringify(message);

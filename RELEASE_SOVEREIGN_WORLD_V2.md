@@ -25,6 +25,6 @@ This release replaces the dashboard-centric autonomous-economy prototype with a 
 - Human-linked avatar with equal physical vulnerability and no privileged Earth knowledge.
 - Durable Object SQLite single writer, alarms, sealed checkpoints and WebSocket live delivery.
 - Game-only Observer UI with Society History and causal `WHY?`.
-- v1 scheduled economy demoted to manual historical verification.
+- The repository contains only the Sovereign World runtime; legacy economy and dashboard paths are removed.
 
 See the v2 design specification and architecture documentation for the full contract.

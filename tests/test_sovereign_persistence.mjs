@@ -12,12 +12,22 @@ test('large canonical snapshots round-trip through rows safely below Cloudflare 
   for(const part of parts)assert.ok(Buffer.byteLength(part,'utf8')<1024*1024,`chunk too large: ${Buffer.byteLength(part,'utf8')}`);
 });
 
-test('stalled pristine Genesis recovers without an unbounded catch-up',()=>{
+test('stalled Genesis recovers without an unbounded catch-up',()=>{
   const now=Date.now(),world=createSovereignGenesis({realEpochMs:now-60_000_000});
   const result=advanceWorldBounded(world,now,360);
   assert.equal(result.recovered,true);
   assert.ok(result.skippedWorldMinutes>360);
   assert.equal(world.clock.worldMinute,1);
   assert.ok(world.citizens.some(c=>c.currentActionId));
-  assert.ok(world.ledger.some(e=>e.type==='RUNTIME_GENESIS_RECOVERED'));
+  assert.ok(world.ledger.some(e=>e.type==='RUNTIME_LAG_REBASED'));
+});
+
+test('an evolved world rebases a long runtime outage and advances one safe minute',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});
+  advanceWorldBounded(world,88_000,360);
+  const before=world.clock.worldMinute;
+  const result=advanceWorldBounded(world,40_000_000,360);
+  assert.equal(result.recovered,true);
+  assert.equal(world.clock.worldMinute,before+1);
+  assert.ok(result.skippedWorldMinutes>360);
 });

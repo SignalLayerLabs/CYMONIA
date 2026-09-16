@@ -1,35 +1,22 @@
 # Security Policy
 
-## Genesis security boundary
+CYMONIA is a research world, not a custody system, wallet, payment processor, exchange or production financial network. Do not connect it to real funds.
 
-CYMONIA Genesis is a research simulator. It is **not** a custody system, wallet, payment processor, exchange, smart contract or production financial network.
-
-Do not connect this reference implementation directly to real funds.
-
-## What is security-sensitive
+## Security-sensitive areas
 
 Please report issues involving:
 
-- Constitution identity bypass;
-- monetary issuance outside constitutional bounds;
-- ledger tampering that passes verification;
-- negative balances or supply-accounting violations;
-- nondeterministic state transitions from identical inputs;
-- GitHub Actions permissions that exceed what is required;
-- arbitrary code execution through economic state data;
-- dashboard injection from generated data.
+- unauthorized Durable Object world advancement or state mutation;
+- bypasses of material, biological or knowledge invariants;
+- forged world history, checkpoints or WebSocket messages;
+- GitHub OAuth, D1 session or avatar ownership bypasses;
+- secret exposure, arbitrary code execution or injection through world data;
+- GitHub Actions or Cloudflare permissions beyond what deployment requires.
 
 ## Reporting
 
-For the initial public release, open a GitHub security advisory if the repository supports private vulnerability reporting. If private reporting is not enabled, open an issue containing only enough information to establish that a security problem exists, without publishing an exploit against any future production deployment.
+Use a private GitHub security advisory when available. Otherwise contact the maintainers privately with enough detail to reproduce the issue without publishing an exploit.
 
-## Future external-value boundary
+## Trust boundary
 
-A move from experimental Genesis units to any externally transferable or tradeable representation requires a separate threat model, independent audit, key-management design, consensus/settlement analysis and legal/regulatory review. Passing the Genesis test suite is not evidence that such a system is safe for real funds.
-
-
-## Autonomous World trust boundary
-
-CymScript is data, not executable user code. Reports that demonstrate arbitrary-code execution, cross-Citizen strategy modification, unauthorized world advancement, balance mutation outside deterministic settlement, or exposure of OAuth/session secrets are security-sensitive.
-
-The public `/api/world`, `/api/world/news`, and `/api/world/why/*` endpoints are observation-only. `/api/agent/*` requires the owning session. World advancement requires a scheduler credential or the repository's remote-D1 automation.
+The Observer is read-oriented. Human actions enter through authenticated intent routes and are checked by the canonical world. Workers AI can suggest cognition, but cannot directly write world state or grant privileged knowledge.
