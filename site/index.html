@@ -8,6 +8,8 @@
   <title>CYMONIA · Sovereign World</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="sovereign-world.css">
+  <link rel="stylesheet" href="medieval-world.css">
+  <link rel="preload" href="assets/medieval-atlas.png" as="image">
 </head>
 <body>
   <main id="game" aria-label="CYMONIA Sovereign World">
@@ -26,6 +28,8 @@
       </div>
     </header>
 
+    <div class="world-label"><small>A SOVEREIGN CIVILIZATION</small><h1>The living valley</h1><p>Every life leaves a trace.</p></div>
+
     <aside id="activityRail" class="activity-rail parchment-panel" aria-label="World activity">
       <div class="rail-title"><div><small>LIVE CHRONICLE</small><strong>WORLD EVENTS</strong></div><button id="toggleRail" aria-label="Collapse activity">‹</button></div>
       <div id="activityList" class="activity-list"></div>
@@ -39,13 +43,13 @@
     <div class="mini-map-shell wood-panel"><div class="mini-title"><span>WORLD MAP</span><small id="miniMode">OBSERVER</small></div><canvas id="miniMap" width="240" height="148" aria-label="World minimap"></canvas></div>
 
     <nav class="game-dock wood-panel" aria-label="Observer controls">
-      <button id="historyOpen"><span>⌛</span><b>Chronicle</b></button>
-      <button id="followSelected"><span>◎</span><b>Follow</b></button>
-      <button id="centerWorld"><span>◇</span><b>Center</b></button>
-      <button id="overlayKnowledge"><span>◌</span><b>Knowledge</b></button>
-      <button id="overlayRelations"><span>⟷</span><b>Relations</b></button>
-      <button id="fullscreenWorld"><span>⛶</span><b>Fullscreen</b></button>
-      <button id="agentOpen"><span>✦</span><b>My Avatar</b></button>
+      <button id="historyOpen"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v17H5zM8 7h8M8 11h8M8 15h5"/></svg></span><b>Chronicle</b></button>
+      <button id="followSelected"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></span><b>Follow</b></button>
+      <button id="centerWorld"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 10 10-10 10L2 12zM12 7v10M7 12h10"/></svg></span><b>Center</b></button>
+      <button id="overlayKnowledge"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5q5-3 9 0 4-3 9 0v15q-5-3-9 0-4-3-9 0zM12 5v15"/></svg></span><b>Knowledge</b></button>
+      <button id="overlayRelations"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="19" cy="19" r="3"/><path d="m8 11 8-5M8 13l8 5"/></svg></span><b>Relations</b></button>
+      <button id="fullscreenWorld"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></span><b>Fullscreen</b></button>
+      <button id="agentOpen"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg></span><b>My Avatar</b></button>
     </nav>
 
     <section id="societyHistory" class="game-window parchment-panel history-window" hidden aria-label="Society History">
