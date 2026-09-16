@@ -30,6 +30,13 @@ test('Workers AI cognition has a hard daily budget and never falls back to fabri
   assert.doesNotMatch(worker,/processCognition\(2\)/);
 });
 
+test('public state reads never wait for Workers AI before returning movement state',()=>{
+  const fetchBody=worker.slice(worker.indexOf('async fetch(request){'),worker.indexOf('\n  }\n}',worker.indexOf('async fetch(request){')));
+  assert.doesNotMatch(fetchBody,/await this\.tick\(\)/);
+  assert.match(fetchBody,/advanceWorldTo\(this\.world,Date\.now\(\)\)/);
+  assert.match(worker,/AI_CALL_TIMEOUT_MS/);
+});
+
 test('AI schema includes emergent claims and biological reproduction primitives',()=>{
   assert.match(worker,/CLAIM/);
   assert.match(worker,/REPRODUCE/);
