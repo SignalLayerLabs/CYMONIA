@@ -15,7 +15,8 @@ import {
 } from '../../world/index.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
-const ALARM_MS=1000;
+const ALARM_MS=10_000;
+const PERSIST_INTERVAL_WORLD_MINUTES=60;
 const AI_CALLS_PER_REAL_DAY=200;
 const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
@@ -100,6 +101,7 @@ export class SovereignWorld {
     this.persistSequence=0;
     this.persistChain=Promise.resolve();
     this.lastPersistedGeneration=null;
+    this.lastPersistedWorldMinute=null;
     this.clients=new Set();
     ctx.blockConcurrencyWhile(async()=>{
       this.initializeSQLite();
@@ -112,6 +114,7 @@ export class SovereignWorld {
         ensureRuntime(this.world);
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
+      this.lastPersistedWorldMinute=this.world.clock.worldMinute;
       await this.ensureAlarm(true);
     });
   }
@@ -205,13 +208,33 @@ export class SovereignWorld {
       }
     });
     this.lastPersistedGeneration=generation;
+    this.lastPersistedWorldMinute=worldMinute;
   }
   async tick(){
     await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+
     const progress=advanceWorldBounded(this.world,Date.now());
-    await this.persist();
-    this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
-    if(!progress.recovered&&await this.processCognition(1))await this.persist();
+
+    const lastPersisted=Number(
+      this.lastPersistedWorldMinute ?? this.world.clock.worldMinute
+    );
+
+    const checkpointDue=
+      this.world.clock.worldMinute-lastPersisted >=
+      PERSIST_INTERVAL_WORLD_MINUTES;
+
+    if(checkpointDue){
+      await this.persist();
+    }
+
+    this.broadcast({
+      type:'world_delta',
+      state:publicWorld(this.world,Date.now())
+    });
+
+    if(!progress.recovered&&await this.processCognition(1)){
+      await this.persist();
+    }
   }
   async alarm(){await this.tick();}
   async processCognition(limit){
