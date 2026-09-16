@@ -1,5 +1,0 @@
-Original prompt: Revamp CYMONIA graphics with original medieval RTS sprites, environment and simulator UI inspired by Age of Empires. Use Marginal, and deliver push and PR before credit is exhausted.
-
-2026-09-16: Isolated clone from current origin/main to preserve unrelated local work. Marginal enabled, live session hooks verified in Shadow mode; enforcement not eligible. Baseline 81 tests pass. Generated original transparent 16-sprite atlas and meadow material with built-in ImageGen. Shared isometric art module for Pixi and Canvas; canonical depletion/collapse/progress contract tests pass. Continuous seeded terrain, depth-sorted trees/structures/citizens, readable moonlight and brass/parchment responsive shell. Browser verification in progress.
-
-Final review corrected atlas-based edge culling and alpha-aware selection; knowledge overlay works in both renderers. Original desktop/mobile Genesis screenshots saved under docs/art. User requested immediate publication; no further scope added.
