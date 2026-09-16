@@ -1,0 +1,41 @@
+/* CYMONIA · a quiet brass-and-parchment frame around the living landscape. */
+:root{--gold:#d7bd80;--cream:#ece4cb;--wood:#22271f}
+#game{background:#68784d}
+.game-topbar{top:16px;left:20px;right:20px;height:64px;padding:8px 18px;gap:22px;border-color:#b9a47170;border-radius:3px;background:linear-gradient(110deg,#1c251ff5,#292e23ed 48%,#17221ff2);box-shadow:0 6px 24px #0b130f55,inset 0 1px #efddaf22}
+.brand{min-width:178px;padding:0 0 0 35px;position:relative}
+.brand:before{content:'C';position:absolute;left:0;top:0;width:25px;height:34px;padding-top:3px;border:1px solid #c9ac69;border-radius:2px 2px 12px 12px;text-align:center;font:24px Georgia;color:#e2cb91;background:#52614c44}
+.brand b{font-size:22px;font-weight:500;letter-spacing:.14em;color:#eee0b4}
+.brand span{font-size:7px;letter-spacing:.3em;color:#aeb7a1}
+.world-clock{min-width:210px;height:38px;border-color:#d7bd8030;padding-left:20px}
+.world-clock strong{font-size:12px;font-weight:400;color:#ede4c9}
+.world-clock small{font-size:7px;margin-top:4px;color:#aabb9e}
+.top-metrics span{min-width:83px;padding:4px 16px;border-color:#c8b57c2b}
+.top-metrics b{font-size:16px;font-weight:400;color:#e9e2ca}
+.top-metrics small{font-size:7px;color:#a9b19b;letter-spacing:.14em}
+.activity-rail{top:104px;left:20px;width:238px;border:1px solid #99834b99;background:linear-gradient(130deg,#e5d9bce8,#c4b58cdb);box-shadow:0 8px 28px #17201430,inset 0 0 0 3px #ede3c329}
+.rail-title{height:51px;padding-left:14px;background:linear-gradient(110deg,#263126f5,#344030ee);border-color:#3b452b;color:#ecdfb9}
+.rail-title small{font-size:7px;color:#b7be9b;letter-spacing:.22em;margin-bottom:4px}
+.rail-title strong{font-size:12px;font-weight:400;letter-spacing:.06em}
+.rail-title button,.panel-close{background:#1d291d66;border-color:#bda66b66;color:#e0d1a7}
+.activity-row{padding:10px 5px;grid-template-columns:23px 1fr;color:#333426}
+.activity-row b{font-size:12px;font-weight:400;line-height:1.25}.activity-row small{font-size:9px;line-height:1.4;margin-top:4px}
+.activity-rail.collapsed{transform:translateX(-214px)}
+.game-dock{bottom:22px;height:64px;padding:4px;border:1px solid #b69b6377;border-radius:3px;background:linear-gradient(#31392aed,#18271ff5);box-shadow:0 7px 30px #0d1a1166,inset 0 1px #e2d5a822}
+.game-dock button{width:76px;background:transparent;border-right-color:#b39e6530;color:#d8ceab;transition:background .15s}
+.game-dock button:hover{background:#d6c28e1a;color:#fff1c7}.game-dock button:focus-visible{outline-offset:-3px}
+.game-dock button span{font-size:21px;line-height:29px;font-weight:400}.game-dock button b{font-size:7px;letter-spacing:.08em;font-family:var(--sans);font-weight:500}
+.game-dock svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.mini-map-shell{left:auto;right:20px;bottom:22px;width:218px;padding:6px;background:#223026ed;border-color:#ad955e80;box-shadow:0 8px 24px #17201455}
+.mini-title{height:25px;font-size:8px;font-weight:400;color:#ded2ac}.mini-title small{font-size:6px;color:#abb59d}
+#miniMap{height:124px;border:1px solid #b9a47377;filter:saturate(.72)}
+.truth-badge{right:20px;bottom:192px;border:0;background:#1b2c23d9;color:#d8dbbf;font-size:7px;padding:7px 10px;letter-spacing:.12em}
+.control-hints{top:auto;bottom:100px;font-size:8px;color:#dfdfc2cc;letter-spacing:.05em}
+.world-label{position:absolute;z-index:9;right:25px;top:107px;pointer-events:none;text-align:right;color:#edf0d9;text-shadow:0 2px 8px #162211aa}
+.world-label small{font-size:8px;letter-spacing:.27em;color:#e0e4c7}.world-label h1{font:italic 26px Georgia;margin:7px 0 0;font-weight:400}.world-label p{font-size:9px;letter-spacing:.06em;margin-top:8px;color:#dae0c5}
+.inspector{border:1px solid #96855b;box-shadow:0 10px 45px #17201455;background:linear-gradient(135deg,#ece1c8fa,#cdc09ef7)}
+.inspector h2,.game-window h2{font-weight:400}.game-window{border:1px solid #ab945d;background:linear-gradient(135deg,#ece1c8fc,#cdc09efb)}
+.world-loader{background:radial-gradient(ellipse at center,#354832,#111f19 80%)}.world-loader strong{letter-spacing:.2em;font-weight:400}
+@media(min-width:1600px){.game-dock button{width:86px}.mini-map-shell{width:250px}#miniMap{height:148px}.truth-badge{bottom:215px}}
+@media(max-width:1100px){.game-topbar{gap:10px;padding:8px 10px}.brand{min-width:157px}.world-clock{min-width:175px;padding-left:12px}.top-metrics span{min-width:60px;padding:4px 9px}.top-metrics span:nth-child(3){display:none}.game-dock{left:20px;transform:none}.mini-map-shell{width:186px}#miniMap{height:104px}.truth-badge{bottom:174px}.control-hints{left:28px;transform:none}.world-label h1{font-size:22px}}
+@media(max-width:720px){.game-topbar{left:8px;right:8px;top:8px;height:58px;padding:6px 9px;gap:8px}.brand{min-width:135px;padding-left:28px}.brand b{font-size:17px}.brand span{font-size:6px}.brand:before{width:21px;height:29px;font-size:21px}.world-clock{min-width:0;flex:1;padding-left:10px}.world-clock strong{font-size:10px}.top-metrics{flex:0}.top-metrics span{display:none}.top-metrics span:first-child{display:block;min-width:40px;padding:4px 6px}.top-metrics b{font-size:15px}.activity-rail{display:none}.world-label{top:88px;right:16px}.world-label h1{font-size:21px}.world-label p{display:none}.game-dock{left:8px;right:8px;bottom:calc(9px + env(safe-area-inset-bottom));height:59px;width:auto;display:flex}.game-dock button{width:auto;flex:1;min-width:0}.game-dock button b{font-size:6px}.game-dock svg{width:21px}.mini-map-shell{right:10px;bottom:86px;width:146px}.mini-title{height:20px;font-size:7px}#miniMap{height:84px}.truth-badge{right:auto;left:12px;bottom:88px;font-size:6px;max-width:calc(100vw - 175px);line-height:1.6}.control-hints{display:none}.inspector{top:80px;max-height:calc(100vh - 165px)}.game-window{width:calc(100vw - 24px);padding:15px}.history-toolbar{flex-wrap:wrap}.history-toolbar input{min-width:0;width:100%}}
+@media(prefers-reduced-motion:reduce){.game-dock button,.activity-rail{transition:none}}
