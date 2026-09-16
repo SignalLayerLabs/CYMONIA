@@ -46,6 +46,7 @@ jobs:
             curl -fsS http://127.0.0.1:8765/ >/dev/null 2>&1 && break
             sleep 0.5
           done
+          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-replay.mjs
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-sovereign.mjs
 
   deploy-world:

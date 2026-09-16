@@ -12,7 +12,7 @@ function scheduler(){
   };
 }
 
-test('initial failure falls back then automatically recovers to canonical live',async()=>{
+test('initial failure stays on replay during retries then recovers to canonical live',async()=>{
   const s=scheduler();let calls=0,replay=0;const modes=[];const worlds=[];
   const c=new ObserverConnection({
     fetchState:async()=>{calls++;if(calls===1)throw new Error('503');return {version:2,worldId:'sovereign-1',clock:{worldMinute:10,realEpochMs:0}};},
@@ -28,7 +28,51 @@ test('initial failure falls back then automatically recovers to canonical live',
   await s.run();
   assert.equal(c.mode,CONNECTION.LIVE);
   assert.equal(worlds.at(-1).worldId,'sovereign-1');
-  assert.ok(modes.includes(CONNECTION.RECONNECTING));
+  assert.ok(modes.includes(CONNECTION.REPLAY));
+  assert.equal(
+    modes.includes(CONNECTION.RECONNECTING),
+    false,
+    'background retries must not replace a usable replay with RECONNECTING'
+  );
+});
+
+
+test('usable replay cannot be masked by reconnecting status',async()=>{
+  const s=scheduler();
+  const modes=[];
+
+  const c=new ObserverConnection({
+    fetchState:async()=>{throw new Error('offline');},
+    loadReplay:async()=>({
+      version:2,
+      worldId:'replay',
+      clock:{worldMinute:0,realEpochMs:null}
+    }),
+    createSocket:()=>null,
+    onWorld:()=>{},
+    onMode:m=>modes.push(m),
+    setTimeoutFn:s.set.bind(s),
+    clearTimeoutFn:s.clear.bind(s),
+    randomFn:()=>.5,
+  });
+
+  try{
+    await c.start();
+
+    assert.equal(c.mode,CONNECTION.REPLAY);
+
+    c.setMode(CONNECTION.RECONNECTING);
+
+    assert.equal(
+      c.mode,
+      CONNECTION.REPLAY,
+      'a usable replay must remain the visible state while canonical reconnects'
+    );
+
+    assert.equal(modes.at(-1),CONNECTION.REPLAY);
+  }finally{
+    c.stop();
+  }
 });
 
 test('last canonical state is retained during transient outage',async()=>{
