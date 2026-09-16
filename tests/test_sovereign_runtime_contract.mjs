@@ -37,6 +37,8 @@ test('public state reads never run mutation or Workers AI before responding',()=
   const readPrelude=fetchBody.slice(0,fetchBody.indexOf("if(request.headers.get('upgrade')"));
   assert.doesNotMatch(readPrelude,/tick\(|advanceWorldTo\(|persist\(/);
   assert.match(worker,/AI_CALL_TIMEOUT_MS/);
+  assert.match(worker,/advanceWorldBounded/);
+  assert.doesNotMatch(worker,/sovereign-world-router/);
 });
 
 test('AI schema includes emergent claims and biological reproduction primitives',()=>{

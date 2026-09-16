@@ -10,6 +10,8 @@ import {
   buildCognitiveContext,
   sanitizeAIProposal,
   appendEvent,
+  worldMinuteAt,
+  REAL_MS_PER_WORLD_MINUTE,
 } from '../../world/index.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
@@ -19,6 +21,7 @@ const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
+const MAX_CATCHUP_WORLD_MINUTES=360;
 
 function json(data,status=200,headers={}){
   return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}});
@@ -73,6 +76,20 @@ export function splitSnapshot(serialized,maxCodeUnits=SNAPSHOT_CHUNK_CODE_UNITS)
   return parts.length?parts:[''];
 }
 export function joinSnapshot(parts){return parts.join('');}
+export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES){
+  let target=worldMinuteAt(world,nowMs),recovered=false,skippedWorldMinutes=0;
+  const pristine=world.clock.worldMinute===0&&world.actions.length===0&&world.ledger.length<=2;
+  if(pristine&&target>maxCatchup){
+    skippedWorldMinutes=target;
+    world.clock.realEpochMs=nowMs-REAL_MS_PER_WORLD_MINUTE;
+    appendEvent(world,'RUNTIME_GENESIS_RECOVERED','world',{skippedWorldMinutes,reason:'unpersisted_runtime_outage'},[],0);
+    target=1;recovered=true;
+  }
+  const next=Math.min(target,world.clock.worldMinute+maxCatchup);
+  const boundedNow=world.clock.realEpochMs+next*REAL_MS_PER_WORLD_MINUTE;
+  advanceWorldTo(world,boundedNow);
+  return {recovered,skippedWorldMinutes,lagWorldMinutes:Math.max(0,target-next)};
+}
 
 export class SovereignWorld {
   constructor(ctx,env){
@@ -155,9 +172,7 @@ export class SovereignWorld {
   }
   async tick(){
     await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
-    advanceWorldTo(this.world,Date.now());
-    await this.persist();
-    this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
+    advanceWorldBounded(this.world,Date.now());
     await this.processCognition(1);
     await this.persist();
     this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
@@ -213,7 +228,7 @@ export class SovereignWorld {
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
       const budget=resetDailyBudget(this.world);
-      return json({ok:true,service:'cymonia-sovereign-world',version:2,model:this.env.BRAIN_MODEL||MODEL,ai:Boolean(this.env.AI?.run),ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},world_id:this.world.worldId,world_minute:this.world.clock.worldMinute,ledger_head:this.world.ledgerHead,persistence:'durable-object-sqlite'});
+      return json({ok:true,service:'cymonia-sovereign-world',version:2,model:this.env.BRAIN_MODEL||MODEL,ai:Boolean(this.env.AI?.run),ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},world_id:this.world.worldId,world_minute:this.world.clock.worldMinute,lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),ledger_head:this.world.ledgerHead,persistence:'durable-object-sqlite-chunked'});
     }
     if(request.method==='GET'&&(path==='/'||path==='/state'))return json({ok:true,world:publicWorld(this.world,Date.now())});
     if(request.method==='GET'&&path==='/history')return json({ok:true,history:getHistory(this.world)});
@@ -242,7 +257,6 @@ export class SovereignWorld {
 export default {
   async fetch(request,env){
     const url=new URL(request.url);
-    if(url.pathname==='/health')return json({ok:true,service:'cymonia-sovereign-world-router',version:2,ai:Boolean(env.AI)});
     const id=env.WORLD.idFromName('canonical-v2'),stub=env.WORLD.get(id),routed=new URL(request.url);
     routed.pathname=`/world${url.pathname}`;
     return stub.fetch(new Request(routed,request));
