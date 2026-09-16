@@ -20,6 +20,9 @@ test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint 
   assert.match(worker,/SHA-256/);
   assert.match(worker,/state_sha256/);
   assert.match(worker,/world_state_chunks/);
+  assert.match(worker,/world_state_manifest/);
+  assert.match(worker,/persistChain/);
+  assert.match(worker,/persisted_generation/);
   assert.match(worker,/transactionSync/);
   assert.doesNotMatch(worker,/storage\.put\(WORLD_KEY/);
 });
