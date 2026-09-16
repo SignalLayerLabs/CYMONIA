@@ -16,6 +16,7 @@ const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=1000;
 const AI_CALLS_PER_REAL_DAY=200;
 const AI_RETRY_COOLDOWN_MS=60_000;
+const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 
 function json(data,status=200,headers={}){
@@ -55,6 +56,11 @@ async function askAI(env,context){
   const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_tokens:620,temperature:.7});
   const text=out?.response??out?.result?.response??out?.result??out;
   return sanitizeAIProposal(parseJsonText(text));
+}
+async function withTimeout(promise,timeoutMs,label='operation_timeout'){
+  let timer;
+  try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),timeoutMs);})]);}
+  finally{clearTimeout(timer);}
 }
 
 export class SovereignWorld {
@@ -121,11 +127,13 @@ export class SovereignWorld {
     }
   }
   async tick(){
+    await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
     advanceWorldTo(this.world,Date.now());
+    await this.persist();
+    this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
     await this.processCognition(1);
     await this.persist();
     this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
-    await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
   }
   async alarm(){await this.tick();}
   async processCognition(limit){
@@ -147,7 +155,7 @@ export class SovereignWorld {
       if(!c)continue;
       budget.calls++;
       try{
-        const proposal=await askAI(this.env,buildCognitiveContext(this.world,c,this.world.clock.worldMinute));
+        const proposal=await withTimeout(askAI(this.env,buildCognitiveContext(this.world,c,this.world.clock.worldMinute)),AI_CALL_TIMEOUT_MS,'ai_timeout');
         acceptCognitiveProposal(this.world,c.id,proposal,this.world.clock.worldMinute);
         appendEvent(this.world,'AI_COGNITION',c.id,{model:this.env.BRAIN_MODEL||MODEL,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length},[],this.world.clock.worldMinute);
         budget.lastFailureRealMs=0;
@@ -174,8 +182,9 @@ export class SovereignWorld {
   webSocketClose(ws){this.clients.delete(ws);}
   webSocketError(ws){this.clients.delete(ws);}
   async fetch(request){
-    await this.tick();
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
+    advanceWorldTo(this.world,Date.now());
+    this.ctx.waitUntil(this.persist());
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
       const budget=resetDailyBudget(this.world);
