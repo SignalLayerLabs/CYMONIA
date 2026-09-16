@@ -9,12 +9,20 @@ TARGET="$(cd "$TARGET" && pwd -P)"
 fail(){ echo "ERROR: $*" >&2; exit 1; }
 pass(){ echo "PASS: $*"; }
 
-[[ -f "$TARGET/site/index.html" ]] || fail "site/index.html missing"
-[[ -f "$TARGET/site/sovereign-world.js" ]] || fail "sovereign-world.js missing"
-[[ -f "$TARGET/world/index.js" ]] || fail "world/index.js missing"
-[[ -f "$TARGET/worker/src/index.js" ]] || fail "worker/src/index.js missing"
-[[ -f "$TARGET/wrangler.world.toml" ]] || fail "wrangler.world.toml missing"
-[[ -f "$TARGET/functions/api/v2/[[path]].js" ]] || fail "v2 Pages facade missing"
+for required in \
+  site/index.html site/sovereign-world.js site/sovereign-renderer.js \
+  world/index.js worker/src/index.js wrangler.world.toml wrangler.toml \
+  functions/api/v2/[[path]].js functions/api/auth/[[path]].js \
+  functions/_lib/identity.js migrations/0001_identity.sql; do
+  [[ -f "$TARGET/$required" ]] || fail "required v2 file missing: $required"
+done
+
+for removed in archive/v1 cymonia state constitution functions/api/[[path]].js \
+  .github/workflows/economy.yml site/app.js site/live-world.js site/world-renderer.js \
+  scripts/build_world_replay.mjs scripts/build_site.py scripts/build_experiments.py; do
+  [[ ! -e "$TARGET/$removed" ]] || fail "obsolete v1 path remains: $removed"
+done
+pass "repository contains only the Sovereign World runtime"
 
 HTML="$(cat "$TARGET/site/index.html")"
 grep -q 'id="worldCanvas"' <<<"$HTML" || fail "game world canvas missing"
@@ -25,13 +33,17 @@ for legacy in 'class="hud"' 'world-grid' 'analysis-grid' 'agents-panel' 'ledger-
 done
 pass "game-only shell contains no legacy dashboard"
 
-if grep -Eq '^[[:space:]]*schedule:' "$TARGET/.github/workflows/economy.yml"; then
-  fail "v1 GitHub workflow still schedules world advancement"
+if grep -R -n -E 'build_world_replay|python -m unittest|/api/world|/api/agent' \
+    "$TARGET/.github" "$TARGET/README.md" "$TARGET/CONTRIBUTING.md" "$TARGET/SECURITY.md" \
+    "$TARGET/functions" "$TARGET/site" >/tmp/cymonia-obsolete-refs.log 2>/dev/null; then
+  cat /tmp/cymonia-obsolete-refs.log >&2
+  fail "obsolete v1 runtime reference remains"
 fi
-pass "GitHub Actions is not the v2 world heartbeat"
+pass "CI, docs and runtime have no v1 entrypoints"
 
 while IFS= read -r -d '' js; do node --check "$js" >/dev/null; done < <(
-  find "$TARGET/world" "$TARGET/worker" "$TARGET/functions/api/v2" "$TARGET/site" "$TARGET/scripts" -type f \( -name '*.js' -o -name '*.mjs' \) -print0
+  find "$TARGET/world" "$TARGET/worker" "$TARGET/functions" "$TARGET/site" "$TARGET/scripts" \
+    -type f \( -name '*.js' -o -name '*.mjs' \) -print0
 )
 pass "JavaScript syntax"
 
@@ -84,4 +96,4 @@ if [[ "$SKIP_BROWSER" -eq 0 ]]; then
   fi
 fi
 
-pass "CYMONIA v2 Sovereign World verification complete"
+pass "CYMONIA Sovereign World verification complete"

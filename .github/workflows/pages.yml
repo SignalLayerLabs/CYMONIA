@@ -26,8 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build Autonomous World replay
-        run: node scripts/build_world_replay.mjs
+      - name: Build Sovereign Genesis replay
+        run: node scripts/build_sovereign_genesis.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
