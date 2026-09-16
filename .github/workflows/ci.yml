@@ -105,8 +105,11 @@ jobs:
             sleep 2
           done
           test -s /tmp/cymonia-health-a.json
-          sleep 3
-          curl --max-time 15 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health
+          for i in $(seq 1 30); do
+            curl --max-time 15 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
+            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));process.exit(b.world_minute>a.world_minute&&b.persisted_generation&&b.persisted_generation!==a.persisted_generation?0:1)}catch{process.exit(1)}" && break
+            sleep 2
+          done
           node <<'NODE'
           const fs=require('fs');
           const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));
