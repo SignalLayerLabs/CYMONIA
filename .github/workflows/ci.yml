@@ -105,17 +105,27 @@ jobs:
             sleep 2
           done
           test -s /tmp/cymonia-health-a.json
-          for i in $(seq 1 30); do
+          # First prove that canonical time advances.
+          for i in $(seq 1 20); do
             curl --max-time 15 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
-            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));process.exit(b.world_minute>a.world_minute&&b.persisted_generation&&b.persisted_generation!==a.persisted_generation?0:1)}catch{process.exit(1)}" && break
+            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));process.exit(b.world_minute>a.world_minute?0:1)}catch{process.exit(1)}" && break
+            sleep 2
+          done
+
+          # Persistence is intentionally throttled for the Durable Objects
+          # free-tier write budget. Allow one checkpoint interval to pass.
+          for i in $(seq 1 45); do
+            curl --max-time 15 -fsS -o /tmp/cymonia-health-c.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
+            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const c=JSON.parse(fs.readFileSync('/tmp/cymonia-health-c.json'));process.exit(c.persisted_generation&&c.persisted_generation!==a.persisted_generation?0:1)}catch{process.exit(1)}" && break
             sleep 2
           done
           node <<'NODE'
           const fs=require('fs');
           const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));
           const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));
+          const c=JSON.parse(fs.readFileSync('/tmp/cymonia-health-c.json'));
           if(!b.ok||b.service!=='cymonia-sovereign-world')throw new Error('canonical health unavailable');
           if(!(b.world_minute>a.world_minute))throw new Error('canonical world minute did not advance');
-          if(!b.persisted_generation||b.persisted_generation===a.persisted_generation)throw new Error('canonical snapshot was not persisted');
-          console.log({from:a.world_minute,to:b.world_minute,persisted_generation:b.persisted_generation});
+          if(!c.persisted_generation||c.persisted_generation===a.persisted_generation)throw new Error('canonical snapshot was not persisted within checkpoint window');
+          console.log({from:a.world_minute,to:b.world_minute,persisted_generation:c.persisted_generation});
           NODE
