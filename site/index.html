@@ -3,51 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07100d">
+  <meta name="theme-color" content="#10170f">
   <meta name="description" content="CYMONIA — observe a sovereign artificial civilization living continuously inside a causally closed world.">
   <title>CYMONIA · Sovereign World</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="sovereign-world.css">
-  <link rel="stylesheet" href="cinematic-world.css">
 </head>
 <body>
   <main id="game" aria-label="CYMONIA Sovereign World">
-    <div id="worldLoader" class="world-loader" role="status" aria-live="polite">
-      <div class="world-loader-mark" aria-hidden="true"><i></i><i></i><i></i></div>
-      <strong>ENTERING CYMONIA</strong>
-      <span>Synchronizing the sovereign world</span>
-    </div>
+    <div id="worldLoader" class="world-loader" role="status" aria-live="polite"><div class="world-loader-mark" aria-hidden="true"><i></i><i></i><i></i></div><strong>ENTERING CYMONIA</strong><span>Synchronizing the sovereign world</span></div>
     <canvas id="worldCanvas" tabindex="0" aria-label="Live CYMONIA world"></canvas>
 
-    <header class="game-topbar">
+    <header class="game-topbar wood-panel">
       <div class="brand"><b>CYMONIA</b><span>SOVEREIGN WORLD</span></div>
-      <div class="world-clock"><i id="liveDot"></i><strong id="worldDate">CONNECTING</strong><small id="worldStatus">CANONICAL WORLD</small></div>
+      <div class="world-clock"><i id="liveDot"></i><strong id="worldDate">CONNECTING</strong><small id="worldStatus">CONNECTING</small></div>
       <div class="top-metrics">
-        <span><b id="populationValue">—</b> living</span>
-        <span><b id="structureValue">—</b> structures</span>
-        <span><b id="organizationValue">—</b> groups</span>
-        <span class="environment-metric"><b id="environmentValue">—</b> climate</span>
-        <span class="environment-metric"><b id="weatherValue">—</b> weather</span>
+        <span><b id="populationValue">—</b><small>PEOPLE</small></span>
+        <span><b id="structureValue">—</b><small>STRUCTURES</small></span>
+        <span><b id="organizationValue">—</b><small>GROUPS</small></span>
+        <span><b id="environmentValue">—</b><small>CLIMATE</small></span>
+        <span><b id="weatherValue">—</b><small>WEATHER</small></span>
       </div>
     </header>
 
-    <aside id="activityRail" class="activity-rail" aria-label="World activity">
-      <div class="rail-title"><span>NOW</span><button id="toggleRail" aria-label="Collapse activity">‹</button></div>
+    <aside id="activityRail" class="activity-rail parchment-panel" aria-label="World activity">
+      <div class="rail-title"><div><small>LIVE CHRONICLE</small><strong>WORLD EVENTS</strong></div><button id="toggleRail" aria-label="Collapse activity">‹</button></div>
       <div id="activityList" class="activity-list"></div>
     </aside>
 
-    <aside id="inspector" class="inspector" hidden>
+    <aside id="inspector" class="inspector parchment-panel" hidden>
       <button class="panel-close" id="closeInspector" aria-label="Close inspector">×</button>
       <div id="inspectorBody"></div>
     </aside>
 
-    <div class="mini-map-shell">
-      <span>WORLD</span>
-      <canvas id="miniMap" width="220" height="130" aria-label="World minimap"></canvas>
-    </div>
+    <div class="mini-map-shell wood-panel"><div class="mini-title"><span>WORLD MAP</span><small id="miniMode">OBSERVER</small></div><canvas id="miniMap" width="240" height="148" aria-label="World minimap"></canvas></div>
 
-    <nav class="game-dock" aria-label="Observer controls">
-      <button id="historyOpen"><span>⌛</span><b>Society History</b></button>
+    <nav class="game-dock wood-panel" aria-label="Observer controls">
+      <button id="historyOpen"><span>⌛</span><b>Chronicle</b></button>
       <button id="followSelected"><span>◎</span><b>Follow</b></button>
       <button id="centerWorld"><span>◇</span><b>Center</b></button>
       <button id="overlayKnowledge"><span>◌</span><b>Knowledge</b></button>
@@ -56,22 +48,24 @@
       <button id="agentOpen"><span>✦</span><b>My Avatar</b></button>
     </nav>
 
-    <section id="societyHistory" class="game-window history-window" hidden aria-label="Society History">
-      <header><div><span>OBSERVER ARCHIVE</span><h2>Society History</h2><p>What actually happened. Nothing here changes the world.</p></div><button class="panel-close" id="historyClose" aria-label="Close history">×</button></header>
+    <section id="societyHistory" class="game-window parchment-panel history-window" hidden aria-label="Society History">
+      <header><div><span>OBSERVER ARCHIVE</span><h2>Chronicle of CYMONIA</h2><p>The history below is derived from canonical events. It cannot change the world.</p></div><button class="panel-close" id="historyClose" aria-label="Close history">×</button></header>
       <div class="history-toolbar"><input id="historySearch" type="search" placeholder="Search people, events, places…"><select id="historyCategory"><option value="all">All history</option><option value="genesis">Genesis</option><option value="life">Life</option><option value="knowledge">Knowledge</option><option value="language">Language</option><option value="construction">Construction</option><option value="society">Society</option><option value="culture">Culture</option><option value="conflict">Conflict</option></select></div>
-      <div id="historyTimeline" class="history-timeline"></div>
-      <aside id="whyPanel" class="why-panel" hidden></aside>
+      <div id="historyTimeline" class="history-timeline"></div><aside id="whyPanel" class="why-panel" hidden></aside>
     </section>
 
-    <section id="agentWindow" class="game-window agent-window" hidden aria-label="Personal Agent">
+    <section id="agentWindow" class="game-window parchment-panel agent-window" hidden aria-label="Personal Agent">
       <header><div><span>HUMAN-LINKED CITIZEN</span><h2>Your direction, their world.</h2><p>Your intent may influence your avatar. It grants no knowledge or privilege.</p></div><button class="panel-close" id="agentClose" aria-label="Close agent">×</button></header>
-      <div class="agent-copy"><p>Your avatar is subject to the same biology, scarcity, social consequences and mortality as every other Citizen.</p><textarea id="humanIntent" rows="5" placeholder="Example: avoid violence, learn their language, build trust, and seek a sustainable way to improve transport."></textarea><button id="sendIntent" class="primary">Send direction to my avatar</button><a id="loginLink" href="/api/auth/github?return_to=%2F">Enter the world with GitHub</a><p id="agentFeedback" role="status"></p></div>
+      <div class="agent-copy"><p>Your avatar is subject to the same biology, scarcity, physical terrain, social consequences and mortality as every other Citizen.</p><textarea id="humanIntent" rows="5" placeholder="Example: avoid violence, learn their language, build trust, and seek a sustainable way to improve transport."></textarea><button id="sendIntent" class="primary">Send direction to my avatar</button><a id="loginLink" href="/api/auth/github?return_to=%2F">Enter the world with GitHub</a><p id="agentFeedback" role="status"></p></div>
     </section>
 
     <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
-    <div class="control-hints" aria-hidden="true"><span>WASD / ARROWS</span> move <i></i><span>WHEEL</span> zoom <i></i><span>F</span> fullscreen <i></i><span>ESC</span> close</div>
-    <div class="truth-badge"><i></i><span id="truthText">CONNECTING TO CANONICAL WORLD</span></div>
+    <div class="control-hints" aria-hidden="true"><span>WASD</span> pan <i></i><span>WHEEL</span> zoom <i></i><span>DOUBLE CLICK</span> center <i></i><span>F</span> fullscreen</div>
+    <div class="truth-badge" data-mode="CONNECTING"><i></i><span id="truthText">CONNECTING TO CANONICAL WORLD</span></div>
   </main>
+  <!-- GPU renderer and observer-only transient rigid-body effects. Neither library can mutate canonical world state. -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.19.0/dist/pixi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
   <script type="module" src="sovereign-world.js"></script>
 </body>
 </html>

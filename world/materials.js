@@ -1,6 +1,19 @@
 import {appendEvent} from './ledger.js';
 import {stableId} from './rng.js';
-export const MATERIAL_PROPERTIES=Object.freeze({water:{density:1,combustible:false,nutrition:0},food:{density:.7,combustible:true,nutrition:1},timber:{density:.6,hardness:.3,combustible:true},stone:{density:2.5,hardness:.8,combustible:false},clay:{density:1.6,hardness:.25,combustible:false},ore:{density:3.4,hardness:.7,combustible:false},fiber:{density:.35,hardness:.1,combustible:true},biomass:{density:1.02,combustible:true,nutrition:.1},composite:{density:1,hardness:.4,combustible:false}});
+
+// Phenomenological material properties: these are world physics, not social knowledge.
+// Citizens still need in-world experiments/teaching to gain actionable knowledge about them.
+export const MATERIAL_PROPERTIES=Object.freeze({
+  water:{density:1,friction:.02,hardness:0,toughness:0,structuralIntegrity:0,combustible:false,nutrition:0,thermalResistance:.05,waterResistance:0,precipitationResistance:0},
+  food:{density:.7,friction:.35,hardness:.04,toughness:.08,structuralIntegrity:12,combustible:true,nutrition:1,thermalResistance:.12,waterResistance:.08,precipitationResistance:.08},
+  timber:{density:.6,friction:.48,hardness:.3,toughness:.58,structuralIntegrity:105,combustible:true,thermalResistance:.55,waterResistance:.38,precipitationResistance:.38},
+  stone:{density:2.5,friction:.78,hardness:.8,toughness:.62,structuralIntegrity:430,compressiveStrength:900,combustible:false,thermalResistance:.28,waterResistance:.92,precipitationResistance:.92},
+  clay:{density:1.6,friction:.62,hardness:.25,toughness:.38,structuralIntegrity:135,compressiveStrength:280,combustible:false,thermalResistance:.48,waterResistance:.8,precipitationResistance:.8},
+  ore:{density:3.4,friction:.66,hardness:.7,toughness:.7,structuralIntegrity:520,compressiveStrength:760,combustible:false,thermalResistance:.14,waterResistance:.94,precipitationResistance:.94},
+  fiber:{density:.35,friction:.5,hardness:.1,toughness:.32,structuralIntegrity:55,combustible:true,thermalResistance:.67,waterResistance:.58,precipitationResistance:.58},
+  biomass:{density:1.02,friction:.45,hardness:.08,toughness:.2,structuralIntegrity:28,combustible:true,nutrition:.1,thermalResistance:.34,waterResistance:.18,precipitationResistance:.18},
+  composite:{density:1,friction:.55,hardness:.4,toughness:.45,structuralIntegrity:180,combustible:false,thermalResistance:.5,waterResistance:.68,precipitationResistance:.68}
+});
 export function objectMass(o){return Math.max(0,Number(o.quantity)||0)*Math.max(0,Number(o.massPerUnitKg)||1);}
 export function totalTrackedMass(world){
   const objectKg=world.objects.reduce((s,o)=>s+objectMass(o),0),depositKg=world.resourceDeposits.reduce((s,d)=>s+Math.max(0,Number(d.quantity)||0),0),reserveKg=Math.max(0,Number(world.reserves?.observerEmbodimentKg)||0),citizenKg=world.citizens.filter(c=>c.alive).reduce((s,c)=>s+Math.max(0,Number(c.body?.massKg)||0),0),buildingKg=(world.buildings||[]).reduce((s,b)=>s+Math.max(0,Number(b.massKg)||0),0),naturalKg=Object.values(world.environment?.naturalReservoirs||{}).reduce((s,v)=>s+Math.max(0,Number(v)||0),0),metabolicKg=Math.max(0,Number(world.environment?.metabolicMatterKg)||0);

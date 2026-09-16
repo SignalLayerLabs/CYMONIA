@@ -84,12 +84,65 @@ fi
 
 if [[ "$SKIP_BROWSER" -eq 0 ]]; then
   if node -e "import('playwright').then(()=>process.exit(0)).catch(()=>process.exit(1))" >/dev/null 2>&1; then
-    PORT="${CYMONIA_CHECK_PORT:-8765}"
-    python3 -m http.server "$PORT" --directory "$TARGET/site" >/tmp/cymonia-v2-check-http.log 2>&1 &
+    if [[ -n "${CYMONIA_CHECK_PORT:-}" ]]; then
+      PORT="$CYMONIA_CHECK_PORT"
+    else
+      PORT="$(python3 - <<'PORTPY'
+import socket
+s=socket.socket()
+s.bind(('127.0.0.1',0))
+print(s.getsockname()[1])
+s.close()
+PORTPY
+)"
+    fi
+
+    HTTP_LOG="/tmp/cymonia-v2-check-http-${PORT}.log"
+
+    python3 -m http.server "$PORT"       --bind 127.0.0.1       --directory "$TARGET/site"       >"$HTTP_LOG" 2>&1 &
+
     SERVER_PID=$!
-    trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
-    for _ in $(seq 1 30); do curl -fsS "http://127.0.0.1:$PORT/" >/dev/null 2>&1 && break; sleep .25; done
-    (cd "$TARGET"; CYMONIA_URL="http://127.0.0.1:$PORT" node tests/browser-sovereign.mjs)
+
+    cleanup_http(){
+      kill "$SERVER_PID" 2>/dev/null || true
+      wait "$SERVER_PID" 2>/dev/null || true
+    }
+
+    trap cleanup_http EXIT
+
+    READY=0
+
+    for _ in $(seq 1 40); do
+      if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+        echo "ERROR: local Observer HTTP server terminated" >&2
+        cat "$HTTP_LOG" >&2 || true
+        exit 1
+      fi
+
+      if curl --max-time 1 -fsS         "http://127.0.0.1:$PORT/" >/dev/null 2>&1; then
+        READY=1
+        break
+      fi
+
+      sleep .25
+    done
+
+    if [[ "$READY" -ne 1 ]]; then
+      echo "ERROR: local Observer HTTP server did not become ready" >&2
+      cat "$HTTP_LOG" >&2 || true
+      exit 1
+    fi
+
+    echo "PASS: local Observer HTTP server ready on port $PORT"
+
+    (
+      cd "$TARGET"
+      CYMONIA_URL="http://127.0.0.1:$PORT"         node tests/browser-sovereign.mjs
+    )
+
+    cleanup_http
+    trap - EXIT
+
     pass "browser sovereign smoke"
   else
     echo "SKIP: browser smoke (Playwright not installed; CI runs it)"
