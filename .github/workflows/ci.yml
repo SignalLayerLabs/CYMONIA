@@ -75,7 +75,7 @@ jobs:
 
   deploy-pages:
     name: Deploy Observer Pages
-    needs: [sovereign-test, browser-smoke]
+    needs: [deploy-world]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency:
@@ -95,15 +95,27 @@ jobs:
         run: node scripts/build_sovereign_genesis.mjs
       - name: Deploy game-only Observer
         run: npx wrangler pages deploy site --project-name cymonia --branch main --commit-hash "$GITHUB_SHA"
-      - name: Verify production route
+      - name: Verify canonical state advances in production
         run: |
           for i in $(seq 1 30); do
-            BODY=$(curl -fsS https://cymonia.pages.dev/api/v2/health 2>/dev/null || true)
-            if echo "$BODY" | grep -q '"ok":true'; then
-              echo "$BODY"
-              exit 0
-            fi
+            rm -f /tmp/cymonia-health-a.json /tmp/cymonia-state-a.json
+            curl --max-time 15 -fsS -o /tmp/cymonia-health-a.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
+            curl --max-time 15 -fsS -o /tmp/cymonia-state-a.json https://cymonia.pages.dev/api/v2/state 2>/dev/null || true
+            node -e "const fs=require('fs');try{const h=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const x=JSON.parse(fs.readFileSync('/tmp/cymonia-state-a.json'));process.exit(h.ok&&h.service==='cymonia-sovereign-world'&&Number.isFinite(h.world_minute)&&h.persisted_generation&&x.ok&&x.world?.version===2&&x.world.citizens?.length>0&&x.world.citizens.some(c=>c.alive&&c.currentAction)?0:1)}catch{process.exit(1)}" && break
             sleep 2
           done
-          echo "Sovereign World production health check failed"
-          exit 1
+          test -s /tmp/cymonia-health-a.json
+          for i in $(seq 1 30); do
+            curl --max-time 15 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
+            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));process.exit(b.world_minute>a.world_minute&&b.persisted_generation&&b.persisted_generation!==a.persisted_generation?0:1)}catch{process.exit(1)}" && break
+            sleep 2
+          done
+          node <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));
+          const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));
+          if(!b.ok||b.service!=='cymonia-sovereign-world')throw new Error('canonical health unavailable');
+          if(!(b.world_minute>a.world_minute))throw new Error('canonical world minute did not advance');
+          if(!b.persisted_generation||b.persisted_generation===a.persisted_generation)throw new Error('canonical snapshot was not persisted');
+          console.log({from:a.world_minute,to:b.world_minute,persisted_generation:b.persisted_generation});
+          NODE
