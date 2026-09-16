@@ -33,5 +33,37 @@ function isTyping(el){return ['INPUT','TEXTAREA','SELECT'].includes(el?.tagName)
 function wire(){const canvas=$('worldCanvas');canvas.addEventListener('worldselect',e=>{state.selected=e.detail.id;state.renderer.setSelected(state.selected);renderInspector();});canvas.addEventListener('dblclick',()=>state.renderer.center());document.addEventListener('click',e=>{const c=e.target.closest('[data-citizen]');if(c){state.selected=c.dataset.citizen;state.renderer.setSelected(state.selected);renderInspector();}const h=e.target.closest('[data-event]');if(h)showWhy(h.dataset.event);const why=e.target.closest('[data-why-action]');if(why)showWhy(why.dataset.whyAction);});$('closeInspector').onclick=()=>{state.selected=null;state.renderer.setSelected(null);renderInspector();};$('toggleRail').onclick=()=>$('activityRail').classList.toggle('collapsed');$('historyOpen').onclick=()=>{$('societyHistory').hidden=false;renderHistory();};$('historyClose').onclick=()=>{$('societyHistory').hidden=true;$('whyPanel').hidden=true;};$('historySearch').oninput=renderHistory;$('historyCategory').onchange=renderHistory;$('agentOpen').onclick=()=>$('agentWindow').hidden=false;$('agentClose').onclick=()=>$('agentWindow').hidden=true;$('sendIntent').onclick=sendIntent;$('centerWorld').onclick=()=>state.renderer.center();$('followSelected').onclick=()=>{state.renderer.setFollow(state.selected);toast(state.selected?'Following selected Citizen':'Select a Citizen first');};$('overlayKnowledge').onclick=()=>state.renderer.toggleOverlay('knowledge');$('overlayRelations').onclick=()=>state.renderer.toggleOverlay('relations');$('fullscreenWorld').onclick=toggleFullscreen;document.addEventListener('keydown',e=>{if(isTyping(e.target)){if(e.key==='Escape')e.target.blur();return}const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){state.keys.add(k);e.preventDefault();}if(k==='f'){toggleFullscreen();e.preventDefault();}else if(k==='escape')closeWindows();else if(k==='h'){$('societyHistory').hidden=!$('societyHistory').hidden;if(!$('societyHistory').hidden)renderHistory();}else if(k==='c')state.renderer.center();else if(k==='+'||k==='=')state.renderer.zoomBy(1.12);else if(k==='-')state.renderer.zoomBy(.89);});document.addEventListener('keyup',e=>state.keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>state.keys.clear());}
 function frame(now){const dt=Math.min(.05,(now-state.lastFrame)/1000||.016);state.lastFrame=now;const speed=260*dt;if(state.keys.has('w')||state.keys.has('arrowup'))state.renderer.panBy(0,speed);if(state.keys.has('s')||state.keys.has('arrowdown'))state.renderer.panBy(0,-speed);if(state.keys.has('a')||state.keys.has('arrowleft'))state.renderer.panBy(speed,0);if(state.keys.has('d')||state.keys.has('arrowright'))state.renderer.panBy(-speed,0);state.renderer.draw();if(now-state.lastHud>300){state.lastHud=now;renderTop();if(!$('inspector').hidden)renderInspector();}requestAnimationFrame(frame);}
 function installTestHooks(){window.render_game_to_text=()=>{if(!state.world)return JSON.stringify({status:'loading'});const w=state.world;return JSON.stringify({mode:state.mode,worldMinute:worldMinute(w),selectedId:state.selected,citizens:w.citizens.filter(c=>c.alive).map(c=>{const p=citizenPosition(c,w);return{id:c.id,x:Number(p.x.toFixed(3)),y:Number(p.y.toFixed(3)),action:c.currentAction?.type||null};}),structures:(w.buildings||[]).length,projects:(w.projects||[]).filter(p=>p.status==='construction').length});};}
-async function boot(){state.renderer=new SovereignRenderer($('worldCanvas'),$('miniMap'));wire();installTestHooks();state.connection=new ObserverConnection({fetchState:async()=>{const d=await getJSON('/api/v2/state');return d.world;},loadReplay:async()=>{const d=await getJSON('data/sovereign-genesis.json');return d.world||d;},createSocket,onWorld:acceptWorld,onMode:setConnectionMode,onError:()=>{},pollMs:10000});await state.connection.start();requestAnimationFrame(frame);}
+async function boot(){
+  state.renderer=new SovereignRenderer($('worldCanvas'),$('miniMap'));
+  wire();
+  installTestHooks();
+
+  // Rendering must never depend on network availability.
+  requestAnimationFrame(frame);
+
+  state.connection=new ObserverConnection({
+    fetchState:async()=>{
+      const d=await getJSON('/api/v2/state');
+      return d.world;
+    },
+    loadReplay:async()=>{
+      const d=await getJSON('data/sovereign-genesis.json');
+      const replay=structuredClone(d.world||d);
+
+      // Replay is a frozen canonical snapshot, not a fake live world.
+      if(replay?.clock){
+        replay.clock.realEpochMs=null;
+      }
+
+      return replay;
+    },
+    createSocket,
+    onWorld:acceptWorld,
+    onMode:setConnectionMode,
+    onError:()=>{},
+    pollMs:10000
+  });
+
+  await state.connection.start();
+}
 boot().catch(error=>{setConnectionMode(CONNECTION.RECONNECTING);$('worldLoader').querySelector('span').textContent=`World link unavailable: ${error.message}`;});
