@@ -95,15 +95,23 @@ jobs:
         run: node scripts/build_sovereign_genesis.mjs
       - name: Deploy game-only Observer
         run: npx wrangler pages deploy site --project-name cymonia --branch main --commit-hash "$GITHUB_SHA"
-      - name: Verify production route
+      - name: Verify canonical state advances in production
         run: |
           for i in $(seq 1 30); do
-            BODY=$(curl -fsS https://cymonia.pages.dev/api/v2/health 2>/dev/null || true)
-            if echo "$BODY" | grep -q '"ok":true'; then
-              echo "$BODY"
-              exit 0
-            fi
+            rm -f /tmp/cymonia-state-a.json
+            curl --max-time 15 -fsS -o /tmp/cymonia-state-a.json https://cymonia.pages.dev/api/v2/state 2>/dev/null || true
+            node -e "const fs=require('fs');try{const x=JSON.parse(fs.readFileSync('/tmp/cymonia-state-a.json'));process.exit(x.ok&&x.world?.citizens?.length===100?0:1)}catch{process.exit(1)}" && break
             sleep 2
           done
-          echo "Sovereign World production health check failed"
-          exit 1
+          test -s /tmp/cymonia-state-a.json
+          sleep 3
+          curl --max-time 15 -fsS -o /tmp/cymonia-state-b.json https://cymonia.pages.dev/api/v2/state
+          node <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('/tmp/cymonia-state-a.json'));
+          const b=JSON.parse(fs.readFileSync('/tmp/cymonia-state-b.json'));
+          if(!b.ok||b.world?.citizens?.length!==100)throw new Error('canonical state unavailable');
+          if(!(b.world.clock.worldMinute>a.world.clock.worldMinute))throw new Error('world clock did not advance');
+          if(!b.world.citizens.some(c=>c.currentAction?.type==='MOVE'))throw new Error('no Citizen movement is active');
+          console.log({from:a.world.clock.worldMinute,to:b.world.clock.worldMinute,moving:b.world.citizens.filter(c=>c.currentAction?.type==='MOVE').length});
+          NODE

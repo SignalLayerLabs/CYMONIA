@@ -18,6 +18,7 @@ const AI_CALLS_PER_REAL_DAY=200;
 const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
+const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 
 function json(data,status=200,headers={}){
   return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}});
@@ -62,6 +63,16 @@ async function withTimeout(promise,timeoutMs,label='operation_timeout'){
   try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),timeoutMs);})]);}
   finally{clearTimeout(timer);}
 }
+export function splitSnapshot(serialized,maxCodeUnits=SNAPSHOT_CHUNK_CODE_UNITS){
+  const source=String(serialized),parts=[];
+  for(let start=0;start<source.length;){
+    let end=Math.min(source.length,start+maxCodeUnits);
+    if(end<source.length){const before=source.charCodeAt(end-1),after=source.charCodeAt(end);if(before>=0xD800&&before<=0xDBFF&&after>=0xDC00&&after<=0xDFFF)end--;}
+    parts.push(source.slice(start,end));start=end;
+  }
+  return parts.length?parts:[''];
+}
+export function joinSnapshot(parts){return parts.join('');}
 
 export class SovereignWorld {
   constructor(ctx,env){
@@ -69,6 +80,7 @@ export class SovereignWorld {
     this.env=env;
     this.sql=ctx.storage.sql;
     this.world=null;
+    this.persistSequence=0;
     this.clients=new Set();
     ctx.blockConcurrencyWhile(async()=>{
       this.initializeSQLite();
@@ -96,11 +108,23 @@ export class SovereignWorld {
       state_sha256 TEXT NOT NULL,
       created_at INTEGER NOT NULL
     )`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS world_state_chunks(
+      generation TEXT NOT NULL,
+      seq INTEGER NOT NULL,
+      state_part TEXT NOT NULL,
+      PRIMARY KEY(generation,seq)
+    )`);
   }
   loadWorld(){
     const rows=[...this.sql.exec('SELECT state_json FROM world_state WHERE id=1 LIMIT 1')];
     if(!rows.length)return null;
-    const world=JSON.parse(rows[0].state_json);
+    const stored=JSON.parse(rows[0].state_json);
+    let world=stored;
+    if(stored?.format==='chunked-v1'){
+      const parts=[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? ORDER BY seq',stored.generation)].map(row=>row.state_part);
+      if(parts.length!==stored.chunkCount)throw new Error('sovereign_world_chunks_incomplete');
+      world=JSON.parse(joinSnapshot(parts));
+    }
     if(!world||world.version!==2||!Array.isArray(world.citizens)||!Array.isArray(world.ledger))throw new Error('sovereign_world_state_invalid');
     return world;
   }
@@ -110,21 +134,24 @@ export class SovereignWorld {
   }
   async persist({forceSeal=false}={}){
     const runtime=ensureRuntime(this.world);
-    const serialized=JSON.stringify(this.world);
     const now=Date.now();
-    this.sql.exec(`INSERT INTO world_state(id,state_json,world_minute,ledger_head,updated_at)
-      VALUES(1,?,?,?,?)
-      ON CONFLICT(id) DO UPDATE SET state_json=excluded.state_json,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-      serialized,this.world.clock.worldMinute,this.world.ledgerHead,now);
     const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
-    if(due){
-      const state_sha256=await sha256Hex(serialized);
-      this.sql.exec('INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',this.world.clock.worldMinute,this.world.ledgerHead,state_sha256,now);
-      runtime.lastSealWorldMinute=this.world.clock.worldMinute;
-      const finalSerialized=JSON.stringify(this.world);
-      this.sql.exec('UPDATE world_state SET state_json=?,world_minute=?,ledger_head=?,updated_at=? WHERE id=1',finalSerialized,this.world.clock.worldMinute,this.world.ledgerHead,now);
-      this.sql.exec('DELETE FROM world_seals WHERE seq NOT IN (SELECT seq FROM world_seals ORDER BY seq DESC LIMIT 4096)');
-    }
+    if(due)runtime.lastSealWorldMinute=this.world.clock.worldMinute;
+    const serialized=JSON.stringify(this.world),generation=`${now}-${++this.persistSequence}`,parts=splitSnapshot(serialized);
+    const metadata=JSON.stringify({format:'chunked-v1',generation,chunkCount:parts.length});
+    const stateSha256=due?await sha256Hex(serialized):null;
+    this.ctx.storage.transactionSync(()=>{
+      for(let seq=0;seq<parts.length;seq++)this.sql.exec('INSERT INTO world_state_chunks(generation,seq,state_part) VALUES(?,?,?)',generation,seq,parts[seq]);
+      this.sql.exec(`INSERT INTO world_state(id,state_json,world_minute,ledger_head,updated_at)
+        VALUES(1,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET state_json=excluded.state_json,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
+        metadata,this.world.clock.worldMinute,this.world.ledgerHead,now);
+      this.sql.exec('DELETE FROM world_state_chunks WHERE generation<>?',generation);
+      if(due){
+        this.sql.exec('INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',this.world.clock.worldMinute,this.world.ledgerHead,stateSha256,now);
+        this.sql.exec('DELETE FROM world_seals WHERE seq NOT IN (SELECT seq FROM world_seals ORDER BY seq DESC LIMIT 4096)');
+      }
+    });
   }
   async tick(){
     await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
@@ -183,8 +210,6 @@ export class SovereignWorld {
   webSocketError(ws){this.clients.delete(ws);}
   async fetch(request){
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
-    advanceWorldTo(this.world,Date.now());
-    this.ctx.waitUntil(this.persist());
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
       const budget=resetDailyBudget(this.world);
