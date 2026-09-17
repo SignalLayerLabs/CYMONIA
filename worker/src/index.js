@@ -10,9 +10,21 @@ import {
   buildCognitiveContext,
   sanitizeAIProposal,
   appendEvent,
+  compactLedger,
   worldMinuteAt,
   REAL_MS_PER_WORLD_MINUTE,
 } from '../../world/index.js';
+import {
+  SAFE_ROW_WRITE_BUDGET,
+  EMERGENCY_ROW_WRITE_BUDGET,
+  encodeSnapshot,
+  decodeSnapshot,
+  estimateSnapshotRowWrites,
+  createWriteBudget,
+  reserveWriteBudget,
+  nextSnapshotSlot,
+  nextUtcDayStart,
+} from './persistence.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=10_000;
@@ -23,6 +35,7 @@ const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const MAX_CATCHUP_WORLD_MINUTES=360;
+const HOT_LEDGER_EVENTS=4096;
 
 function json(data,status=200,headers={}){
   return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}});
@@ -102,10 +115,12 @@ export class SovereignWorld {
     this.persistChain=Promise.resolve();
     this.lastPersistedGeneration=null;
     this.lastPersistedWorldMinute=null;
+    this.persistenceDeferred=0;
+    this.persistenceDeferredUntilRealMs=0;
     this.clients=new Set();
     ctx.blockConcurrencyWhile(async()=>{
       this.initializeSQLite();
-      this.world=this.loadWorld();
+      this.world=await this.loadWorld();
       if(!this.world){
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
         ensureRuntime(this.world);
@@ -147,15 +162,29 @@ export class SovereignWorld {
       ledger_head TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     )`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS world_state_chunks_v2(
+      id INTEGER PRIMARY KEY,
+      state_part TEXT NOT NULL
+    )`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS persistence_budget(
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      day TEXT NOT NULL,
+      rows_written INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`);
   }
-  loadWorld(){
+  async loadWorld(){
     const manifests=[...this.sql.exec('SELECT generation,chunk_count FROM world_state_manifest WHERE id=1 LIMIT 1')];
     let world;
     if(manifests.length){
       const manifest=manifests[0];
-      const parts=[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? ORDER BY seq',manifest.generation)].map(row=>row.state_part);
+      const slotted=manifest.generation==='slot-a'||manifest.generation==='slot-b';
+      const slotBase=manifest.generation==='slot-b'?1_000_000:0;
+      const parts=slotted
+        ?[...this.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',slotBase,slotBase+manifest.chunk_count)].map(row=>row.state_part)
+        :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',manifest.generation,manifest.chunk_count)].map(row=>row.state_part);
       if(parts.length!==manifest.chunk_count)throw new Error('sovereign_world_chunks_incomplete');
-      world=JSON.parse(joinSnapshot(parts));
+      world=JSON.parse(await decodeSnapshot(joinSnapshot(parts)));
       this.lastPersistedGeneration=manifest.generation;
     }else{
       const rows=[...this.sql.exec('SELECT state_json FROM world_state WHERE id=1 LIMIT 1')];
@@ -182,33 +211,64 @@ export class SovereignWorld {
     this.persistChain=pending.catch(()=>{});
     return pending;
   }
+  readPersistenceBudget(day=utcDay(),limit=SAFE_ROW_WRITE_BUDGET){
+    const rows=[...this.sql.exec('SELECT day,rows_written FROM persistence_budget WHERE id=1 LIMIT 1')];
+    const used=rows.length&&rows[0].day===day?Number(rows[0].rows_written||0):0;
+    return createWriteBudget(day,used,limit);
+  }
   async persistSnapshot({forceSeal=false}={}){
     const runtime=ensureRuntime(this.world);
-    const now=Date.now();
+    const now=Date.now(),day=utcDay(now);
+    if(!forceSeal&&now<this.persistenceDeferredUntilRealMs){
+      return {persisted:false,reason:'write_budget_backoff'};
+    }
+    const limit=forceSeal?EMERGENCY_ROW_WRITE_BUDGET:SAFE_ROW_WRITE_BUDGET;
+    const currentBudget=this.readPersistenceBudget(day,limit);
+    if(!forceSeal&&currentBudget.rowsWritten>=currentBudget.limit){
+      this.persistenceDeferred++;
+      this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
+      return {persisted:false,reason:'write_budget_exhausted'};
+    }
+    compactLedger(this.world,HOT_LEDGER_EVENTS);
     const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
-    if(due)runtime.lastSealWorldMinute=this.world.clock.worldMinute;
-    const serialized=JSON.stringify(this.world),generation=`${now}-${++this.persistSequence}`,parts=splitSnapshot(serialized);
+    const serialized=JSON.stringify(this.world);
+    const encoded=await encodeSnapshot(serialized);
+    const generation=nextSnapshotSlot(this.lastPersistedGeneration);
+    const parts=splitSnapshot(encoded);
+    const slotBase=generation==='slot-b'?1_000_000:0;
     const worldMinute=this.world.clock.worldMinute,ledgerHead=this.world.ledgerHead;
-    const legacySafe=new TextEncoder().encode(serialized).byteLength<=1_500_000;
+    const sealCount=due?Number([...this.sql.exec('SELECT COUNT(*) AS count FROM world_seals')][0]?.count||0):0;
+    const sealPruneRows=due&&sealCount>=4096?1:0;
+    const rowWrites=estimateSnapshotRowWrites({chunkCount:parts.length,sealDue:due,sealPruneRows});
+    const reservation=reserveWriteBudget(currentBudget,rowWrites);
+    if(!reservation.allowed){
+      this.persistenceDeferred++;
+      if(!forceSeal)this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
+      return {persisted:false,reason:'write_budget_exhausted',rowWrites};
+    }
     const stateSha256=due?await sha256Hex(serialized):null;
     this.ctx.storage.transactionSync(()=>{
-      for(let seq=0;seq<parts.length;seq++)this.sql.exec('INSERT INTO world_state_chunks(generation,seq,state_part) VALUES(?,?,?)',generation,seq,parts[seq]);
+      for(let seq=0;seq<parts.length;seq++)this.sql.exec(
+        'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
+        slotBase+seq,parts[seq]
+      );
       this.sql.exec(`INSERT INTO world_state_manifest(id,generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
         generation,parts.length,worldMinute,ledgerHead,now);
-      if(legacySafe)this.sql.exec(`INSERT INTO world_state(id,state_json,world_minute,ledger_head,updated_at)
-        VALUES(1,?,?,?,?)
-        ON CONFLICT(id) DO UPDATE SET state_json=excluded.state_json,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        serialized,worldMinute,ledgerHead,now);
-      this.sql.exec('DELETE FROM world_state_chunks WHERE generation<>?',generation);
       if(due){
         this.sql.exec('INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',worldMinute,ledgerHead,stateSha256,now);
-        this.sql.exec('DELETE FROM world_seals WHERE seq NOT IN (SELECT seq FROM world_seals ORDER BY seq DESC LIMIT 4096)');
+        if(sealPruneRows)this.sql.exec('DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)');
       }
+      this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
+        day,reservation.budget.rowsWritten,now);
     });
+    if(due)runtime.lastSealWorldMinute=worldMinute;
     this.lastPersistedGeneration=generation;
     this.lastPersistedWorldMinute=worldMinute;
+    this.persistenceDeferredUntilRealMs=0;
+    return {persisted:true,generation,rowWrites,rowsWritten:reservation.budget.rowsWritten};
   }
   async tick(){
     await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
@@ -287,8 +347,8 @@ export class SovereignWorld {
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
-      const budget=resetDailyBudget(this.world);
-      return json({ok:true,service:'cymonia-sovereign-world',version:2,model:this.env.BRAIN_MODEL||MODEL,ai:Boolean(this.env.AI?.run),ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},world_id:this.world.worldId,world_minute:this.world.clock.worldMinute,lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),ledger_head:this.world.ledgerHead,persisted_generation:this.lastPersistedGeneration,persistence:'durable-object-sqlite-chunked'});
+      const budget=resetDailyBudget(this.world),persistenceBudget=this.readPersistenceBudget();
+      return json({ok:true,service:'cymonia-sovereign-world',version:2,model:this.env.BRAIN_MODEL||MODEL,ai:Boolean(this.env.AI?.run),ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},persistence_budget:{day:persistenceBudget.day,rows_written:persistenceBudget.rowsWritten,soft_limit:SAFE_ROW_WRITE_BUDGET,emergency_limit:EMERGENCY_ROW_WRITE_BUDGET,deferred:this.persistenceDeferred},world_id:this.world.worldId,world_minute:this.world.clock.worldMinute,lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),ledger_head:this.world.ledgerHead,persisted_generation:this.lastPersistedGeneration,persistence:'durable-object-sqlite-gzip-slotted'});
     }
     if(request.method==='GET'&&(path==='/'||path==='/state'))return json({ok:true,world:publicWorld(this.world,Date.now())});
     if(request.method==='GET'&&path==='/history')return json({ok:true,history:getHistory(this.world)});
