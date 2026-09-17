@@ -16,6 +16,7 @@ export * from './cognition.js';
 export * from './observer.js';
 export * from './engine.js';
 export * from './perception.js';
+export * from './designs.js';
 export * from './genetics.js';
 export * from './reproduction.js';
 export * from './disease.js';
