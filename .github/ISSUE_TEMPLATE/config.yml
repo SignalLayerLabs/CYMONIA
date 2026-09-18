@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live CYMONIA world
+    url: https://cymonia.pages.dev/
+    about: Open the production Observer.
+  - name: Documentation
+    url: https://github.com/SignalLayerLabs/CYMONIA/tree/main/docs
+    about: Architecture, contributor map and deployment documentation.

@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible CYMONIA world, runtime or Observer defect
+title: "[Bug]: "
+body:
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Affected layer
+      options:
+        - Canonical world kernel
+        - Durable Object / persistence
+        - AI cognition
+        - Pages API / authentication
+        - Observer / renderer
+        - Human-linked avatar
+        - CI / deployment
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Give the smallest sequence that reliably reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, screenshots, world minute, event IDs or failing tests. Remove secrets.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: I removed OAuth tokens, session secrets and private data.
+          required: true

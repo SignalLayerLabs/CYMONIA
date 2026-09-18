@@ -1,8 +1,8 @@
 # CYMONIA v2 — Sovereign World
 ## Complete Technical Design Specification
 
-**Status:** Architecture approved; written specification prepared for final user review before implementation.  
-**Date:** 2026-09-15  
+**Status:** Architecture approved; written specification prepared for final user review before implementation.
+**Date:** 2026-09-15
 **Project:** SignalLayerLabs/CYMONIA
 
 ## 1. Product thesis
