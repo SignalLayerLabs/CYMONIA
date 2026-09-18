@@ -34,6 +34,28 @@ export class SovereignRenderer{
   setSelected(id){this.selected=id;}
   setFollow(id){this.follow=id||null;}
   center(){this.camera.targetX=50;this.camera.targetY=50;this.camera.targetZoom=1.55;this.follow=null;}
+  fitPopulation(){
+    const alive=(this.state?.citizens||[]).filter(c=>c.alive);
+    if(!alive.length)return false;
+    const positions=alive.map(c=>citizenPosition(c,this.state));
+    const projected=positions.map(pos=>{const t=terrainAtPublic(this.state,pos.x,pos.y);return isoPoint(pos.x,pos.y,t.elevation);});
+    const xs=positions.map(p=>p.x),ys=positions.map(p=>p.y),px=projected.map(p=>p.x),py=projected.map(p=>p.y);
+    this.camera.targetX=clamp((Math.min(...xs)+Math.max(...xs))/2,2,98);
+    this.camera.targetY=clamp((Math.min(...ys)+Math.max(...ys))/2,2,98);
+    const spanX=Math.max(20,Math.max(...px)-Math.min(...px)),spanY=Math.max(20,Math.max(...py)-Math.min(...py));
+    const usableW=Math.max(240,this.camera.width-220),usableH=Math.max(180,this.camera.height-200);
+    this.camera.targetZoom=clamp(Math.min(usableW/spanX,usableH/spanY),.6,2.2);
+    this.follow=null;return true;
+  }
+  populationVisibility(){
+    const alive=(this.state?.citizens||[]).filter(c=>c.alive);let visible=0;
+    const margin=28*Math.max(.7,this.camera.zoom);
+    for(const c of alive){
+      const pos=citizenPosition(c,this.state),t=terrainAtPublic(this.state,pos.x,pos.y),p=this.project(pos.x,pos.y,t.elevation);
+      if(p.x>=-margin&&p.x<=this.camera.width+margin&&p.y>=-margin*2&&p.y<=this.camera.height+margin)visible++;
+    }
+    return {visible,total:alive.length};
+  }
   panBy(dx,dy){this.follow=null;const delta=isoInverse(dx/this.camera.zoom,dy/this.camera.zoom);this.camera.targetX=clamp(this.camera.targetX-delta.x,2,98);this.camera.targetY=clamp(this.camera.targetY-delta.y,2,98);}
   zoomBy(factor){this.camera.targetZoom=clamp(this.camera.targetZoom*factor,.6,3.1);}
   toggleOverlay(name){this.overlay=this.overlay===name?null:name;}

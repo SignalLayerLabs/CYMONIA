@@ -1,6 +1,8 @@
 import {terrainAtPublic,terrainDecoration,terrainPalette} from './terrain-model.js';
 import {TransientMatterEffects} from './transient-physics.js';
 import {isoPoint,sceneEntries,staticSceneKey,citizenFrame,artHash} from './medieval-art.js';
+import {citizenVisualPose} from './citizen-animation.js';
+import {SpineCitizenAdapter} from './spine-citizen-adapter.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function renderWorldMinute(state,nowMs=Date.now()){const raw=state?.clock?.realEpochMs,epoch=Number(raw),canonical=Number(state?.clock?.worldMinute)||0;return raw!=null&&Number.isFinite(epoch)?Math.max(canonical,(nowMs-epoch)/1000):canonical;}
@@ -14,7 +16,7 @@ export class PixiObserverLayer{
   constructor(canvasFallback,art){
     this.canvasFallback=canvasFallback;this.art=art;this.app=null;this.ready=false;this.failed=false;this.state=null;this.staticKey='';this.hits=[];this.citizenSprites=new Map();this.frames=[];this.groundSource=null;this.staticEntries=[];
     // Logical object layers share a depth-sorted container, so trees can occlude people correctly.
-    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;
+    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;this.spineAdapter=null;
     this.init();
   }
   async init(){
@@ -32,6 +34,8 @@ export class PixiObserverLayer{
       if(!this.art.atlas)throw new Error('Art atlas unavailable');
       const source=PIXI.Texture.from(this.art.atlas).source;
       this.frames=this.art.frames.map(f=>new PIXI.Texture({source,frame:new PIXI.Rectangle(f.x,f.y,f.w,f.h)}));
+      this.spineAdapter=new SpineCitizenAdapter(PIXI,globalThis.CYMONIA_SPINE);
+      await this.spineAdapter.preload();
       this.ready=true;
     }catch(error){console.warn('Pixi observer unavailable; Canvas fallback remains active.',error);this.app?.destroy(true,{children:true});this.app=null;this.failed=true;}
   }
@@ -60,9 +64,17 @@ export class PixiObserverLayer{
   }
   ensureCitizens(){
     const PIXI=globalThis.PIXI,alive=new Set();
-    for(const c of this.state.citizens||[]){if(!c.alive)continue;alive.add(c.id);if(this.citizenSprites.has(c.id))continue;
-      const container=new PIXI.Container(),body=this.sprite(citizenFrame(c),19),shadow=new PIXI.Graphics();shadow.ellipse(1,1,6,2.8).fill({color:0x1d281c,alpha:.22});
-      const task=new PIXI.Text({text:'',style:{fontFamily:'Georgia',fontSize:10,fill:0xf8e8b5,stroke:{color:0x283021,width:2}}});task.anchor.set(.5);task.position.set(0,-41);container.addChild(shadow,body,task);this.citizenLayer.addChild(container);this.citizenSprites.set(c.id,{container,body,task});
+    for(const c of this.state.citizens||[]){
+      if(!c.alive)continue;alive.add(c.id);if(this.citizenSprites.has(c.id))continue;
+      let entry=this.spineAdapter?.create(c)||null;
+      if(!entry){
+        const container=new PIXI.Container(),body=this.sprite(citizenFrame(c),19),shadow=new PIXI.Graphics();
+        shadow.ellipse(1,1,6,2.8).fill({color:0x1d281c,alpha:.22});
+        const task=new PIXI.Text({text:'',style:{fontFamily:'Georgia',fontSize:10,fill:0xf8e8b5,stroke:{color:0x283021,width:2}}});
+        task.anchor.set(.5);task.position.set(0,-41);container.addChild(shadow,body,task);
+        entry={container,body,task,shadow,baseScale:Math.abs(body.scale.x),spine:false};
+      }
+      this.citizenLayer.addChild(entry.container);this.citizenSprites.set(c.id,entry);
     }
     for(const [id,e] of this.citizenSprites)if(!alive.has(id)){e.container.destroy({children:true});this.citizenSprites.delete(id);}
   }
@@ -75,8 +87,16 @@ export class PixiObserverLayer{
     const hits=[];
     for(const e of this.staticEntries){if(!e.id)continue;const t=terrainAtPublic(state,e.position.x,e.position.y),p=this.screenPoint(e.position.x,e.position.y,t.elevation,camera);hits.push({...this.art.hitRecord(e,p,camera.zoom),depth:point(e.position.x,e.position.y,t.elevation).y});}
     for(const c of state.citizens||[]){if(!c.alive)continue;const e=this.citizenSprites.get(c.id),pos=citizenPosition(c,state),t=terrainAtPublic(state,pos.x,pos.y),p=point(pos.x,pos.y,t.elevation),a=c.currentAction,moving=a?.type==='MOVE'&&minute<Number(a.endsWorldMinute),active=c.id===selected||c.id===follow;
-      e.container.position.set(p.x,p.y);e.container.zIndex=p.y;e.body.y=moving?Math.sin(performance.now()/125+artHash(c.id)*Math.PI*2):0;
-      e.body.scale.x=Math.abs(e.body.scale.x)*(moving&&a.targetPosition.x-a.targetPosition.y<a.fromPosition.x-a.fromPosition.y?-1:1);
+      const flip=Boolean(moving&&a?.targetPosition&&a?.fromPosition&&a.targetPosition.x-a.targetPosition.y<a.fromPosition.x-a.fromPosition.y);
+      e.container.position.set(p.x,p.y);e.container.zIndex=p.y;
+      if(e.spine){
+        this.spineAdapter?.update(e,c,{flip});
+      }else{
+        const pose=citizenVisualPose(c,performance.now());
+        e.body.y=pose.y;e.body.rotation=pose.rotation;
+        e.body.scale.set((flip?-1:1)*e.baseScale*pose.scaleX,e.baseScale*pose.scaleY);
+        if(e.shadow)e.shadow.scale.x=pose.shadowScale;
+      }
       e.task.text=a&&(active||camera.zoom>2)?ACTION_ICON[a.type]||'·':'';
       const sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:citizenFrame(c),size:19},{x:sp.x,y:sp.y+e.body.y*camera.zoom},camera.zoom,e.body.scale.x<0),depth:p.y});
     }
