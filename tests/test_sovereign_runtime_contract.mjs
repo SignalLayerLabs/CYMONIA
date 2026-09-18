@@ -22,12 +22,33 @@ test('hibernating websocket runtime survives object eviction without volatile cl
   assert.doesNotMatch(worker,/this\.clients/);
 });
 
-test('alarm cadence is one minute and constructor does not forcibly rewrite an existing alarm',()=>{
+test('constructor never postpones a due alarm and alarm handler keeps the schedule alive',()=>{
   assert.match(worker,/const ALARM_MS=60_000/);
-  assert.match(worker,/await this\.ensureAlarm\(\);/);
-  assert.doesNotMatch(worker,/ensureAlarm\(true\)/);
-});
 
+  const ensureStart=worker.indexOf('async ensureAlarm(){');
+  const ensureEnd=worker.indexOf('persist(options={})',ensureStart);
+  const ensure=worker.slice(ensureStart,ensureEnd);
+
+  assert.match(ensure,/getAlarm\(\)/);
+  assert.match(ensure,/current===null/);
+  assert.match(ensure,/setAlarm\(Date\.now\(\)\+ALARM_MS\)/);
+  assert.doesNotMatch(ensure,/current\s*<\s*Date\.now\(\)/);
+
+  const tickStart=worker.indexOf('async tick(){');
+  const tickEnd=worker.indexOf('async alarm(){',tickStart);
+  const tick=worker.slice(tickStart,tickEnd);
+
+  assert.doesNotMatch(tick,/ensureAlarm/);
+  assert.doesNotMatch(tick,/setAlarm/);
+
+  const alarmStart=worker.indexOf('async alarm(){');
+  const alarmEnd=worker.indexOf('async processCognition',alarmStart);
+  const alarm=worker.slice(alarmStart,alarmEnd);
+
+  assert.match(alarm,/await this\.tick\(\)/);
+  assert.match(alarm,/finally/);
+  assert.match(alarm,/setAlarm\(Date\.now\(\)\+ALARM_MS\)/);
+});
 test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint seals',()=>{
   assert.match(worker,/storage\.sql/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_state/);

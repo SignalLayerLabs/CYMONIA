@@ -203,10 +203,11 @@ export class SovereignWorld {
     if(!world||world.version!==2||!Array.isArray(world.citizens)||!Array.isArray(world.ledger))throw new Error('sovereign_world_state_invalid');
     return world;
   }
-  async ensureAlarm(force=false){
+  async ensureAlarm(){
     const current=await this.ctx.storage.getAlarm();
-    const next=Date.now()+ALARM_MS;
-    if(force||current===null||current< Date.now()||current>next+ALARM_MS)await this.ctx.storage.setAlarm(next);
+    if(current===null){
+      await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+    }
   }
   persist(options={}){
     const pending=this.persistChain.then(()=>this.persistSnapshot(options));
@@ -273,8 +274,6 @@ export class SovereignWorld {
     return {persisted:true,generation,rowWrites,rowsWritten:reservation.budget.rowsWritten};
   }
   async tick(){
-    await this.ensureAlarm();
-
     const progress=advanceWorldBounded(this.world,Date.now());
 
     const lastPersisted=Number(
@@ -298,7 +297,13 @@ export class SovereignWorld {
       await this.persist();
     }
   }
-  async alarm(){await this.tick();}
+  async alarm(){
+    try{
+      await this.tick();
+    }finally{
+      await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+    }
+  }
   async processCognition(limit){
     if(!this.env.AI?.run)return false;
     const budget=resetDailyBudget(this.world),dailyLimit=configuredDailyBudget(this.env),runtime=ensureRuntime(this.world);
