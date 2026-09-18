@@ -1,32 +1,98 @@
 # Contributing to CYMONIA
 
-CYMONIA contributions should preserve a causal, observable and deterministic Sovereign World.
+CYMONIA is an open-source persistent artificial civilization. Contributions are welcome when they make the world richer **without weakening the causal, epistemic or authority boundaries that make the project meaningful**.
 
-## Before opening a PR
+Start with:
 
-1. Read `README.md`, `docs/architecture-v2.md` and the design specification.
-2. Run the focused suite:
+1. [`README.md`](README.md) — product model.
+2. [`docs/architecture/overview.md`](docs/architecture/overview.md) — runtime and trust boundaries.
+3. [`docs/reference/repository-map.md`](docs/reference/repository-map.md) — file-by-file map.
+4. [`docs/design/sovereign-world-v2.md`](docs/design/sovereign-world-v2.md) — world contract.
 
-   ```bash
-   node --test tests/test_sovereign_*.mjs
-   bash CHECK.sh . --skip-browser
-   ```
+## Pick the right layer
 
-3. Run `tests/browser-sovereign.mjs` against a local static server when changing the Observer.
+| You want to change… | Start here |
+|---|---|
+| physics, resources, terrain, movement | `world/materials.js`, `world/terrain.js`, `world/actions.js`, `world/impact.js` |
+| biology, disease, genetics, reproduction | `world/biology.js`, `world/disease.js`, `world/genetics.js`, `world/reproduction.js` |
+| knowledge, perception, memory, beliefs | `world/epistemics.js`, `world/perception.js`, `world/memory.js`, `world/beliefs.js` |
+| cognition and plans | `world/cognition.js`, `world/engine.js` |
+| language or society | `world/language.js`, `world/society.js` |
+| canonical persistence/runtime | `worker/src/index.js`, `worker/src/persistence.js` |
+| GitHub auth / human-linked identity | `functions/api/auth/`, `functions/_lib/` |
+| public API facade | `functions/api/v2/` |
+| Observer UI and camera | `site/sovereign-world.js`, `site/sovereign-renderer.js` |
+| GPU rendering | `site/pixi-observer.js`, `site/medieval-art.js` |
+| visual concept interpretation | `site/observer-concepts.js` |
+| Citizen animation | `site/citizen-animation.js`, `site/spine-citizen-adapter.js` |
+| CI / deployment | `.github/workflows/`, `wrangler.toml`, `wrangler.world.toml` |
+| documentation | `docs/` |
 
-## Runtime rules
+## Non-negotiable invariants
 
-- The Durable Object is the only writer of canonical world state.
-- The browser renders and sends explicit intents; it never advances time.
-- AI may propose cognition, but deterministic kernel rules authorize mutation.
-- Every persistent action needs a physical, biological or social cause.
-- New world behavior needs an invariant test under `tests/test_sovereign_*.mjs`.
-- Keep the fallback Genesis replay deterministic and reproducible.
+- The `SovereignWorld` Durable Object is the **single canonical writer**.
+- The browser is an Observer. It does not advance world time or author canonical outcomes.
+- Workers AI may **propose** cognition. Deterministic validation authorizes mutation.
+- Citizens may not act on unknown concepts or receive omniscient context.
+- Persistent physical outcomes require physical causes and provenance.
+- Death is permanent.
+- The deterministic Genesis replay remains reproducible.
+- Observer-only classifications and visual labels never write back into canonical state.
+- Human-linked Citizens receive no Earth knowledge or privileged physics.
+- A runtime outage is not silently converted into fictional lived history.
 
-## Pull requests
+## Development workflow
 
-Describe the problem, the resulting behavior, the tests run and any schema or deployment impact. Keep changes focused and remove obsolete runtime paths instead of adding compatibility aliases.
+```bash
+node --test tests/test_sovereign_*.mjs
+bash CHECK.sh . --skip-browser
+```
+
+If you changed the Observer, rendering, browser connection or UI:
+
+```bash
+bash CHECK.sh .
+```
+
+## Tests are part of the feature
+
+Every new canonical behavior should add or strengthen an invariant under `tests/test_sovereign_*.mjs`.
+
+Examples:
+
+- physical transformation → prove conservation/provenance;
+- cognition path → prove unknown concepts cannot leak in;
+- social primitive → prove canonical relationships/commitments change rather than narration only;
+- Observer feature → prove it cannot mutate world state;
+- persistence change → prove write budget, recovery and checkpoint behavior;
+- UI change → add contract coverage and run browser smoke.
+
+## Pull request format
+
+A strong PR explains:
+
+**Problem** — what limitation exists?
+**World effect** — canonical behavior, Observer behavior or both?
+**Authority boundary** — which layer may mutate state?
+**Evidence** — which tests prove the behavior?
+**Operational impact** — bindings, writes, schemas, budgets or deployment?
+
+The repository includes a PR template that mirrors this structure.
 
 ## Security and identity
 
-GitHub OAuth creates a human-linked avatar through the identity-only D1 store. Never log OAuth codes, access tokens, session secrets or raw personal data. Report security issues privately according to `SECURITY.md`.
+Never commit or log OAuth codes, access tokens, raw session tokens, Cloudflare secrets or private user data.
+
+Identity metadata must not become free in-world knowledge.
+
+Report vulnerabilities according to [`SECURITY.md`](SECURITY.md).
+
+## Style
+
+- Prefer small ES modules with explicit responsibilities.
+- Prefer deterministic logic over hidden side effects.
+- Delete obsolete paths instead of preserving dead compatibility layers.
+- Comment invariants, authority boundaries and non-obvious runtime behavior.
+- Use **Citizen**, **Observer**, **Sovereign World** and **canonical** consistently.
+
+For a complete file-by-file explanation, use [`docs/reference/repository-map.md`](docs/reference/repository-map.md).

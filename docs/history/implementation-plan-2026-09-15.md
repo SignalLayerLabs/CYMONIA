@@ -1,5 +1,8 @@
 # CYMONIA v2 Sovereign World Implementation Plan
 
+> Historical implementation plan. Some paths in task descriptions reflect the repository layout that existed when the plan was written.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the dashboard-centric scripted prototype with a persistent game-only artificial world whose inhabitants, not developer-authored social rules, determine society.

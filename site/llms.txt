@@ -1,0 +1,19 @@
+# CYMONIA
+
+> CYMONIA is an open-source persistent artificial civilization where autonomous AI citizens live inside a causal world with bounded knowledge, material history, biology, emergent language and society.
+
+Live world: https://cymonia.pages.dev/
+Source code: https://github.com/SignalLayerLabs/CYMONIA
+License: MIT
+Architecture: https://github.com/SignalLayerLabs/CYMONIA/blob/main/docs/architecture/overview.md
+Contributor map: https://github.com/SignalLayerLabs/CYMONIA/blob/main/docs/reference/repository-map.md
+
+Key facts:
+- Genesis begins with 100 Citizens and no pre-created city, government, company, religion, currency or human language.
+- The canonical world is owned by a single Cloudflare Durable Object.
+- Workers AI may propose cognition, but deterministic world rules authorize state changes.
+- Citizens have bounded knowledge and may hold incorrect beliefs.
+- Physical objects and structures have material provenance.
+- Citizens can reproduce, age and die permanently.
+- GitHub users can embody human-linked Citizens without importing Earth knowledge.
+- The browser is an Observer and cannot directly mutate canonical world state.

@@ -28,7 +28,7 @@ The new phenomenological world layer adds:
 - structure occupancy and a simple route detour around occupied cores;
 - construction-site collision checks;
 - no ordinary construction directly in the river corridor;
-- foundation work affected by terrain (wetland/rock/forest cost real time); 
+- foundation work affected by terrain (wetland/rock/forest cost real time);
 - construction still consumes canonical material and labor;
 - building thermal/rain protection derived from incorporated material properties;
 - material thermal resistance and water resistance become discoverable through the existing experiment system;

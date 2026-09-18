@@ -18,7 +18,7 @@ test('Spine support is optional and does not vendor proprietary runtime into the
   const adapter=fs.readFileSync(new URL('../site/spine-citizen-adapter.js',import.meta.url),'utf8');
   const pixi=fs.readFileSync(new URL('../site/pixi-observer.js',import.meta.url),'utf8');
   const html=fs.readFileSync(new URL('../site/index.html',import.meta.url),'utf8');
-  const docs=fs.readFileSync(new URL('../docs/SPINE_OBSERVER_INTEGRATION.md',import.meta.url),'utf8');
+  const docs=fs.readFileSync(new URL('../docs/observer/spine.md',import.meta.url),'utf8');
   assert.match(adapter,/CYMONIA_SPINE/);assert.match(adapter,/animationForCitizen/);
   assert.match(pixi,/SpineCitizenAdapter/);assert.match(pixi,/citizenVisualPose/);
   assert.doesNotMatch(html,/@esotericsoftware|spine-pixi-v8/i);assert.match(docs,/Spine Runtimes License/);assert.match(docs,/fallback/i);
