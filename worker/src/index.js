@@ -426,9 +426,14 @@ export class SovereignWorld {
     if(request.method==='POST'&&path==='/avatar'){
       const body=await request.json();
       if(!body?.actor?.id)return json({ok:false,error:'actor_required'},400);
-      const c=createHumanAvatar(this.world,{externalId:`github:${body.actor.github_id||body.actor.id}`,displayName:body.actor.display_name||body.actor.github_login||null},this.world.clock.worldMinute);
-      await this.persist({forceSeal:true});
-      return json({ok:true,citizenId:c.id});
+      const externalId=`github:${body.actor.github_id||body.actor.id}`;
+      const existing=this.world.citizens.find(c=>c.externalId===externalId);
+      const c=existing||createHumanAvatar(this.world,{externalId,displayName:body.actor.display_name||body.actor.github_login||null},this.world.clock.worldMinute);
+      if(!existing){
+        await this.persist({forceSeal:true});
+        this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
+      }
+      return json({ok:true,citizenId:c.id,created:!existing});
     }
     if(request.method==='POST'&&path==='/intent'){
       const body=await request.json();
