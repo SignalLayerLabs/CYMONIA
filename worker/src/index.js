@@ -27,7 +27,7 @@ import {
 } from './persistence.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
-const ALARM_MS=10_000;
+const ALARM_MS=60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
 const AI_CALLS_PER_REAL_DAY=200;
 const AI_RETRY_COOLDOWN_MS=60_000;
@@ -117,7 +117,9 @@ export class SovereignWorld {
     this.lastPersistedWorldMinute=null;
     this.persistenceDeferred=0;
     this.persistenceDeferredUntilRealMs=0;
-    this.clients=new Set();
+    if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
+      this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
+    }
     ctx.blockConcurrencyWhile(async()=>{
       this.initializeSQLite();
       this.world=await this.loadWorld();
@@ -130,7 +132,7 @@ export class SovereignWorld {
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
-      await this.ensureAlarm(true);
+      await this.ensureAlarm();
     });
   }
   initializeSQLite(){
@@ -271,7 +273,7 @@ export class SovereignWorld {
     return {persisted:true,generation,rowWrites,rowsWritten:reservation.budget.rowsWritten};
   }
   async tick(){
-    await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+    await this.ensureAlarm();
 
     const progress=advanceWorldBounded(this.world,Date.now());
 
@@ -330,25 +332,80 @@ export class SovereignWorld {
     runtime.aiBudget=budget;
     return used>0;
   }
+  websocketMeta(ws){
+    try{return ws.deserializeAttachment?.()||null;}catch{return null;}
+  }
   broadcast(message){
     const text=JSON.stringify(message);
-    for(const ws of this.clients){try{ws.send(text);}catch{this.clients.delete(ws);}}
+    for(const ws of this.ctx.getWebSockets()){
+      try{ws.send(text);}
+      catch(error){
+        console.warn('CYMONIA_WS_SEND_FAILED',JSON.stringify({
+          session:this.websocketMeta(ws)?.id||null,
+          error:String(error?.message||error).slice(0,160)
+        }));
+      }
+    }
   }
   webSocket(){
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];
+    const session={id:crypto.randomUUID(),connectedAt:Date.now()};
     this.ctx.acceptWebSocket(server);
-    this.clients.add(server);
+    server.serializeAttachment?.(session);
     server.send(JSON.stringify({type:'world_snapshot',state:publicWorld(this.world,Date.now())}));
     return new Response(null,{status:101,webSocket:client});
   }
-  webSocketClose(ws){this.clients.delete(ws);}
-  webSocketError(ws){this.clients.delete(ws);}
+  webSocketMessage(ws,message){
+    if(message==='ping')ws.send('pong');
+  }
+  webSocketClose(ws,code,reason,wasClean){
+    const meta=this.websocketMeta(ws);
+    console.log('CYMONIA_WS_CLOSE',JSON.stringify({
+      session:meta?.id||null,
+      code:Number(code)||0,
+      reason:String(reason||'').slice(0,160),
+      wasClean:Boolean(wasClean),
+      connectedMs:meta?.connectedAt?Math.max(0,Date.now()-meta.connectedAt):null,
+      remaining:this.ctx.getWebSockets().length
+    }));
+  }
+  webSocketError(ws,error){
+    const meta=this.websocketMeta(ws);
+    console.error('CYMONIA_WS_ERROR',JSON.stringify({
+      session:meta?.id||null,
+      error:String(error?.message||error).slice(0,160),
+      remaining:this.ctx.getWebSockets().length
+    }));
+  }
   async fetch(request){
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
       const budget=resetDailyBudget(this.world),persistenceBudget=this.readPersistenceBudget();
-      return json({ok:true,service:'cymonia-sovereign-world',version:2,model:this.env.BRAIN_MODEL||MODEL,ai:Boolean(this.env.AI?.run),ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},persistence_budget:{day:persistenceBudget.day,rows_written:persistenceBudget.rowsWritten,soft_limit:SAFE_ROW_WRITE_BUDGET,emergency_limit:EMERGENCY_ROW_WRITE_BUDGET,deferred:this.persistenceDeferred},world_id:this.world.worldId,world_minute:this.world.clock.worldMinute,lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),ledger_head:this.world.ledgerHead,persisted_generation:this.lastPersistedGeneration,persistence:'durable-object-sqlite-gzip-slotted'});
+      return json({
+        ok:true,
+        service:'cymonia-sovereign-world',
+        version:2,
+        model:this.env.BRAIN_MODEL||MODEL,
+        ai:Boolean(this.env.AI?.run),
+        ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},
+        persistence_budget:{
+          day:persistenceBudget.day,
+          rows_written:persistenceBudget.rowsWritten,
+          soft_limit:SAFE_ROW_WRITE_BUDGET,
+          emergency_limit:EMERGENCY_ROW_WRITE_BUDGET,
+          deferred:this.persistenceDeferred,
+          backoff_until_real_ms:this.persistenceDeferredUntilRealMs||null
+        },
+        websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
+        alarm_interval_ms:ALARM_MS,
+        world_id:this.world.worldId,
+        world_minute:this.world.clock.worldMinute,
+        lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),
+        ledger_head:this.world.ledgerHead,
+        persisted_generation:this.lastPersistedGeneration,
+        persistence:'durable-object-sqlite-gzip-slotted'
+      });
     }
     if(request.method==='GET'&&(path==='/'||path==='/state'))return json({ok:true,world:publicWorld(this.world,Date.now())});
     if(request.method==='GET'&&path==='/history')return json({ok:true,history:getHistory(this.world)});

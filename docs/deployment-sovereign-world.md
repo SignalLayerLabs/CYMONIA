@@ -41,3 +41,13 @@ curl -fsS https://cymonia.pages.dev/api/v2/health
 Expected service path: Pages -> `WORLD_SERVICE` -> Sovereign Worker -> canonical Durable Object.
 
 Then open the production site and verify that it enters the game-only Observer directly and that Society History opens over the same live world.
+
+## Runtime reliability guardrails
+
+The canonical world uses a one-minute Durable Object alarm cadence. Each alarm catches the deterministic world up to canonical real time, so reducing alarm frequency does not slow in-world time while it substantially reduces `setAlarm()` row writes.
+
+Snapshot persistence uses a 40,000-row soft daily budget and a 60,000-row emergency ceiling, both below the 100,000 free-tier account ceiling. The remaining capacity is intentional headroom for alarms, SQLite index effects, migrations, and other account-level Durable Object writes.
+
+Observer streaming uses the Durable Objects WebSocket Hibernation API. Active sockets are enumerated from `ctx.getWebSockets()` and carry serialized connection metadata so they remain usable after object eviction. A WebSocket-only outage does not mark the canonical world degraded while REST polling continues to return valid state; the stream reconnects independently with exponential backoff.
+
+Cloudflare observability emits `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, and `CYMONIA_WS_SEND_FAILED` events for stream diagnostics without persisting additional rows.

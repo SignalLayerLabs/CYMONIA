@@ -13,6 +13,21 @@ test('Durable Object runtime declares single writer, alarms, websocket and AI bi
   assert.match(cfg,/binding = "AI"/);
 });
 
+test('hibernating websocket runtime survives object eviction without volatile client ownership',()=>{
+  assert.match(worker,/getWebSockets\(\)/);
+  assert.match(worker,/serializeAttachment/);
+  assert.match(worker,/webSocketMessage/);
+  assert.match(worker,/CYMONIA_WS_CLOSE/);
+  assert.match(worker,/CYMONIA_WS_ERROR/);
+  assert.doesNotMatch(worker,/this\.clients/);
+});
+
+test('alarm cadence is one minute and constructor does not forcibly rewrite an existing alarm',()=>{
+  assert.match(worker,/const ALARM_MS=60_000/);
+  assert.match(worker,/await this\.ensureAlarm\(\);/);
+  assert.doesNotMatch(worker,/ensureAlarm\(true\)/);
+});
+
 test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint seals',()=>{
   assert.match(worker,/storage\.sql/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_state/);

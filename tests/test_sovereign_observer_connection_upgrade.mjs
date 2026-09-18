@@ -102,5 +102,30 @@ test('socket reconnect never creates overlapping live sockets',async()=>{
   assert.equal(sockets,1);
   handles[0].readyState=3;handles[0].onClose();
   await s.run();
+  assert.equal(sockets,1);
+  await s.run();
   assert.equal(sockets,2);
+});
+
+test('short websocket loss keeps canonical observer LIVE while reconnecting in background',async()=>{
+  const s=scheduler();let now=1000;let closeSocket;
+  const modes=[];
+  const c=new ObserverConnection({
+    fetchState:async()=>({version:2,worldId:'live',clock:{worldMinute:2,realEpochMs:0}}),
+    createSocket:({onOpen,onClose})=>{
+      const h={readyState:1,close(){this.readyState=3;}};
+      closeSocket=()=>{h.readyState=3;onClose();};
+      onOpen();
+      return h;
+    },
+    onWorld:()=>{},onMode:m=>modes.push(m),
+    setTimeoutFn:s.set.bind(s),clearTimeoutFn:s.clear.bind(s),randomFn:()=>.5,nowFn:()=>now,
+  });
+  await c.start();
+  assert.equal(c.mode,CONNECTION.LIVE);
+  now+=1200;
+  closeSocket();
+  assert.equal(c.mode,CONNECTION.LIVE);
+  assert.notEqual(modes.at(-1),CONNECTION.DEGRADED);
+  assert.ok(s.pending>0);
 });

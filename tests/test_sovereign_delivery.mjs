@@ -54,8 +54,9 @@ test('Genesis replay builder is reproducible',()=>{
 
 test('production Durable Object stays within free-tier write budget',()=>{
   const worker=read('worker/src/index.js');
-  assert.match(worker,/const ALARM_MS=10_000;/);
+  assert.match(worker,/const ALARM_MS=60_000;/);
   assert.match(worker,/const PERSIST_INTERVAL_WORLD_MINUTES=60;/);
+  assert.doesNotMatch(worker,/const ALARM_MS=10_000;/);
   assert.doesNotMatch(worker,/const ALARM_MS=1000;/);
   assert.match(worker,/checkpointDue/);
 });

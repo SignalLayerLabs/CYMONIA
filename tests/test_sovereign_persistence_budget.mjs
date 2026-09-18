@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FREE_TIER_ROW_WRITE_BUDGET,
+  ACCOUNT_RESERVE_ROW_WRITE_BUDGET,
   SAFE_ROW_WRITE_BUDGET,
   EMERGENCY_ROW_WRITE_BUDGET,
   encodeSnapshot,
@@ -40,11 +41,13 @@ test('budget backoff resumes exactly at next UTC day',()=>{
   assert.equal(new Date(nextUtcDayStart(Date.parse('2026-09-17T23:59:59.000Z'))).toISOString(),'2026-09-18T00:00:00.000Z');
 });
 
-test('write budget is conservative below Cloudflare free-tier ceiling',()=>{
+test('write budget leaves deliberate account headroom below Cloudflare free-tier ceiling',()=>{
   assert.equal(FREE_TIER_ROW_WRITE_BUDGET,100_000);
-  assert.ok(SAFE_ROW_WRITE_BUDGET<FREE_TIER_ROW_WRITE_BUDGET);
-  assert.equal(SAFE_ROW_WRITE_BUDGET,72_000);
-  assert.ok(EMERGENCY_ROW_WRITE_BUDGET<FREE_TIER_ROW_WRITE_BUDGET);
+  assert.equal(ACCOUNT_RESERVE_ROW_WRITE_BUDGET,40_000);
+  assert.equal(SAFE_ROW_WRITE_BUDGET,40_000);
+  assert.equal(EMERGENCY_ROW_WRITE_BUDGET,60_000);
+  assert.ok(SAFE_ROW_WRITE_BUDGET<EMERGENCY_ROW_WRITE_BUDGET);
+  assert.ok(EMERGENCY_ROW_WRITE_BUDGET<=FREE_TIER_ROW_WRITE_BUDGET-ACCOUNT_RESERVE_ROW_WRITE_BUDGET);
 });
 
 test('budget reservation is atomic in-memory semantics and never overspends',()=>{
@@ -58,11 +61,20 @@ test('budget reservation is atomic in-memory semantics and never overspends',()=
   assert.equal(result.budget.rowsWritten,SAFE_ROW_WRITE_BUDGET);
 });
 
-test('24h simulation remains below safety budget even under large snapshots',()=>{
-  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:64,sealEveryCheckpoints:1,alarmEverySeconds:10});
+test('expected 24h production envelope fits without persistence deferral',()=>{
+  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:8,sealEveryCheckpoints:60,alarmEverySeconds:60});
+  assert.equal(result.alarmRowsWritten,1_440);
   assert.ok(result.rowsWritten<=SAFE_ROW_WRITE_BUDGET,result);
-  assert.equal(result.alarmRowsWritten,8_640);
-  assert.ok(result.totalRowsWritten<FREE_TIER_ROW_WRITE_BUDGET,result);
+  assert.ok(result.totalRowsWritten<SAFE_ROW_WRITE_BUDGET,result);
+  assert.equal(result.deferredPersists,0,result);
+});
+
+test('stress envelope is throttled while preserving free-tier account headroom',()=>{
+  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:64,sealEveryCheckpoints:1,alarmEverySeconds:60});
+  assert.ok(result.rowsWritten<=SAFE_ROW_WRITE_BUDGET,result);
+  assert.equal(result.alarmRowsWritten,1_440);
+  assert.ok(result.totalRowsWritten<=FREE_TIER_ROW_WRITE_BUDGET-ACCOUNT_RESERVE_ROW_WRITE_BUDGET,result);
+  assert.ok(result.freeTierHeadroom>=ACCOUNT_RESERVE_ROW_WRITE_BUDGET,result);
   assert.ok(result.acceptedPersists>0,result);
   assert.ok(result.deferredPersists>0,result);
 });

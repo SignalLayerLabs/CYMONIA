@@ -1,6 +1,7 @@
 export const FREE_TIER_ROW_WRITE_BUDGET=100_000;
-export const SAFE_ROW_WRITE_BUDGET=72_000;
-export const EMERGENCY_ROW_WRITE_BUDGET=88_000;
+export const ACCOUNT_RESERVE_ROW_WRITE_BUDGET=40_000;
+export const SAFE_ROW_WRITE_BUDGET=40_000;
+export const EMERGENCY_ROW_WRITE_BUDGET=60_000;
 export const SNAPSHOT_ENCODING='gzip-base64-v1';
 
 function bytesToBase64(bytes){
@@ -71,7 +72,7 @@ export function simulateDay({
   cognitionPersists=0,
   chunkCount=1,
   sealEveryCheckpoints=60,
-  alarmEverySeconds=10,
+  alarmEverySeconds=60,
   day='simulation',
   limit=SAFE_ROW_WRITE_BUDGET,
 }={}){
@@ -87,5 +88,15 @@ export function simulateDay({
   for(let i=1;i<=checkpointCount;i++)attempt(sealEveryCheckpoints>0&&i%sealEveryCheckpoints===0);
   for(let i=0;i<Math.max(0,Math.floor(cognitionPersists));i++)attempt(false);
   const alarmRowsWritten=Math.floor(86_400/Math.max(1,alarmEverySeconds));
-  return {rowsWritten:budget.rowsWritten,alarmRowsWritten,totalRowsWritten:budget.rowsWritten+alarmRowsWritten,acceptedPersists,deferredPersists,checkpointCount,limit:budget.limit};
+  const totalRowsWritten=budget.rowsWritten+alarmRowsWritten;
+  return {
+    rowsWritten:budget.rowsWritten,
+    alarmRowsWritten,
+    totalRowsWritten,
+    freeTierHeadroom:Math.max(0,FREE_TIER_ROW_WRITE_BUDGET-totalRowsWritten),
+    acceptedPersists,
+    deferredPersists,
+    checkpointCount,
+    limit:budget.limit
+  };
 }
