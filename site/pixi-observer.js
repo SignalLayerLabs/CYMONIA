@@ -16,7 +16,7 @@ export class PixiObserverLayer{
   constructor(canvasFallback,art){
     this.canvasFallback=canvasFallback;this.art=art;this.app=null;this.ready=false;this.failed=false;this.state=null;this.staticKey='';this.hits=[];this.citizenSprites=new Map();this.frames=[];this.groundSource=null;this.staticEntries=[];
     // Logical object layers share a depth-sorted container, so trees can occlude people correctly.
-    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;this.spineAdapter=null;
+    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;this.spineAdapter=null;this.ownedCitizenId=null;
     this.init();
   }
   async init(){
@@ -40,6 +40,7 @@ export class PixiObserverLayer{
     }catch(error){console.warn('Pixi observer unavailable; Canvas fallback remains active.',error);this.app?.destroy(true,{children:true});this.app=null;this.failed=true;}
   }
   setState(state){this.state=state;}
+  setOwnedCitizen(id){this.ownedCitizenId=id||null;}
   staticSignature(state){return `${staticSceneKey(state)}|${this.art.revision}`;}
   clearLayer(layer){for(const child of layer.removeChildren())child.destroy({children:true});}
   sprite(frame,size){const s=new globalThis.PIXI.Sprite(this.frames[frame]);s.anchor.set(.5,.94);s.scale.set(size/s.texture.width);return s;}
@@ -74,6 +75,9 @@ export class PixiObserverLayer{
         task.anchor.set(.5);task.position.set(0,-41);container.addChild(shadow,body,task);
         entry={container,body,task,shadow,baseScale:Math.abs(body.scale.x),spine:false};
       }
+      const ownedRing=new PIXI.Graphics();ownedRing.ellipse(0,1,11,5).stroke({width:1.5,color:0x8fd7ff,alpha:.95});ownedRing.visible=false;
+      const ownerMark=new PIXI.Text({text:'YOU',style:{fontFamily:'system-ui',fontSize:8,fontWeight:'700',fill:0xbfe8ff,stroke:{color:0x17251f,width:2}}});ownerMark.anchor.set(.5);ownerMark.position.set(0,-49);ownerMark.visible=false;
+      entry.container.addChildAt(ownedRing,0);entry.container.addChild(ownerMark);entry.ownedRing=ownedRing;entry.ownerMark=ownerMark;
       this.citizenLayer.addChild(entry.container);this.citizenSprites.set(c.id,entry);
     }
     for(const [id,e] of this.citizenSprites)if(!alive.has(id)){e.container.destroy({children:true});this.citizenSprites.delete(id);}
@@ -97,6 +101,7 @@ export class PixiObserverLayer{
         e.body.scale.set((flip?-1:1)*e.baseScale*pose.scaleX,e.baseScale*pose.scaleY);
         if(e.shadow)e.shadow.scale.x=pose.shadowScale;
       }
+      const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
       e.task.text=a&&(active||camera.zoom>2)?ACTION_ICON[a.type]||'·':'';
       const sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:citizenFrame(c),size:19},{x:sp.x,y:sp.y+e.body.y*camera.zoom},camera.zoom,e.body.scale.x<0),depth:p.y});
     }

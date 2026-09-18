@@ -18,7 +18,26 @@ export async function onRequest({request,env}){
     if(request.method==='GET'&&p.startsWith('/why/'))return proxy(request,env);
     if(request.method==='GET'&&p==='/stream')return proxy(request,env);
     if(request.method==='POST'&&p==='/avatar'){
-      await readJson(request).catch(()=>({}));const actor=await requireActor(request,env);return proxy(request,env,{body:{actor},path:'/avatar'});
+      await readJson(request).catch(()=>({}));
+      const actor=await requireActor(request,env);
+      const ensured=await proxy(request,env,{body:{actor},path:'/avatar'});
+      const avatar=await ensured.json();
+
+      if(!avatar.ok)return json(avatar,ensured.status);
+
+      return json({
+        ok:true,
+        authenticated:true,
+        actor:{
+          displayName:actor.display_name||actor.github_login||null,
+          githubLogin:actor.github_login||null,
+          avatarUrl:actor.avatar_url||null
+        },
+        avatar:{
+          citizenId:avatar.citizenId,
+          created:Boolean(avatar.created)
+        }
+      });
     }
     if(request.method==='POST'&&p==='/intent'){
       const actor=await requireActor(request,env);const body=await readJson(request);const avatar=await proxy(new Request(request.url,{method:'POST'}),env,{body:{actor},path:'/avatar'});const av=await avatar.json();if(!av.ok)return json(av,avatar.status);return proxy(request,env,{body:{citizenId:av.citizenId,intent:body.intent},path:'/intent'});
