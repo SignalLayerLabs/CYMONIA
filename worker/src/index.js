@@ -284,7 +284,12 @@ export class SovereignWorld {
       this.world.clock.worldMinute-lastPersisted >=
       PERSIST_INTERVAL_WORLD_MINUTES;
 
-    if(checkpointDue){
+    if(progress.recovered){
+      // Recovery rebases realEpochMs so downtime is not counted as lived
+      // world time. Persist that boundary immediately; otherwise Durable
+      // Object hibernation can discard it and reload the pre-recovery state.
+      await this.persist({forceSeal:true});
+    }else if(checkpointDue){
       await this.persist();
     }
 
