@@ -1,0 +1,48 @@
+name: Feature proposal
+description: Propose a world, Observer or infrastructure capability
+title: "[Proposal]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What limitation exists today?
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Primary layer
+      options:
+        - World physics / materials
+        - Biology / life cycle
+        - Knowledge / memory / beliefs
+        - Cognition
+        - Language / society
+        - Runtime / persistence
+        - Observer / visualization
+        - Human-linked avatar
+        - Developer experience / testing
+        - Documentation
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the mechanism, not only the desired outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: authority
+    attributes:
+      label: Authority boundary
+      description: Which component is allowed to mutate canonical state, if any?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: How would we prove it works?
+      description: Suggested invariants, browser checks or operational metrics.
