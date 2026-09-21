@@ -86,6 +86,15 @@ test('Workers AI cognition has a hard daily budget and never falls back to fabri
   assert.doesNotMatch(worker,/processCognition\(2\)/);
 });
 
+test('Workers AI selects cognition through the fair novelty scheduler',()=>{
+  const start=worker.indexOf('async processCognition');
+  const end=worker.indexOf('websocketMeta',start);
+  const process=worker.slice(start,end);
+  assert.match(process,/takeCognitionCandidate/);
+  assert.match(process,/queueCognition/);
+  assert.doesNotMatch(process,/\.sort\(\(a,b\)=>b\.priority-a\.priority\)/);
+});
+
 test('public state reads never run mutation or Workers AI before responding',()=>{
   const fetchBody=worker.slice(worker.indexOf('async fetch(request){'),worker.indexOf('\n  }\n}',worker.indexOf('async fetch(request){')));
   const readPrelude=fetchBody.slice(0,fetchBody.indexOf("if(request.headers.get('upgrade')"));

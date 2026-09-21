@@ -13,6 +13,8 @@ import {
   compactLedger,
   worldMinuteAt,
   REAL_MS_PER_WORLD_MINUTE,
+  queueCognition,
+  takeCognitionCandidate,
 } from '../../world/index.js';
 import {
   SAFE_ROW_WRITE_BUDGET,
@@ -321,10 +323,10 @@ export class SovereignWorld {
       }
       return false;
     }
-    const queue=this.world.cognitionQueue.sort((a,b)=>b.priority-a.priority);
     let used=0;
-    while(queue.length&&used<limit&&budget.calls<dailyLimit){
-      const item=queue.shift();
+    while(used<limit&&budget.calls<dailyLimit){
+      const item=takeCognitionCandidate(this.world,this.world.clock.worldMinute,'standard');
+      if(!item)break;
       const c=this.world.citizens.find(x=>x.id===item.citizenId&&x.alive);
       if(!c)continue;
       budget.calls++;
@@ -336,7 +338,7 @@ export class SovereignWorld {
       }catch(error){
         budget.lastFailureRealMs=Date.now();
         appendEvent(this.world,'COGNITION_DEFERRED',c.id,{reason:item.reason,error:String(error?.message||error).slice(0,160)},[],this.world.clock.worldMinute);
-        queue.push({...item,priority:Math.max(.2,item.priority-.02)});
+        queueCognition(this.world,c,item.reason,Math.max(.2,item.basePriority-.02),this.world.clock.worldMinute,item.eventIds?.at(-1),{retryAfterWorldMinute:this.world.clock.worldMinute+60});
       }
       used++;
     }

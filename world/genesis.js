@@ -3,6 +3,7 @@ import {rng,stableId} from './rng.js';
 import {appendEvent} from './ledger.js';
 import {genesisGenome} from './genetics.js';
 import {ensureCognitionState} from './cognition-state.js';
+import {queueCognition} from './cognition-queue.js';
 
 function body(r,index,genome){return {massKg:55+Math.round(r()*30),hydration:82+r()*15,calories:82+r()*15,sleepPressure:5+r()*15,temperatureC:36.6,health:100,injuries:[],diseases:[],fertility:genome.fertility,pregnancy:null,reproductiveRole:index%2===0?'gestating':'non_gestating',ageMinutes:(18+Math.floor(r()*17))*525600,alive:true};}
 function psychology(r){return {curiosity:r(),riskTolerance:r(),socialDrive:r(),aggression:r()*.6,empathy:.35+r()*.65,noveltySeeking:r(),stress:0,fear:0,attachment:0.2+r()*.4,confidence:.3+r()*.6};}
@@ -27,7 +28,8 @@ export function createSovereignGenesis({seed=20260915,realEpochMs=Date.now()}={}
     {id:stableId('dep',seed,4),type:'clay',quantity:12000,renewPerDay:.2,position:{x:43,y:53},accessDifficulty:.18},
     {id:stableId('dep',seed,5),type:'ore',quantity:8000,renewPerDay:0,position:{x:32,y:31},accessDifficulty:.7}
   ];
-  const world={version:WORLD_VERSION,worldId,seed,clock:{realEpochMs:Number(realEpochMs),worldMinute:0},environment:{temperatureC:18,precipitation:0,soilMoisture:.55,seasonPhase:0,dayPhase:0,pollution:0,pathogenPressure:.012,naturalReservoirs:{waterKg:9_000_000,biomassKg:1_000_000,mineralKg:1_000_000},metabolicMatterKg:0},citizens,objects,resourceDeposits,actions:[],projects:[],designs:[],buildings:[],organizations:[],claims:[],commitments:[],currencySystems:[],relationships:[],languages:[],experiments:[],reserves:{observerEmbodimentKg:8000,observerEmbodimentEnergyUnits:800000},privateHumanIntents:{},cognitionQueue:citizens.map(c=>({citizenId:c.id,reason:'genesis_awareness',priority:.6})),ledger:[],ledgerHead:'GENESIS',observer:{classifications:[]}};
+  const world={version:WORLD_VERSION,worldId,seed,clock:{realEpochMs:Number(realEpochMs),worldMinute:0},environment:{temperatureC:18,precipitation:0,soilMoisture:.55,seasonPhase:0,dayPhase:0,pollution:0,pathogenPressure:.012,naturalReservoirs:{waterKg:9_000_000,biomassKg:1_000_000,mineralKg:1_000_000},metabolicMatterKg:0},citizens,objects,resourceDeposits,actions:[],projects:[],designs:[],buildings:[],organizations:[],claims:[],commitments:[],currencySystems:[],relationships:[],languages:[],experiments:[],reserves:{observerEmbodimentKg:8000,observerEmbodimentEnergyUnits:800000},privateHumanIntents:{},cognitionQueue:[],ledger:[],ledgerHead:'GENESIS',observer:{classifications:[]}};
+  for(const c of citizens)queueCognition(world,c,'genesis_awareness',.6,0);
   appendEvent(world,'WORLD_GENESIS','world',{population:GENESIS_POPULATION,seed,endowmentObjectIds:objects.map(o=>o.id),materialClosure:true,timeRatio:'1 real second = 1 world minute'},[],0);
   return world;
 }
