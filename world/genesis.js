@@ -2,11 +2,12 @@ import {WORLD_VERSION,GENESIS_POPULATION,PRIMITIVE_SIGNALS} from './constants.js
 import {rng,stableId} from './rng.js';
 import {appendEvent} from './ledger.js';
 import {genesisGenome} from './genetics.js';
+import {ensureCognitionState} from './cognition-state.js';
 
 function body(r,index,genome){return {massKg:55+Math.round(r()*30),hydration:82+r()*15,calories:82+r()*15,sleepPressure:5+r()*15,temperatureC:36.6,health:100,injuries:[],diseases:[],fertility:genome.fertility,pregnancy:null,reproductiveRole:index%2===0?'gestating':'non_gestating',ageMinutes:(18+Math.floor(r()*17))*525600,alive:true};}
 function psychology(r){return {curiosity:r(),riskTolerance:r(),socialDrive:r(),aggression:r()*.6,empathy:.35+r()*.65,noveltySeeking:r(),stress:0,fear:0,attachment:0.2+r()*.4,confidence:.3+r()*.6};}
 function position(i,r){const ring=Math.floor(i/20);const a=(i%20)/20*Math.PI*2;const radius=4+ring*2.3;return {x:50+Math.cos(a)*radius+r()*.4,y:50+Math.sin(a)*radius+r()*.4};}
-function citizen(i,r,seed){const genome=genesisGenome(seed,i);const id=`genesis:${String(i+1).padStart(3,'0')}`;return {id,kind:'GENESIS',selfName:null,externalId:null,alive:true,birthWorldMinute:-Math.floor((18+r()*17)*525600),deathWorldMinute:null,position:position(i,r),genome,body:body(r,i,genome),psychology:psychology(r),knowledge:[],memories:[],knownEntityIds:[id],skills:{},language:{primitiveSignals:[...PRIMITIVE_SIGNALS],lexicon:{},heard:{},grammarPatterns:{}},relationships:{},beliefs:[],possessions:[],goals:[],activeGoal:null,plans:[],currentActionId:null,commitments:[],cognition:{lastReflectionMinute:null,pending:true,reason:'genesis_awareness'}};}
+function citizen(i,r,seed){const genome=genesisGenome(seed,i);const id=`genesis:${String(i+1).padStart(3,'0')}`;const c={id,kind:'GENESIS',selfName:null,externalId:null,alive:true,birthWorldMinute:-Math.floor((18+r()*17)*525600),deathWorldMinute:null,position:position(i,r),genome,body:body(r,i,genome),psychology:psychology(r),knowledge:[],memories:[],knownEntityIds:[id],skills:{},language:{primitiveSignals:[...PRIMITIVE_SIGNALS],lexicon:{},heard:{},grammarPatterns:{}},relationships:{},beliefs:[],possessions:[],goals:[],activeGoal:null,plans:[],currentActionId:null,commitments:[],cognition:{lastReflectionMinute:null,pending:true,reason:'genesis_awareness'}};ensureCognitionState(c,0);return c;}
 
 export function createSovereignGenesis({seed=20260915,realEpochMs=Date.now()}={}){
   const r=rng(seed);const worldId=`sovereign-${seed}`;
