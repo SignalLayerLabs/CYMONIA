@@ -305,11 +305,39 @@ export class SovereignWorld {
       await this.persist();
     }
   }
-  async alarm(){
+  async alarm(alarmInfo){
+    const startedAt=Date.now();
+    const runtime=ensureRuntime(this.world);
+
     try{
       await this.tick();
+
+      runtime.lastTickRealMs=Date.now();
+      runtime.lastTickWorldMinute=this.world.clock.worldMinute;
+      runtime.lastTickError=null;
+      runtime.lastAlarmRetryCount=Number(alarmInfo?.retryCount||0);
+    }catch(error){
+      runtime.lastTickRealMs=Date.now();
+      runtime.lastTickWorldMinute=this.world?.clock?.worldMinute??null;
+      runtime.lastTickError=String(error?.stack||error?.message||error).slice(0,1000);
+      runtime.lastAlarmRetryCount=Number(alarmInfo?.retryCount||0);
+
+      console.error('CYMONIA_TICK_FAILED',JSON.stringify({
+        worldMinute:this.world?.clock?.worldMinute??null,
+        retryCount:Number(alarmInfo?.retryCount||0),
+        isRetry:Boolean(alarmInfo?.isRetry),
+        elapsedMs:Date.now()-startedAt,
+        error:String(error?.message||error).slice(0,300)
+      }));
+
+      // Do not rethrow here.
+      // A single malformed Citizen or transient runtime error must never
+      // permanently stop the Sovereign World heartbeat.
     }finally{
-      await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+      const nextAlarm=Date.now()+ALARM_MS;
+      runtime.nextAlarmRealMs=nextAlarm;
+
+      await this.ctx.storage.setAlarm(nextAlarm);
     }
   }
   async processCognition(limit){
