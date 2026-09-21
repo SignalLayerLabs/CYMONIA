@@ -27,11 +27,20 @@ import {
   nextSnapshotSlot,
   nextUtcDayStart,
 } from './persistence.js';
+import {
+  MODEL_NEURON_RATES,
+  NEURON_BUDGET_LIMITS,
+  ensureNeuronBudget,
+  estimateReservation,
+  neuronCapacity,
+  reconcileNeurons,
+  reserveNeurons,
+} from './neuron-governor.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
-const AI_CALLS_PER_REAL_DAY=200;
+const MAX_COMPLETION_TOKENS=200;
 const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
@@ -52,18 +61,9 @@ function parseJsonText(value){
 function utcDay(ms=Date.now()){return new Date(ms).toISOString().slice(0,10);}
 function ensureRuntime(world){
   world.runtime??={};
-  world.runtime.aiBudget??={day:utcDay(),calls:0,lastExhaustedDay:null,lastFailureRealMs:0};
+  ensureNeuronBudget(world);
   world.runtime.lastSealWorldMinute??=-CHECKPOINT_WORLD_MINUTES;
   return world.runtime;
-}
-function resetDailyBudget(world){
-  const runtime=ensureRuntime(world),day=utcDay();
-  if(runtime.aiBudget.day!==day){runtime.aiBudget={day,calls:0,lastExhaustedDay:null,lastFailureRealMs:0};}
-  return runtime.aiBudget;
-}
-function configuredDailyBudget(env){
-  const raw=Number(env.AI_CALLS_PER_REAL_DAY||AI_CALLS_PER_REAL_DAY);
-  return Number.isFinite(raw)?Math.max(0,Math.floor(raw)):AI_CALLS_PER_REAL_DAY;
 }
 async function sha256Hex(text){
   const bytes=new TextEncoder().encode(text);
@@ -73,7 +73,7 @@ async function sha256Hex(text){
 async function askAI(env,context){
   if(!env.AI?.run)throw new Error('ai_unavailable');
   const system=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge or concrete actions. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7}. The strategy should guide several world-days of local autonomous behavior. Prefer novelty or reinterpretation; use adapt when evidence is insufficient.`;
-  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:200,temperature:.45});
+  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:MAX_COMPLETION_TOKENS,temperature:.45});
   const text=out?.response??out?.result?.response??out?.result??out;
   const usage=out?.usage??out?.result?.usage??out?.result?.response?.usage??null;
   return {strategy:sanitizeAIStrategy(parseJsonText(text)),usage};
@@ -314,35 +314,49 @@ export class SovereignWorld {
   }
   async processCognition(limit){
     if(!this.env.AI?.run)return false;
-    const budget=resetDailyBudget(this.world),dailyLimit=configuredDailyBudget(this.env),runtime=ensureRuntime(this.world);
+    const budget=ensureNeuronBudget(this.world),model=this.env.BRAIN_MODEL||MODEL;
     if(Date.now()-Number(budget.lastFailureRealMs||0)<AI_RETRY_COOLDOWN_MS)return false;
-    if(budget.calls>=dailyLimit){
-      if(budget.lastExhaustedDay!==budget.day){
-        budget.lastExhaustedDay=budget.day;
-        appendEvent(this.world,'COGNITION_DEFERRED','world',{reason:'ai_budget_exhausted',dailyLimit},[],this.world.clock.worldMinute);
-      }
-      return false;
-    }
-    let used=0;
-    while(used<limit&&budget.calls<dailyLimit){
-      const item=takeCognitionCandidate(this.world,this.world.clock.worldMinute,'standard');
-      if(!item)break;
+    const phases=[];
+    if(neuronCapacity(budget,'normal')>0)phases.push('standard');
+    if(neuronCapacity(budget,'priority')>0)phases.push('priority');
+    if(neuronCapacity(budget,'emergency')>0)phases.push('emergency');
+    const rejected=[];
+    let used=0,exhaustedReason=phases.length?null:'neuron_hard_budget_exhausted';
+    for(const phase of phases){
+      if(used>=limit)break;
+      const item=takeCognitionCandidate(this.world,this.world.clock.worldMinute,phase);
+      if(!item)continue;
       const c=this.world.citizens.find(x=>x.id===item.citizenId&&x.alive);
       if(!c)continue;
-      budget.calls++;
+      const context=buildCognitiveContext(this.world,c,this.world.clock.worldMinute);
+      const reserveClass=item.reserve==='emergency'?'emergency':item.reserve==='priority'?'priority':'normal';
+      const estimate=estimateReservation(model,JSON.stringify(context),MAX_COMPLETION_TOKENS);
+      const admission=reserveNeurons(budget,estimate,reserveClass);
+      if(!admission.ok){
+        exhaustedReason=admission.reason;
+        rejected.push({item,c});
+        continue;
+      }
+      let accounting=null;
       try{
-        const {strategy,usage}=await withTimeout(askAI(this.env,buildCognitiveContext(this.world,c,this.world.clock.worldMinute)),AI_CALL_TIMEOUT_MS,'ai_timeout');
+        const {strategy,usage}=await withTimeout(askAI(this.env,context),AI_CALL_TIMEOUT_MS,'ai_timeout');
+        accounting=reconcileNeurons(budget,admission.reservation,usage,model);
         acceptAIStrategy(this.world,c.id,strategy,this.world.clock.worldMinute);
-        appendEvent(this.world,'AI_COGNITION',c.id,{model:this.env.BRAIN_MODEL||MODEL,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length,usage:usage?{promptTokens:Number(usage.prompt_tokens||0),completionTokens:Number(usage.completion_tokens||0)}:null},[],this.world.clock.worldMinute);
+        appendEvent(this.world,'AI_COGNITION',c.id,{model,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length,chargedNeurons:accounting.charged,accountingWarning:accounting.warning||null},[],this.world.clock.worldMinute);
         budget.lastFailureRealMs=0;
       }catch(error){
+        if(!admission.reservation.reconciled)accounting=reconcileNeurons(budget,admission.reservation,null,model);
         budget.lastFailureRealMs=Date.now();
-        appendEvent(this.world,'COGNITION_DEFERRED',c.id,{reason:item.reason,error:String(error?.message||error).slice(0,160)},[],this.world.clock.worldMinute);
+        appendEvent(this.world,'COGNITION_DEFERRED',c.id,{reason:item.reason,error:String(error?.message||error).slice(0,160),chargedNeurons:accounting?.charged??null},[],this.world.clock.worldMinute);
         queueCognition(this.world,c,item.reason,Math.max(.2,item.basePriority-.02),this.world.clock.worldMinute,item.eventIds?.at(-1),{retryAfterWorldMinute:this.world.clock.worldMinute+60});
       }
       used++;
     }
-    runtime.aiBudget=budget;
+    for(const {item,c} of rejected)queueCognition(this.world,c,item.reason,item.basePriority,this.world.clock.worldMinute,item.eventIds?.at(-1));
+    if(used===0&&exhaustedReason&&budget.lastExhaustedDay!==budget.day){
+      budget.lastExhaustedDay=budget.day;
+      appendEvent(this.world,'COGNITION_DEFERRED','world',{reason:'neuron_budget_exhausted',admissionReason:exhaustedReason,usedNeurons:budget.usedNeurons,reservedNeurons:budget.reservedNeurons},[],this.world.clock.worldMinute);
+    }
     return used>0;
   }
   websocketMeta(ws){
@@ -394,14 +408,27 @@ export class SovereignWorld {
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
-      const budget=resetDailyBudget(this.world),persistenceBudget=this.readPersistenceBudget();
+      const budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,rate=MODEL_NEURON_RATES[model]||null;
       return json({
         ok:true,
         service:'cymonia-sovereign-world',
         version:2,
-        model:this.env.BRAIN_MODEL||MODEL,
+        model,
         ai:Boolean(this.env.AI?.run),
-        ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},
+        ai_budget:{
+          day:budget.day,
+          used_neurons:budget.usedNeurons,
+          reserved_neurons:budget.reservedNeurons,
+          prompt_tokens:budget.promptTokens,
+          completion_tokens:budget.completionTokens,
+          calls:budget.calls,
+          soft_limit:NEURON_BUDGET_LIMITS.normal,
+          high_priority_limit:NEURON_BUDGET_LIMITS.priority,
+          hard_limit:NEURON_BUDGET_LIMITS.emergency,
+          available:{normal:neuronCapacity(budget,'normal'),priority:neuronCapacity(budget,'priority'),emergency:neuronCapacity(budget,'emergency')},
+          model_rate_id:rate?.rateId||null,
+          last_accounting_warning:budget.lastAccountingWarning,
+        },
         persistence_budget:{
           day:persistenceBudget.day,
           rows_written:persistenceBudget.rowsWritten,

@@ -78,12 +78,28 @@ test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint 
   assert.doesNotMatch(worker,/storage\.put\(WORLD_KEY/);
 });
 
-test('Workers AI cognition has a hard daily budget and never falls back to fabricated social decisions',()=>{
-  assert.match(worker,/AI_CALLS_PER_REAL_DAY/);
-  assert.match(worker,/aiBudget/);
-  assert.match(worker,/ai_budget_exhausted/);
+test('Workers AI cognition is governed by measured neurons, not call count',()=>{
+  assert.doesNotMatch(worker,/AI_CALLS_PER_REAL_DAY/);
+  assert.match(worker,/ensureNeuronBudget/);
+  assert.match(worker,/reserveNeurons/);
+  assert.match(worker,/reconcileNeurons/);
+  assert.match(worker,/neuron_budget_exhausted/);
   assert.match(worker,/processCognition\(1\)/);
   assert.doesNotMatch(worker,/processCognition\(2\)/);
+});
+
+test('health exposes safe neuron accounting without prompts or strategy text',()=>{
+  const start=worker.indexOf("if(request.method==='GET'&&path==='/health')");
+  const end=worker.indexOf("if(request.method==='GET'&&path==='/state')",start);
+  const health=worker.slice(start,end);
+  assert.match(health,/used_neurons/);
+  assert.match(health,/prompt_tokens/);
+  assert.match(health,/completion_tokens/);
+  assert.match(health,/soft_limit/);
+  assert.match(health,/high_priority_limit/);
+  assert.match(health,/hard_limit/);
+  assert.match(health,/model_rate_id/);
+  assert.doesNotMatch(health,/dailyLimit|prompt:|context:|strategy:/);
 });
 
 test('Workers AI selects cognition through the fair novelty scheduler',()=>{
@@ -114,7 +130,8 @@ test('Workers AI emits compact persistent strategies instead of short action scr
   const askStart=worker.indexOf('async function askAI');
   const askEnd=worker.indexOf('async function withTimeout',askStart);
   const ask=worker.slice(askStart,askEnd);
-  assert.match(ask,/max_completion_tokens:\s*200/);
+  assert.match(worker,/const MAX_COMPLETION_TOKENS=200/);
+  assert.match(ask,/max_completion_tokens:MAX_COMPLETION_TOKENS/);
   assert.match(ask,/"intent"/);
   assert.match(ask,/"actionBias"/);
   assert.match(ask,/usage/);
