@@ -132,6 +132,33 @@ Authenticated users can create one persistent `HUMAN_LINKED` Citizen. External d
 
 ---
 
+## Autonomous cognition economy
+
+Citizens continue to act when Workers AI is unavailable. Cognition is split into four layers:
+
+1. **Tier 0 — Reflex:** urgent hydration, nutrition, sleep and environmental safety.
+2. **Tier 1 — Local Brain:** a deterministic affordance planner scores exploration, gathering,
+   experimentation, transformation, communication, teaching, care, transfer, cooperation,
+   construction and rest from the citizen's own evidence.
+3. **Tier 2 — Adaptive planning:** bounded outcome memory and a persistent strategy alter later
+   choices without bypassing the physical or epistemic validators.
+4. **Tier 3 — AI cognition:** Workers AI is used only for novel or urgent reinterpretation. It
+   returns a compact multi-day strategy, never a minute-by-minute action script.
+
+The novelty queue merges repeated events and uses cognition debt so a few Citizens cannot
+monopolize AI. One accepted strategy can guide many days of local action. Concrete outcomes remain
+deterministic: resource discovery can lead to gathering, property experiments, coined signals,
+shared knowledge, material transformation and construction without an AI call or a rule saying
+what society must build.
+
+Workers AI admission is governed by measured neurons rather than a call-count limit. The default
+daily ceilings are 8,000 neurons for normal novelty, 9,000 including high-priority events, and
+9,500 including human/emergency work, preserving 500 neurons of the documented free allocation as
+headroom. Actual `usage.prompt_tokens` and `usage.completion_tokens` replace the reservation after
+each response; missing usage is charged conservatively rather than treated as free.
+
+---
+
 ## Architecture
 
 ```text
@@ -172,7 +199,12 @@ For the technical deep dive, read **[Architecture](docs/architecture/overview.md
 | Path | Responsibility |
 |---|---|
 | [`world/`](world/) | Canonical simulation kernel: physics, biology, knowledge, cognition, language and society |
+| [`world/affordances.js`](world/affordances.js) | Deterministic Local Brain candidate generation and scoring |
+| [`world/cognition-state.js`](world/cognition-state.js) | Bounded local learning, cooldowns and cognition debt |
+| [`world/cognition-queue.js`](world/cognition-queue.js) | Mergeable novelty queue and fair debt-aware AI scheduling |
+| [`world/strategy.js`](world/strategy.js) | Persistent AI strategy validation and lifecycle |
 | [`worker/`](worker/) | Persistent Durable Object runtime, alarms, AI budget, checkpoints and WebSockets |
+| [`worker/src/neuron-governor.js`](worker/src/neuron-governor.js) | Workers AI neuron reservation and measured accounting |
 | [`functions/`](functions/) | Cloudflare Pages API facade, GitHub OAuth and identity boundary |
 | [`site/`](site/) | Public Observer, PixiJS renderer, avatar UI and deterministic replay fallback |
 | [`tests/`](tests/) | World invariants, runtime contracts, renderer contracts and browser smoke tests |

@@ -22,3 +22,6 @@ export * from './reproduction.js';
 export * from './disease.js';
 export * from './beliefs.js';
 export * from './impact.js';
+export * from './strategy.js';
+export * from './cognition-state.js';
+export * from './cognition-queue.js';

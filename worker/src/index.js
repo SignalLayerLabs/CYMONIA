@@ -6,13 +6,15 @@ import {
   getWhy,
   createHumanAvatar,
   submitHumanIntent,
-  acceptCognitiveProposal,
+  acceptAIStrategy,
   buildCognitiveContext,
-  sanitizeAIProposal,
+  sanitizeAIStrategy,
   appendEvent,
   compactLedger,
   worldMinuteAt,
   REAL_MS_PER_WORLD_MINUTE,
+  queueCognition,
+  takeCognitionCandidate,
 } from '../../world/index.js';
 import {
   SAFE_ROW_WRITE_BUDGET,
@@ -25,11 +27,20 @@ import {
   nextSnapshotSlot,
   nextUtcDayStart,
 } from './persistence.js';
+import {
+  ensureNeuronBudget,
+  estimateReservation,
+  neuronCapacity,
+  reconcileNeurons,
+  resolveNeuronConfig,
+  reserveNeurons,
+} from './neuron-governor.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
-const AI_CALLS_PER_REAL_DAY=200;
+const MAX_COMPLETION_TOKENS=200;
+const AI_SYSTEM_PROMPT=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge or concrete actions. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7}. The strategy should guide several world-days of local autonomous behavior. Prefer novelty or reinterpretation; use adapt when evidence is insufficient.`;
 const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
@@ -50,18 +61,9 @@ function parseJsonText(value){
 function utcDay(ms=Date.now()){return new Date(ms).toISOString().slice(0,10);}
 function ensureRuntime(world){
   world.runtime??={};
-  world.runtime.aiBudget??={day:utcDay(),calls:0,lastExhaustedDay:null,lastFailureRealMs:0};
+  ensureNeuronBudget(world);
   world.runtime.lastSealWorldMinute??=-CHECKPOINT_WORLD_MINUTES;
   return world.runtime;
-}
-function resetDailyBudget(world){
-  const runtime=ensureRuntime(world),day=utcDay();
-  if(runtime.aiBudget.day!==day){runtime.aiBudget={day,calls:0,lastExhaustedDay:null,lastFailureRealMs:0};}
-  return runtime.aiBudget;
-}
-function configuredDailyBudget(env){
-  const raw=Number(env.AI_CALLS_PER_REAL_DAY||AI_CALLS_PER_REAL_DAY);
-  return Number.isFinite(raw)?Math.max(0,Math.floor(raw)):AI_CALLS_PER_REAL_DAY;
 }
 async function sha256Hex(text){
   const bytes=new TextEncoder().encode(text);
@@ -70,11 +72,12 @@ async function sha256Hex(text){
 }
 async function askAI(env,context){
   if(!env.AI?.run)throw new Error('ai_unavailable');
-  const system=`You are the private cognition process of one inhabitant of CYMONIA. You are NOT an Earth assistant. Use ONLY facts, opaque concept IDs, entities, memories and evidence present in the supplied context. Never introduce Earth institutions, technologies, languages, history, religion, science, objects, recipes or proper names unless the exact concept already exists in context. External direction is a preference only and never factual knowledge. Return strict JSON only, with this shape: {"concepts":["known concept id"],"beliefUpdates":[{"stanceCode":"supports|opposes|uncertain|sacred|taboo|causal|identity|normative","conceptIds":["known concept id"],"confidence":0.0}],"actions":[{"type":"MOVE|OBSERVE|REST|SLEEP|EAT|DRINK|GATHER|CARRY|CUT|DIG|HEAT|COOL|MIX|ASSEMBLE|BUILD|CARE|TEACH|COMMUNICATE|EXPERIMENT|ATTACK|DEFEND|TRANSFER|PROMISE|CLAIM|REPRODUCE","durationMinutes":number,"targetId":string|null,"targetPosition":{"x":number,"y":number}|null,"purpose":"survival|explore|cooperate|care|experiment|construct|defend|communicate|self_directed","concepts":["known concept id"],"payload":object}]}. Payload may contain only IDs and primitive parameters supported by the action. For GATHER use quantity. For TEACH/COMMUNICATE use concept, conceptIds, beliefId or primitiveSignal. For PROMISE use kindCode and purposeConcept. For CLAIM use predicateCode, subjectId and purposeConcept. For EXPERIMENT use targetIds and methodCode. For BUILD use projectId or inputObjectIds, site, workMinutes and form. For TRANSFER use objectId. For CUT/DIG/HEAT/COOL/MIX/ASSEMBLE use inputObjectIds, quantities and form. REPRODUCE uses only targetId. Prefer a short coherent plan. If knowledge is insufficient, OBSERVE, COMMUNICATE or EXPERIMENT instead of assuming.`;
-  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_tokens:620,temperature:.7});
+  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:AI_SYSTEM_PROMPT},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:MAX_COMPLETION_TOKENS,temperature:.45});
   const text=out?.response??out?.result?.response??out?.result??out;
-  return sanitizeAIProposal(parseJsonText(text));
+  const usage=out?.usage??out?.result?.usage??out?.result?.response?.usage??null;
+  return {strategy:sanitizeAIStrategy(parseJsonText(text)),usage};
 }
+function serializeAIPrompt(context){return JSON.stringify([{role:'system',content:AI_SYSTEM_PROMPT},{role:'user',content:JSON.stringify(context)}]);}
 async function withTimeout(promise,timeoutMs,label='operation_timeout'){
   let timer;
   try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),timeoutMs);})]);}
@@ -311,35 +314,49 @@ export class SovereignWorld {
   }
   async processCognition(limit){
     if(!this.env.AI?.run)return false;
-    const budget=resetDailyBudget(this.world),dailyLimit=configuredDailyBudget(this.env),runtime=ensureRuntime(this.world);
+    const budget=ensureNeuronBudget(this.world),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
     if(Date.now()-Number(budget.lastFailureRealMs||0)<AI_RETRY_COOLDOWN_MS)return false;
-    if(budget.calls>=dailyLimit){
-      if(budget.lastExhaustedDay!==budget.day){
-        budget.lastExhaustedDay=budget.day;
-        appendEvent(this.world,'COGNITION_DEFERRED','world',{reason:'ai_budget_exhausted',dailyLimit},[],this.world.clock.worldMinute);
-      }
-      return false;
-    }
-    const queue=this.world.cognitionQueue.sort((a,b)=>b.priority-a.priority);
-    let used=0;
-    while(queue.length&&used<limit&&budget.calls<dailyLimit){
-      const item=queue.shift();
+    const phases=[];
+    if(neuronCapacity(budget,'normal',config.limits)>0)phases.push('standard');
+    if(neuronCapacity(budget,'priority',config.limits)>0)phases.push('priority');
+    if(neuronCapacity(budget,'emergency',config.limits)>0)phases.push('emergency');
+    const rejected=[];
+    let used=0,exhaustedReason=phases.length?null:'neuron_hard_budget_exhausted';
+    for(const phase of phases){
+      if(used>=limit)break;
+      const item=takeCognitionCandidate(this.world,this.world.clock.worldMinute,phase);
+      if(!item)continue;
       const c=this.world.citizens.find(x=>x.id===item.citizenId&&x.alive);
       if(!c)continue;
-      budget.calls++;
+      const context=buildCognitiveContext(this.world,c,this.world.clock.worldMinute);
+      const reserveClass=item.reserve==='emergency'?'emergency':item.reserve==='priority'?'priority':'normal';
+      const estimate=estimateReservation(model,serializeAIPrompt(context),MAX_COMPLETION_TOKENS,config.rates);
+      const admission=reserveNeurons(budget,estimate,reserveClass,config.limits);
+      if(!admission.ok){
+        exhaustedReason=admission.reason;
+        rejected.push({item,c});
+        continue;
+      }
+      let accounting=null;
       try{
-        const proposal=await withTimeout(askAI(this.env,buildCognitiveContext(this.world,c,this.world.clock.worldMinute)),AI_CALL_TIMEOUT_MS,'ai_timeout');
-        acceptCognitiveProposal(this.world,c.id,proposal,this.world.clock.worldMinute);
-        appendEvent(this.world,'AI_COGNITION',c.id,{model:this.env.BRAIN_MODEL||MODEL,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length},[],this.world.clock.worldMinute);
+        const {strategy,usage}=await withTimeout(askAI(this.env,context),AI_CALL_TIMEOUT_MS,'ai_timeout');
+        accounting=reconcileNeurons(budget,admission.reservation,usage,model,config.rates);
+        acceptAIStrategy(this.world,c.id,strategy,this.world.clock.worldMinute);
+        appendEvent(this.world,'AI_COGNITION',c.id,{model,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length,chargedNeurons:accounting.charged,accountingWarning:accounting.warning||null},[],this.world.clock.worldMinute);
         budget.lastFailureRealMs=0;
       }catch(error){
+        if(!admission.reservation.reconciled)accounting=reconcileNeurons(budget,admission.reservation,null,model,config.rates);
         budget.lastFailureRealMs=Date.now();
-        appendEvent(this.world,'COGNITION_DEFERRED',c.id,{reason:item.reason,error:String(error?.message||error).slice(0,160)},[],this.world.clock.worldMinute);
-        queue.push({...item,priority:Math.max(.2,item.priority-.02)});
+        appendEvent(this.world,'COGNITION_DEFERRED',c.id,{reason:item.reason,error:String(error?.message||error).slice(0,160),chargedNeurons:accounting?.charged??null},[],this.world.clock.worldMinute);
+        queueCognition(this.world,c,item.reason,Math.max(.2,item.basePriority-.02),this.world.clock.worldMinute,item.eventIds?.at(-1),{retryAfterWorldMinute:this.world.clock.worldMinute+60});
       }
       used++;
     }
-    runtime.aiBudget=budget;
+    for(const {item,c} of rejected)queueCognition(this.world,c,item.reason,item.basePriority,this.world.clock.worldMinute,item.eventIds?.at(-1));
+    if(used===0&&exhaustedReason&&budget.lastExhaustedDay!==budget.day){
+      budget.lastExhaustedDay=budget.day;
+      appendEvent(this.world,'COGNITION_DEFERRED','world',{reason:'neuron_budget_exhausted',admissionReason:exhaustedReason,usedNeurons:budget.usedNeurons,reservedNeurons:budget.reservedNeurons},[],this.world.clock.worldMinute);
+    }
     return used>0;
   }
   websocketMeta(ws){
@@ -391,14 +408,27 @@ export class SovereignWorld {
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
-      const budget=resetDailyBudget(this.world),persistenceBudget=this.readPersistenceBudget();
+      const budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
       return json({
         ok:true,
         service:'cymonia-sovereign-world',
         version:2,
-        model:this.env.BRAIN_MODEL||MODEL,
+        model,
         ai:Boolean(this.env.AI?.run),
-        ai_budget:{day:budget.day,calls:budget.calls,limit:configuredDailyBudget(this.env)},
+        ai_budget:{
+          day:budget.day,
+          used_neurons:budget.usedNeurons,
+          reserved_neurons:budget.reservedNeurons,
+          prompt_tokens:budget.promptTokens,
+          completion_tokens:budget.completionTokens,
+          calls:budget.calls,
+          soft_limit:config.limits.normal,
+          high_priority_limit:config.limits.priority,
+          hard_limit:config.limits.emergency,
+          available:{normal:neuronCapacity(budget,'normal',config.limits),priority:neuronCapacity(budget,'priority',config.limits),emergency:neuronCapacity(budget,'emergency',config.limits)},
+          model_rate_id:config.rates?.rateId||null,
+          last_accounting_warning:budget.lastAccountingWarning,
+        },
         persistence_budget:{
           day:persistenceBudget.day,
           rows_written:persistenceBudget.rowsWritten,

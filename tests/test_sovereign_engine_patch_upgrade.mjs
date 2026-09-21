@@ -4,8 +4,9 @@ import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 
-const patcher=resolve(new URL('../scripts/patch_current_v2.mjs',import.meta.url).pathname);
+const patcher=resolve(fileURLToPath(new URL('../scripts/patch_current_v2.mjs',import.meta.url)));
 const currentAnchors=`export function f(){const completed=[];for(const a of completed){resolveAction(world,a,a.endsWorldMinute);const c=world.citizens.find(x=>x.id===a.actorId);if(c?.alive&&!continuePlan(world,c,a,a.endsWorldMinute))queueCognition(world,c,'plan_completed',.42);}return {body:{hydration:c.body.hydration,calories:c.body.calories,sleepPressure:c.body.sleepPressure,health:c.body.health,ageMinutes:c.body.ageMinutes,diseases:c.body.diseases.length,injuries:c.body.injuries.length},currentAction:action?{targetId:action.targetId}:null,objects:world.objects.filter(o=>o.quantity>0).map(o=>({id:o.id,kind:o.kind,quantity:o.quantity,holderId:o.holderId,position:o.position,condition:o.condition,provenance:o.provenance})),ledgerHead:world.ledgerHead};}`;
 
 test('engine projection patch is safe and idempotent on current structural anchors',()=>{

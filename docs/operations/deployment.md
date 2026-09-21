@@ -51,3 +51,48 @@ Snapshot persistence uses a 40,000-row soft daily budget and a 60,000-row emerge
 Observer streaming uses the Durable Objects WebSocket Hibernation API. Active sockets are enumerated from `ctx.getWebSockets()` and carry serialized connection metadata so they remain usable after object eviction. A WebSocket-only outage does not mark the canonical world degraded while REST polling continues to return valid state; the stream reconnects independently with exponential backoff.
 
 Cloudflare observability emits `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, and `CYMONIA_WS_SEND_FAILED` events for stream diagnostics without persisting additional rows.
+
+## Workers AI neuron governor
+
+The Worker uses `@cf/zai-org/glm-4.7-flash` unless `BRAIN_MODEL` is overridden. AI produces a
+persistent strategy with `max_completion_tokens: 200`; deterministic cognition executes the
+concrete actions. There is no fixed calls-per-day admission limit.
+
+Defaults current on 2026-09-21 are:
+
+- 8,000 neurons for normal novelty;
+- 9,000 neurons including the high-priority reserve;
+- 9,500 neurons including human direction and emergency work;
+- 5,500 neurons per million GLM-4.7-Flash input tokens;
+- 36,400 neurons per million GLM-4.7-Flash output tokens.
+
+Cloudflare's free allocation is 10,000 neurons per day and resets at 00:00 UTC. CYMONIA keeps the
+last 500 unallocated. Before a call, the governor reserves a conservative prompt estimate plus the
+full 200-token output cap. It then reconciles the reservation with
+`usage.prompt_tokens` and `usage.completion_tokens`. A missing, negative or malformed usage object
+charges the full reservation and records an accounting warning; it never produces a zero-cost
+call. An unknown model is fail-closed unless explicit rates are supplied.
+
+These optional Worker variables are supported:
+
+| Variable | Purpose | Safety behavior |
+| --- | --- | --- |
+| `AI_NEURON_SOFT_LIMIT` | Normal-work ceiling | Can lower, but not raise, 8,000 |
+| `AI_NEURON_PRIORITY_LIMIT` | High-priority ceiling | Can lower, but not raise, 9,000 |
+| `AI_NEURON_HARD_LIMIT` | Human/emergency ceiling | Can lower, but not raise, 9,500 |
+| `AI_INPUT_NEURONS_PER_MILLION` | Model input rate | Positive numeric override |
+| `AI_OUTPUT_NEURONS_PER_MILLION` | Model output rate | Positive numeric override |
+
+For a custom `BRAIN_MODEL`, set both rate variables. A partial rate override can reuse the other
+known rate only when the model already exists in the built-in table.
+
+`GET /api/v2/health` exposes only safe accounting metadata under `ai_budget`: UTC day,
+`used_neurons`, `reserved_neurons`, input/output token totals, call count, all three ceilings,
+capacity by reserve class, `model_rate_id`, and `last_accounting_warning`. It never returns prompts,
+memories, private directions or strategy content.
+
+Cloudflare references for the dated assumptions and cache-compatible prompt layout:
+
+- [Workers AI pricing and neurons](https://developers.cloudflare.com/workers-ai/platform/pricing/)
+- [GLM-4.7-Flash model](https://developers.cloudflare.com/workers-ai/models/glm-4.7-flash/)
+- [Workers AI prompt caching](https://developers.cloudflare.com/workers-ai/features/prompt-caching/)

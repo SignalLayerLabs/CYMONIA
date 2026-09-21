@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-const root=path.resolve(new URL('..',import.meta.url).pathname);
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
 
 test('Observer loads pinned PixiJS and Matter.js before the sovereign module',()=>{
   const html=fs.readFileSync(path.join(root,'site/index.html'),'utf8');
