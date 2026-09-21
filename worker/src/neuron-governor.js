@@ -53,6 +53,23 @@ function neuronCost(promptTokens,completionTokens,rate){
   return precise(promptTokens*Number(rate.inputPerMillion)/1_000_000+completionTokens*Number(rate.outputPerMillion)/1_000_000);
 }
 
+function positiveOverride(value,fallback,ceiling=Infinity){
+  const parsed=Number(value);
+  return Number.isFinite(parsed)&&parsed>0?Math.min(parsed,ceiling):fallback;
+}
+
+export function resolveNeuronConfig(env={},model='@cf/zai-org/glm-4.7-flash'){
+  const emergency=positiveOverride(env.AI_NEURON_HARD_LIMIT,NEURON_BUDGET_LIMITS.emergency,NEURON_BUDGET_LIMITS.emergency);
+  const priority=Math.min(emergency,positiveOverride(env.AI_NEURON_PRIORITY_LIMIT,NEURON_BUDGET_LIMITS.priority,NEURON_BUDGET_LIMITS.priority));
+  const normal=Math.min(priority,positiveOverride(env.AI_NEURON_SOFT_LIMIT,NEURON_BUDGET_LIMITS.normal,NEURON_BUDGET_LIMITS.normal));
+  const base=MODEL_NEURON_RATES[model]||null;
+  const inputPerMillion=positiveOverride(env.AI_INPUT_NEURONS_PER_MILLION,base?.inputPerMillion??NaN);
+  const outputPerMillion=positiveOverride(env.AI_OUTPUT_NEURONS_PER_MILLION,base?.outputPerMillion??NaN);
+  const overridden=env.AI_INPUT_NEURONS_PER_MILLION!==undefined||env.AI_OUTPUT_NEURONS_PER_MILLION!==undefined;
+  const rates=Number.isFinite(inputPerMillion)&&Number.isFinite(outputPerMillion)?{rateId:overridden?`environment-override:${model}`:base.rateId,inputPerMillion,outputPerMillion}:null;
+  return {limits:{normal,priority,emergency},rates};
+}
+
 export function estimateReservation(model,context,maxCompletionTokens,rates=MODEL_NEURON_RATES){
   const rate=modelRate(model,rates);
   if(!rate||!finiteNonNegative(rate.inputPerMillion)||!finiteNonNegative(rate.outputPerMillion))return Infinity;
@@ -61,19 +78,19 @@ export function estimateReservation(model,context,maxCompletionTokens,rates=MODE
   return neuronCost(promptTokens,completionTokens,rate);
 }
 
-export function neuronCapacity(budget,reserveClass='normal'){
-  const ceiling=NEURON_BUDGET_LIMITS[reserveClass];
+export function neuronCapacity(budget,reserveClass='normal',limits=NEURON_BUDGET_LIMITS){
+  const ceiling=limits?.[reserveClass];
   if(!ceiling)return 0;
   const used=finiteNonNegative(budget?.usedNeurons)?Number(budget.usedNeurons):0;
   const reserved=finiteNonNegative(budget?.reservedNeurons)?Number(budget.reservedNeurons):0;
   return precise(Math.max(0,ceiling-used-reserved));
 }
 
-export function reserveNeurons(budget,amount,reserveClass='normal'){
-  if(!budget||!NEURON_BUDGET_LIMITS[reserveClass])return {ok:false,reason:'neuron_reserve_class_invalid'};
+export function reserveNeurons(budget,amount,reserveClass='normal',limits=NEURON_BUDGET_LIMITS){
+  if(!budget||!limits?.[reserveClass])return {ok:false,reason:'neuron_reserve_class_invalid'};
   if(!finiteNonNegative(amount)||!Number.isFinite(Number(amount)))return {ok:false,reason:'neuron_estimate_unavailable'};
   const held=Math.ceil(Number(amount));
-  if(held>neuronCapacity(budget,reserveClass))return {ok:false,reason:`neuron_${reserveClass}_budget_exhausted`};
+  if(held>neuronCapacity(budget,reserveClass,limits))return {ok:false,reason:`neuron_${reserveClass}_budget_exhausted`};
   budget.reservedNeurons=precise((Number(budget.reservedNeurons)||0)+held);
   return {ok:true,reservation:{amount:held,reserveClass,reconciled:false}};
 }

@@ -28,12 +28,11 @@ import {
   nextUtcDayStart,
 } from './persistence.js';
 import {
-  MODEL_NEURON_RATES,
-  NEURON_BUDGET_LIMITS,
   ensureNeuronBudget,
   estimateReservation,
   neuronCapacity,
   reconcileNeurons,
+  resolveNeuronConfig,
   reserveNeurons,
 } from './neuron-governor.js';
 
@@ -314,12 +313,12 @@ export class SovereignWorld {
   }
   async processCognition(limit){
     if(!this.env.AI?.run)return false;
-    const budget=ensureNeuronBudget(this.world),model=this.env.BRAIN_MODEL||MODEL;
+    const budget=ensureNeuronBudget(this.world),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
     if(Date.now()-Number(budget.lastFailureRealMs||0)<AI_RETRY_COOLDOWN_MS)return false;
     const phases=[];
-    if(neuronCapacity(budget,'normal')>0)phases.push('standard');
-    if(neuronCapacity(budget,'priority')>0)phases.push('priority');
-    if(neuronCapacity(budget,'emergency')>0)phases.push('emergency');
+    if(neuronCapacity(budget,'normal',config.limits)>0)phases.push('standard');
+    if(neuronCapacity(budget,'priority',config.limits)>0)phases.push('priority');
+    if(neuronCapacity(budget,'emergency',config.limits)>0)phases.push('emergency');
     const rejected=[];
     let used=0,exhaustedReason=phases.length?null:'neuron_hard_budget_exhausted';
     for(const phase of phases){
@@ -330,8 +329,8 @@ export class SovereignWorld {
       if(!c)continue;
       const context=buildCognitiveContext(this.world,c,this.world.clock.worldMinute);
       const reserveClass=item.reserve==='emergency'?'emergency':item.reserve==='priority'?'priority':'normal';
-      const estimate=estimateReservation(model,JSON.stringify(context),MAX_COMPLETION_TOKENS);
-      const admission=reserveNeurons(budget,estimate,reserveClass);
+      const estimate=estimateReservation(model,JSON.stringify(context),MAX_COMPLETION_TOKENS,config.rates);
+      const admission=reserveNeurons(budget,estimate,reserveClass,config.limits);
       if(!admission.ok){
         exhaustedReason=admission.reason;
         rejected.push({item,c});
@@ -340,12 +339,12 @@ export class SovereignWorld {
       let accounting=null;
       try{
         const {strategy,usage}=await withTimeout(askAI(this.env,context),AI_CALL_TIMEOUT_MS,'ai_timeout');
-        accounting=reconcileNeurons(budget,admission.reservation,usage,model);
+        accounting=reconcileNeurons(budget,admission.reservation,usage,model,config.rates);
         acceptAIStrategy(this.world,c.id,strategy,this.world.clock.worldMinute);
         appendEvent(this.world,'AI_COGNITION',c.id,{model,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length,chargedNeurons:accounting.charged,accountingWarning:accounting.warning||null},[],this.world.clock.worldMinute);
         budget.lastFailureRealMs=0;
       }catch(error){
-        if(!admission.reservation.reconciled)accounting=reconcileNeurons(budget,admission.reservation,null,model);
+        if(!admission.reservation.reconciled)accounting=reconcileNeurons(budget,admission.reservation,null,model,config.rates);
         budget.lastFailureRealMs=Date.now();
         appendEvent(this.world,'COGNITION_DEFERRED',c.id,{reason:item.reason,error:String(error?.message||error).slice(0,160),chargedNeurons:accounting?.charged??null},[],this.world.clock.worldMinute);
         queueCognition(this.world,c,item.reason,Math.max(.2,item.basePriority-.02),this.world.clock.worldMinute,item.eventIds?.at(-1),{retryAfterWorldMinute:this.world.clock.worldMinute+60});
@@ -408,7 +407,7 @@ export class SovereignWorld {
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
-      const budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,rate=MODEL_NEURON_RATES[model]||null;
+      const budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
       return json({
         ok:true,
         service:'cymonia-sovereign-world',
@@ -422,11 +421,11 @@ export class SovereignWorld {
           prompt_tokens:budget.promptTokens,
           completion_tokens:budget.completionTokens,
           calls:budget.calls,
-          soft_limit:NEURON_BUDGET_LIMITS.normal,
-          high_priority_limit:NEURON_BUDGET_LIMITS.priority,
-          hard_limit:NEURON_BUDGET_LIMITS.emergency,
-          available:{normal:neuronCapacity(budget,'normal'),priority:neuronCapacity(budget,'priority'),emergency:neuronCapacity(budget,'emergency')},
-          model_rate_id:rate?.rateId||null,
+          soft_limit:config.limits.normal,
+          high_priority_limit:config.limits.priority,
+          hard_limit:config.limits.emergency,
+          available:{normal:neuronCapacity(budget,'normal',config.limits),priority:neuronCapacity(budget,'priority',config.limits),emergency:neuronCapacity(budget,'emergency',config.limits)},
+          model_rate_id:config.rates?.rateId||null,
           last_accounting_warning:budget.lastAccountingWarning,
         },
         persistence_budget:{

@@ -5,6 +5,7 @@ import {
   estimateReservation,
   neuronCapacity,
   reconcileNeurons,
+  resolveNeuronConfig,
   reserveNeurons,
 } from '../worker/src/neuron-governor.js';
 
@@ -82,4 +83,12 @@ test('actual usage above reservation remains fully accounted and cannot reconcil
 test('reservation estimate uses conservative prompt length and full completion cap',()=>{
   const estimated=estimateReservation(MODEL,'1234567',200);
   assert.equal(estimated,7.2965);
+});
+
+test('environment overrides can only lower safety ceilings and can update rates',()=>{
+  const config=resolveNeuronConfig({AI_NEURON_SOFT_LIMIT:'7000',AI_NEURON_PRIORITY_LIMIT:'8800',AI_NEURON_HARD_LIMIT:'9999',AI_INPUT_NEURONS_PER_MILLION:'6000',AI_OUTPUT_NEURONS_PER_MILLION:'40000'},MODEL);
+  assert.deepEqual(config.limits,{normal:7000,priority:8800,emergency:9500});
+  assert.equal(config.rates.inputPerMillion,6000);
+  assert.equal(config.rates.outputPerMillion,40000);
+  assert.match(config.rates.rateId,/environment-override/);
 });

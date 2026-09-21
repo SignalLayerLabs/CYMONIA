@@ -26,5 +26,7 @@ test('gathering removes matter from a deposit and creates provenance-bound matte
   startAction(w,c,{type:'GATHER',durationMinutes:1,targetId:d.id,payload:{quantity:2},purpose:'self-directed'},0);
   advanceWorldTo(w,1000);
   assert.ok(Math.abs(d.quantity-(q+d.renewPerDay/1440-2))<1e-6);
-  assert.ok(w.objects.some(o=>o.holderId===c.id&&o.provenance?.depositId===d.id));
+  const gathered=w.objects.find(o=>o.holderId===c.id&&o.provenance?.depositId===d.id);
+  assert.ok(gathered);
+  assert.ok(c.knownEntityIds.includes(gathered.id));
 });

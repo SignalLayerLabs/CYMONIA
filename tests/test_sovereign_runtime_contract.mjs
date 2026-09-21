@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const worker=fs.readFileSync(new URL('../worker/src/index.js',import.meta.url),'utf8');
+const governor=fs.readFileSync(new URL('../worker/src/neuron-governor.js',import.meta.url),'utf8');
 const cfg=fs.readFileSync(new URL('../wrangler.world.toml',import.meta.url),'utf8');
 
 test('Durable Object runtime declares single writer, alarms, websocket and AI binding',()=>{
@@ -99,6 +100,8 @@ test('health exposes safe neuron accounting without prompts or strategy text',()
   assert.match(health,/high_priority_limit/);
   assert.match(health,/hard_limit/);
   assert.match(health,/model_rate_id/);
+  assert.match(governor,/AI_NEURON_SOFT_LIMIT/);
+  assert.match(governor,/AI_INPUT_NEURONS_PER_MILLION/);
   assert.doesNotMatch(health,/dailyLimit|prompt:|context:|strategy:/);
 });
 
