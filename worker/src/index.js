@@ -40,6 +40,7 @@ const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
 const MAX_COMPLETION_TOKENS=200;
+const AI_SYSTEM_PROMPT=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge or concrete actions. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7}. The strategy should guide several world-days of local autonomous behavior. Prefer novelty or reinterpretation; use adapt when evidence is insufficient.`;
 const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
@@ -71,12 +72,12 @@ async function sha256Hex(text){
 }
 async function askAI(env,context){
   if(!env.AI?.run)throw new Error('ai_unavailable');
-  const system=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge or concrete actions. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7}. The strategy should guide several world-days of local autonomous behavior. Prefer novelty or reinterpretation; use adapt when evidence is insufficient.`;
-  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:MAX_COMPLETION_TOKENS,temperature:.45});
+  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:AI_SYSTEM_PROMPT},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:MAX_COMPLETION_TOKENS,temperature:.45});
   const text=out?.response??out?.result?.response??out?.result??out;
   const usage=out?.usage??out?.result?.usage??out?.result?.response?.usage??null;
   return {strategy:sanitizeAIStrategy(parseJsonText(text)),usage};
 }
+function serializeAIPrompt(context){return JSON.stringify([{role:'system',content:AI_SYSTEM_PROMPT},{role:'user',content:JSON.stringify(context)}]);}
 async function withTimeout(promise,timeoutMs,label='operation_timeout'){
   let timer;
   try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),timeoutMs);})]);}
@@ -329,7 +330,7 @@ export class SovereignWorld {
       if(!c)continue;
       const context=buildCognitiveContext(this.world,c,this.world.clock.worldMinute);
       const reserveClass=item.reserve==='emergency'?'emergency':item.reserve==='priority'?'priority':'normal';
-      const estimate=estimateReservation(model,JSON.stringify(context),MAX_COMPLETION_TOKENS,config.rates);
+      const estimate=estimateReservation(model,serializeAIPrompt(context),MAX_COMPLETION_TOKENS,config.rates);
       const admission=reserveNeurons(budget,estimate,reserveClass,config.limits);
       if(!admission.ok){
         exhaustedReason=admission.reason;

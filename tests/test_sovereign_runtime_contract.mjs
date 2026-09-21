@@ -135,9 +135,26 @@ test('Workers AI emits compact persistent strategies instead of short action scr
   const ask=worker.slice(askStart,askEnd);
   assert.match(worker,/const MAX_COMPLETION_TOKENS=200/);
   assert.match(ask,/max_completion_tokens:MAX_COMPLETION_TOKENS/);
-  assert.match(ask,/"intent"/);
-  assert.match(ask,/"actionBias"/);
+  assert.match(worker,/"intent"/);
+  assert.match(worker,/"actionBias"/);
   assert.match(ask,/usage/);
   assert.doesNotMatch(ask,/max_tokens/);
   assert.doesNotMatch(ask,/"actions"/);
 });
+
+test('neuron reservation includes the same static system prompt sent to Workers AI',()=>{
+  const start=worker.indexOf('async processCognition');
+  const end=worker.indexOf('websocketMeta',start);
+  const process=worker.slice(start,end);
+  assert.match(worker,/const AI_SYSTEM_PROMPT=/);
+  assert.match(worker,/function serializeAIPrompt/);
+  assert.match(worker,/serializeAIPrompt\(context\).*content:JSON\.stringify\(context\)/);
+  assert.match(askAIBlock(),/content:AI_SYSTEM_PROMPT/);
+  assert.match(process,/estimateReservation\(model,serializeAIPrompt\(context\)/);
+});
+
+function askAIBlock(){
+  const start=worker.indexOf('async function askAI');
+  const end=worker.indexOf('async function withTimeout',start);
+  return worker.slice(start,end);
+}

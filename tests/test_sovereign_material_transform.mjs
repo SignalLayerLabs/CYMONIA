@@ -11,4 +11,6 @@ test('generic transformations conserve tracked mass',()=>{
   const result=transformMaterials(w,c,{inputObjectIds:[o.id],consume:[{objectId:o.id,quantity:10}],output:{material:'timber',quantity:10,massPerUnitKg:1,kind:'shaped_material'},process:'shape'},0);
   assert.equal(result.provenance.type,'TRANSFORMATION');
   assert.equal(totalTrackedMass(w),before);
+  assert.ok(c.knownEntityIds.includes(result.id));
+  assert.ok(c.possessions.includes(result.id));
 });
