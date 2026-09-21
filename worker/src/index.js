@@ -6,9 +6,9 @@ import {
   getWhy,
   createHumanAvatar,
   submitHumanIntent,
-  acceptCognitiveProposal,
+  acceptAIStrategy,
   buildCognitiveContext,
-  sanitizeAIProposal,
+  sanitizeAIStrategy,
   appendEvent,
   compactLedger,
   worldMinuteAt,
@@ -70,10 +70,11 @@ async function sha256Hex(text){
 }
 async function askAI(env,context){
   if(!env.AI?.run)throw new Error('ai_unavailable');
-  const system=`You are the private cognition process of one inhabitant of CYMONIA. You are NOT an Earth assistant. Use ONLY facts, opaque concept IDs, entities, memories and evidence present in the supplied context. Never introduce Earth institutions, technologies, languages, history, religion, science, objects, recipes or proper names unless the exact concept already exists in context. External direction is a preference only and never factual knowledge. Return strict JSON only, with this shape: {"concepts":["known concept id"],"beliefUpdates":[{"stanceCode":"supports|opposes|uncertain|sacred|taboo|causal|identity|normative","conceptIds":["known concept id"],"confidence":0.0}],"actions":[{"type":"MOVE|OBSERVE|REST|SLEEP|EAT|DRINK|GATHER|CARRY|CUT|DIG|HEAT|COOL|MIX|ASSEMBLE|BUILD|CARE|TEACH|COMMUNICATE|EXPERIMENT|ATTACK|DEFEND|TRANSFER|PROMISE|CLAIM|REPRODUCE","durationMinutes":number,"targetId":string|null,"targetPosition":{"x":number,"y":number}|null,"purpose":"survival|explore|cooperate|care|experiment|construct|defend|communicate|self_directed","concepts":["known concept id"],"payload":object}]}. Payload may contain only IDs and primitive parameters supported by the action. For GATHER use quantity. For TEACH/COMMUNICATE use concept, conceptIds, beliefId or primitiveSignal. For PROMISE use kindCode and purposeConcept. For CLAIM use predicateCode, subjectId and purposeConcept. For EXPERIMENT use targetIds and methodCode. For BUILD use projectId or inputObjectIds, site, workMinutes and form. For TRANSFER use objectId. For CUT/DIG/HEAT/COOL/MIX/ASSEMBLE use inputObjectIds, quantities and form. REPRODUCE uses only targetId. Prefer a short coherent plan. If knowledge is insufficient, OBSERVE, COMMUNICATE or EXPERIMENT instead of assuming.`;
-  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_tokens:620,temperature:.7});
+  const system=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge or concrete actions. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7}. The strategy should guide several world-days of local autonomous behavior. Prefer novelty or reinterpretation; use adapt when evidence is insufficient.`;
+  const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:200,temperature:.45});
   const text=out?.response??out?.result?.response??out?.result??out;
-  return sanitizeAIProposal(parseJsonText(text));
+  const usage=out?.usage??out?.result?.usage??out?.result?.response?.usage??null;
+  return {strategy:sanitizeAIStrategy(parseJsonText(text)),usage};
 }
 async function withTimeout(promise,timeoutMs,label='operation_timeout'){
   let timer;
@@ -328,9 +329,9 @@ export class SovereignWorld {
       if(!c)continue;
       budget.calls++;
       try{
-        const proposal=await withTimeout(askAI(this.env,buildCognitiveContext(this.world,c,this.world.clock.worldMinute)),AI_CALL_TIMEOUT_MS,'ai_timeout');
-        acceptCognitiveProposal(this.world,c.id,proposal,this.world.clock.worldMinute);
-        appendEvent(this.world,'AI_COGNITION',c.id,{model:this.env.BRAIN_MODEL||MODEL,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length},[],this.world.clock.worldMinute);
+        const {strategy,usage}=await withTimeout(askAI(this.env,buildCognitiveContext(this.world,c,this.world.clock.worldMinute)),AI_CALL_TIMEOUT_MS,'ai_timeout');
+        acceptAIStrategy(this.world,c.id,strategy,this.world.clock.worldMinute);
+        appendEvent(this.world,'AI_COGNITION',c.id,{model:this.env.BRAIN_MODEL||MODEL,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length,usage:usage?{promptTokens:Number(usage.prompt_tokens||0),completionTokens:Number(usage.completion_tokens||0)}:null},[],this.world.clock.worldMinute);
         budget.lastFailureRealMs=0;
       }catch(error){
         budget.lastFailureRealMs=Date.now();

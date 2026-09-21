@@ -3,6 +3,7 @@ import {ensureCognitionState,outcomeModifier} from './cognition-state.js';
 import {resourceConceptId} from './perception.js';
 import {MATERIAL_PROPERTIES} from './materials.js';
 import {hash32,stableId} from './rng.js';
+import {activeStrategy} from './strategy.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -100,8 +101,14 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
 
 export function scoreAffordance(world,citizen,candidate,at=world.clock.worldMinute){
   const state=ensureCognitionState(citizen,at),psychology=citizen.psychology||{},rel=relation(citizen,candidate.targetId);
-  const desired=new Set(citizen.activeGoal?.actionTypes||[]),actions=candidate.proposal.actions||[];
-  const strategy=actions.some(action=>desired.has(action.type))?1:0;
+  const persistent=activeStrategy(citizen,at,world),legacy=citizen.activeGoal?.kind==='strategy-v1'?null:citizen.activeGoal;
+  const desired=new Set(persistent?.actionBias||legacy?.actionTypes||[]),actions=candidate.proposal.actions||[];
+  const actionAligned=actions.some(action=>desired.has(action.type));
+  const partnerAligned=Boolean(persistent?.partnerIds?.includes(candidate.targetId));
+  const conceptAligned=Boolean(persistent?.focus&&(candidate.proposal.concepts||[]).includes(persistent.focus));
+  const intentFamilies={explore:['explore'],understand:['experiment','transform'],share:['communicate','teach','transfer'],cooperate:['cooperate','transfer','communicate','build'],care:['care'],construct:['build','gather','transform'],adapt:['explore','experiment','transform']};
+  const intentAligned=Boolean(persistent&&intentFamilies[persistent.intent]?.includes(candidate.family));
+  const strategy=actionAligned||partnerAligned||conceptAligned||intentAligned?1:0;
   const cooldown=Number(state.cooldowns?.[candidate.key]?.untilWorldMinute||0)>at?1:0;
   const relationValue=Math.max(clamp01(candidate.relationship),clamp01((Number(rel.trust)||0)+(Number(rel.familiarity)||0))/2);
   return Number(candidate.utility||0)

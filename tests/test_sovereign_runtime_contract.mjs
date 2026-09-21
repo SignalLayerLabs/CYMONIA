@@ -95,8 +95,20 @@ test('public state reads never run mutation or Workers AI before responding',()=
   assert.doesNotMatch(worker,/sovereign-world-router/);
 });
 
-test('AI schema includes emergent claims and biological reproduction primitives',()=>{
-  assert.match(worker,/CLAIM/);
-  assert.match(worker,/REPRODUCE/);
-  assert.match(worker,/payload/);
+test('AI schema supplies strategic intent while local cognition owns concrete primitives',()=>{
+  assert.match(worker,/explore\|understand\|share\|cooperate\|care\|construct\|adapt/);
+  assert.match(worker,/actionBias/);
+  assert.match(worker,/horizonMinutes/);
+});
+
+test('Workers AI emits compact persistent strategies instead of short action scripts',()=>{
+  const askStart=worker.indexOf('async function askAI');
+  const askEnd=worker.indexOf('async function withTimeout',askStart);
+  const ask=worker.slice(askStart,askEnd);
+  assert.match(ask,/max_completion_tokens:\s*200/);
+  assert.match(ask,/"intent"/);
+  assert.match(ask,/"actionBias"/);
+  assert.match(ask,/usage/);
+  assert.doesNotMatch(ask,/max_tokens/);
+  assert.doesNotMatch(ask,/"actions"/);
 });

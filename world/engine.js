@@ -17,6 +17,7 @@ import {makeCommitment,makeClaim,maybeFormOrganization,updateRelationship} from 
 import {runExperiment,applyConstructionWork,beginEmpiricalConstruction} from './artifacts.js';
 import {transferObject,transformMaterials,objectMass,advanceDecomposition} from './materials.js';
 import {recordAffordanceOutcome} from './cognition-state.js';
+import {recordStrategyOutcome} from './strategy.js';
 
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 function perceiveLocal(world,citizen,at){const discoveries=[...perceiveResources(world,citizen,at),...perceiveStructures(world,citizen,at)];if(discoveries.length)queueCognition(world,citizen,'discovery',.65);for(const other of world.citizens){if(other.id!==citizen.id&&other.alive&&dist(citizen.position,other.position)<=8&&!citizen.knownEntityIds.includes(other.id)){citizen.knownEntityIds.push(other.id);queueCognition(world,citizen,'encounter',.5);recordMemory(citizen,{kind:'episodic',content:{encounter:other.id},source:{kind:'observation'},confidence:.9,salience:.45,worldMinute:at});}}}
@@ -45,12 +46,14 @@ function stepSegment(world,from,to){
       if(citizen?.alive){
         if(plan)plan.status='failed';
         if(plan?.affordanceFamily)recordAffordanceOutcome(citizen,plan.affordanceFamily,{ok:false,reason:failureReason},action.endsWorldMinute);
+        recordStrategyOutcome(world,citizen,{ok:false,family:plan?.affordanceFamily||action.type.toLowerCase()},action.endsWorldMinute);
         recordMemory(citizen,{kind:'episodic',content:{actionFailure:{actionId:action.id,type:action.type,reason:failureReason}},source:{kind:'physical_outcome',eventId:event.id},confidence:1,salience:.75,worldMinute:action.endsWorldMinute});
         queueCognition(world,citizen,'physical_action_failed',.85);
       }
     }
     if(resolved&&citizen?.alive&&!continuePlan(world,citizen,action,action.endsWorldMinute)){
       if(plan?.affordanceFamily)recordAffordanceOutcome(citizen,plan.affordanceFamily,{ok:true},action.endsWorldMinute);
+      recordStrategyOutcome(world,citizen,{ok:true,family:plan?.affordanceFamily||action.type.toLowerCase()},action.endsWorldMinute);
       queueCognition(world,citizen,'plan_completed',.42);
     }
   }
