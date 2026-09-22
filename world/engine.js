@@ -22,7 +22,31 @@ import {queueCognition} from './cognition-queue.js';
 
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 function perceiveLocal(world,citizen,at){const discoveries=[...perceiveResources(world,citizen,at),...perceiveStructures(world,citizen,at)];if(discoveries.length)queueCognition(world,citizen,'discovery',.65,at,discoveries[0]);for(const other of world.citizens){if(other.id!==citizen.id&&other.alive&&dist(citizen.position,other.position)<=8&&!citizen.knownEntityIds.includes(other.id)){citizen.knownEntityIds.push(other.id);queueCognition(world,citizen,'encounter',.5,at,other.id);recordMemory(citizen,{kind:'episodic',content:{encounter:other.id},source:{kind:'observation'},confidence:.9,salience:.45,worldMinute:at});}}}
-function runReflex(world,citizen,at){if(!citizen.alive||citizen.currentActionId)return;const p=survivalFallback(world,citizen,at)||localDeliberation(world,citizen,at);if(!p)return;try{applyAcceptedPlan(world,citizen,p,at);}catch{if(!citizen.currentActionId)startAction(world,citizen,{type:'OBSERVE',durationMinutes:10,purpose:'orientation'},at);}}
+function runReflex(world,citizen,at){
+  if(!citizen.alive||citizen.currentActionId)return;
+  let proposal;
+  try{
+    proposal=survivalFallback(world,citizen,at)||localDeliberation(world,citizen,at);
+  }catch(error){
+    appendEvent(world,'LOCAL_COGNITION_DEFERRED',citizen.id,{
+      error:String(error?.message||error).slice(0,160),fallback:'OBSERVE'
+    },[],at);
+  }
+  if(proposal){
+    try{
+      applyAcceptedPlan(world,citizen,proposal,at);
+      return;
+    }catch(error){
+      appendEvent(world,'LOCAL_PLAN_REJECTED',citizen.id,{
+        error:String(error?.message||error).slice(0,160),fallback:'OBSERVE'
+      },[],at);
+    }
+  }
+  // If even the safe action fails, the alarm handler must see the error.
+  if(!citizen.currentActionId)startAction(world,citizen,{
+    type:'OBSERVE',durationMinutes:10,purpose:'orientation'
+  },at);
+}
 function gather(world,c,a,at){const d=world.resourceDeposits.find(x=>x.id===a.targetId);if(!d)return;const q=Math.max(.1,Math.min(Number(a.payload?.quantity)||1,d.quantity));d.quantity-=q;const o={id:stableId('obj',d.id,c.id,world.objects.length,at),kind:'gathered_material',material:d.type,quantity:q,massPerUnitKg:1,properties:null,holderId:c.id,position:{...c.position},condition:1,provenance:{type:'GATHERED',depositId:d.id,actionId:a.id}};world.objects.push(o);c.possessions.push(o.id);if(!c.knownEntityIds.includes(o.id))c.knownEntityIds.push(o.id);appendEvent(world,'RESOURCE_GATHERED',c.id,{objectId:o.id,depositId:d.id,quantity:q},[a.id],at);}
 function consumeFromDeposit(world,c,a,type,amount,restore,at){const d=world.resourceDeposits.find(x=>x.id===a.targetId&&x.type===type);if(!d||d.quantity<amount)return;d.quantity-=amount;world.environment.metabolicMatterKg=(world.environment.metabolicMatterKg||0)+amount;restore(c);appendEvent(world,type==='water'?'DRANK_RESOURCE':'ATE_RESOURCE',c.id,{depositId:d.id,quantity:amount},[a.id],at);}
 function genericTransform(world,c,a,at){const ids=a.payload?.inputObjectIds||[];if(!ids.length)return null;const quantities=a.payload?.quantities||[];const consume=[];let total=0;for(let i=0;i<ids.length;i++){const o=world.objects.find(x=>x.id===ids[i]&&x.holderId===c.id);if(!o)continue;const q=Math.max(.01,Math.min(Number(quantities[i])||o.quantity,o.quantity));consume.push({objectId:o.id,quantity:q});total+=q*o.massPerUnitKg;}if(!consume.length||total<=0)return null;return transformMaterials(world,c,{consume,output:{material:'composite',quantity:total,massPerUnitKg:1,kind:a.payload?.form||'artifact'},process:a.type.toLowerCase()},at);}
