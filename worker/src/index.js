@@ -223,8 +223,11 @@ export class SovereignWorld {
   }
   async ensureAlarm(){
     let current=await this.ctx.storage.getAlarm();
-    if(current===null){
-      current=Date.now()+ALARM_MS;
+    const now=Date.now();
+    // A recently due alarm may be waking this object. Only replace one that
+    // has remained overdue beyond normal scheduling jitter.
+    if(current===null||current<now-2*ALARM_MS){
+      current=now+ALARM_MS;
       await this.ctx.storage.setAlarm(current);
     }
     ensureRuntime(this.world).nextAlarmRealMs=current;

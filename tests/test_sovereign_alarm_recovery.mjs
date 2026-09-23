@@ -21,7 +21,7 @@ function runtime(t){
       put:async(key,value)=>{status.set(key,structuredClone(value));},
     },getWebSockets:()=>[]},
   });
-  return {instance,alarms,alarmTime:()=>scheduledAlarm};
+  return {instance,alarms,alarmTime:()=>scheduledAlarm,setStoredAlarm:value=>{scheduledAlarm=value;}};
 }
 
 async function wakeWorld(storage,persistedWorld=createSovereignGenesis({realEpochMs:59_000})){
@@ -61,6 +61,15 @@ test('an ordinary HTTP fetch repairs a missing alarm without advancing the world
   assert.equal(response.status,200);
   assert.equal(alarmTime(),120_000);
   assert.equal(instance.world.clock.worldMinute,before);
+});
+
+test('an HTTP fetch repairs a long-overdue alarm once without postponing its replacement',async t=>{
+  const {instance,alarms,alarmTime,setStoredAlarm}=runtime(t);
+  setStoredAlarm(-180_000);
+  await instance.fetch(new Request('https://example.com/world/state'));
+  assert.equal(alarmTime(),120_000);
+  await instance.fetch(new Request('https://example.com/world/state'));
+  assert.deepEqual(alarms,[120_000]);
 });
 
 test('alarm stores its successor before running the world tick',async t=>{
