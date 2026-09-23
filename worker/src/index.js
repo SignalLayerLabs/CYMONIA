@@ -47,6 +47,7 @@ const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const MAX_CATCHUP_WORLD_MINUTES=360;
 const HOT_LEDGER_EVENTS=4096;
+const HEARTBEAT_STATUS_KEY='heartbeat-status-v1';
 
 function json(data,status=200,headers={}){
   return new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}});
@@ -64,6 +65,14 @@ function ensureRuntime(world){
   ensureNeuronBudget(world);
   world.runtime.lastSealWorldMinute??=-CHECKPOINT_WORLD_MINUTES;
   return world.runtime;
+}
+function tickDiagnostics(runtime){
+  return {
+    lastTickRealMs:runtime.lastTickRealMs??null,
+    lastTickWorldMinute:runtime.lastTickWorldMinute??null,
+    lastTickError:runtime.lastTickError??null,
+    lastAlarmRetryCount:runtime.lastAlarmRetryCount??null,
+  };
 }
 async function sha256Hex(text){
   const bytes=new TextEncoder().encode(text);
@@ -123,6 +132,7 @@ export class SovereignWorld {
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
+    // A constructor also runs before an alarm wakeup; repair alarms from fetch.
     ctx.blockConcurrencyWhile(async()=>{
       this.initializeSQLite();
       this.world=await this.loadWorld();
@@ -135,7 +145,12 @@ export class SovereignWorld {
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
-      await this.ensureAlarm();
+      try{
+        const status=await ctx.storage.get(HEARTBEAT_STATUS_KEY);
+        if(status&&typeof status==='object')Object.assign(ensureRuntime(this.world),tickDiagnostics(status));
+      }catch(error){
+        console.error('CYMONIA_HEARTBEAT_STATUS_LOAD_FAILED',String(error?.message||error).slice(0,300));
+      }
     });
   }
   initializeSQLite(){
@@ -207,10 +222,13 @@ export class SovereignWorld {
     return world;
   }
   async ensureAlarm(){
-    const current=await this.ctx.storage.getAlarm();
+    let current=await this.ctx.storage.getAlarm();
     if(current===null){
-      await this.ctx.storage.setAlarm(Date.now()+ALARM_MS);
+      current=Date.now()+ALARM_MS;
+      await this.ctx.storage.setAlarm(current);
     }
+    ensureRuntime(this.world).nextAlarmRealMs=current;
+    return current;
   }
   persist(options={}){
     const pending=this.persistChain.then(()=>this.persistSnapshot(options));
@@ -307,7 +325,11 @@ export class SovereignWorld {
   }
   async alarm(alarmInfo){
     const startedAt=Date.now();
+    const nextAlarm=startedAt+ALARM_MS;
+    // Commit the successor before tick can throw or exhaust its CPU budget.
+    await this.ctx.storage.setAlarm(nextAlarm);
     const runtime=ensureRuntime(this.world);
+    runtime.nextAlarmRealMs=nextAlarm;
 
     try{
       await this.tick();
@@ -333,11 +355,12 @@ export class SovereignWorld {
       // Do not rethrow here.
       // A single malformed Citizen or transient runtime error must never
       // permanently stop the Sovereign World heartbeat.
-    }finally{
-      const nextAlarm=Date.now()+ALARM_MS;
-      runtime.nextAlarmRealMs=nextAlarm;
-
-      await this.ctx.storage.setAlarm(nextAlarm);
+    }
+    try{
+      // A world snapshot may have been written before the tick outcome was known.
+      await this.ctx.storage.put(HEARTBEAT_STATUS_KEY,tickDiagnostics(runtime));
+    }catch(error){
+      console.error('CYMONIA_HEARTBEAT_STATUS_SAVE_FAILED',String(error?.message||error).slice(0,300));
     }
   }
   async processCognition(limit){
@@ -434,9 +457,10 @@ export class SovereignWorld {
   }
   async fetch(request){
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
+    const scheduledAlarmRealMs=await this.ensureAlarm();
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
-      const budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
+      const runtime=ensureRuntime(this.world),budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
       return json({
         ok:true,
         service:'cymonia-sovereign-world',
@@ -467,6 +491,11 @@ export class SovereignWorld {
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         alarm_interval_ms:ALARM_MS,
+        heartbeat:{
+          scheduledAlarmRealMs,
+          nextAlarmRealMs:runtime.nextAlarmRealMs??null,
+          ...tickDiagnostics(runtime),
+        },
         world_id:this.world.worldId,
         world_minute:this.world.clock.worldMinute,
         lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),

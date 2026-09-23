@@ -88,10 +88,12 @@ export function simulateDay({
   for(let i=1;i<=checkpointCount;i++)attempt(sealEveryCheckpoints>0&&i%sealEveryCheckpoints===0);
   for(let i=0;i<Math.max(0,Math.floor(cognitionPersists));i++)attempt(false);
   const alarmRowsWritten=Math.floor(86_400/Math.max(1,alarmEverySeconds));
-  const totalRowsWritten=budget.rowsWritten+alarmRowsWritten;
+  const heartbeatDiagnosticRowsWritten=alarmRowsWritten;
+  const totalRowsWritten=budget.rowsWritten+alarmRowsWritten+heartbeatDiagnosticRowsWritten;
   return {
     rowsWritten:budget.rowsWritten,
     alarmRowsWritten,
+    heartbeatDiagnosticRowsWritten,
     totalRowsWritten,
     freeTierHeadroom:Math.max(0,FREE_TIER_ROW_WRITE_BUDGET-totalRowsWritten),
     acceptedPersists,
