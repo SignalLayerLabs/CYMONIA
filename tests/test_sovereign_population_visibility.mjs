@@ -18,19 +18,20 @@ test('moving colocated citizens receive distinct display offsets',()=>{
   assert.notDeepEqual(offsets.get(a.id),offsets.get(b.id));
 });
 
-test('display offsets are fixed screen pixels, not multiplied by zoom',()=>{
+test('display formation scales with the world instead of accordioning in screen space',()=>{
   const renderer=fs.readFileSync(path.join(root,'site/sovereign-renderer.js'),'utf8');
   const pixi=fs.readFileSync(path.join(root,'site/pixi-observer.js'),'utf8');
-  assert.match(renderer,/\+offset\.x/);
-  assert.match(renderer,/\+offset\.y/);
-  assert.match(pixi,/offset\.x\/Math\.max\(\.001,camera\.zoom\)/);
-  assert.match(pixi,/sp\.x\+=offset\.x/);
-  assert.match(pixi,/sp\.y\+=offset\.y/);
+  assert.match(renderer,/return \{x:p\.x\+offset\.x,y:p\.y\+offset\.y\}/);
+  assert.doesNotMatch(renderer,/\*z\+offset\.x/);
+  assert.match(pixi,/p\.x\+=offset\.x;p\.y\+=offset\.y/);
+  assert.match(pixi,/sp\.x\+=offset\.x\*camera\.zoom/);
+  assert.match(pixi,/sp\.y\+=offset\.y\*camera\.zoom/);
 });
 
-test('same-world updates can automatically reframe dispersed population',()=>{
+test('same-world auto framing only zooms outward for dispersed population',()=>{
   const renderer=fs.readFileSync(path.join(root,'site/sovereign-renderer.js'),'utf8');
-  assert.match(renderer,/visibility\.visible\/visibility\.total<\.96/);
-  assert.match(renderer,/autoFramePopulation=true/);
+  assert.match(renderer,/visibility\.visible\/visibility\.total<\.92/);
+  assert.match(renderer,/fitPopulation\(\{onlyOut:true\}\)/);
+  assert.match(renderer,/onlyOut\?Math\.min\(this\.camera\.targetZoom,fittedZoom\):fittedZoom/);
   assert.match(renderer,/autoFramePopulation=false/);
 });

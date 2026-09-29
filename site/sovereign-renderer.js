@@ -37,22 +37,22 @@ export class SovereignRenderer{
     }else if(this.autoFramePopulation&&!this.follow){
       const visibility=this.populationVisibility();
       const now=performance.now?.()||Date.now();
-      if(visibility.total&&visibility.visible/visibility.total<.96&&now-this.lastAutoFitAt>1800){
-        this.fitPopulation();
+      if(visibility.total&&visibility.visible/visibility.total<.92&&now-this.lastAutoFitAt>2200){
+        this.fitPopulation({onlyOut:true});
         this.lastAutoFitAt=now;
       }
     }
   }
   citizenScenePoint(c){
-    const pos=citizenPosition(c,this.state),t=terrainAtPublic(this.state,pos.x,pos.y);
-    return isoPoint(pos.x,pos.y,t.elevation);
+    const pos=citizenPosition(c,this.state),t=terrainAtPublic(this.state,pos.x,pos.y),p=isoPoint(pos.x,pos.y,t.elevation);
+    const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};
+    return {x:p.x+offset.x,y:p.y+offset.y};
   }
   projectCitizen(c){
     const p=this.citizenScenePoint(c),origin=isoPoint(this.camera.x,this.camera.y),z=this.camera.zoom;
-    const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};
     return {
-      x:this.camera.width/2+(p.x-origin.x)*z+offset.x,
-      y:this.camera.height/2+(p.y-origin.y)*z+offset.y
+      x:this.camera.width/2+(p.x-origin.x)*z,
+      y:this.camera.height/2+(p.y-origin.y)*z
     };
   }
   setSelected(id){this.selected=id;}
@@ -68,7 +68,7 @@ export class SovereignRenderer{
     return true;
   }
   center(){this.camera.targetX=50;this.camera.targetY=50;this.camera.targetZoom=1.55;this.follow=null;}
-  fitPopulation(){
+  fitPopulation({onlyOut=false}={}){
     this.autoFramePopulation=true;
     const alive=(this.state?.citizens||[]).filter(c=>c.alive);
     if(!alive.length)return false;
@@ -78,7 +78,8 @@ export class SovereignRenderer{
     const center=isoInverse((minX+maxX)/2,(minY+maxY)/2);
     this.camera.targetX=center.x;this.camera.targetY=center.y;
     const usableW=Math.max(120,this.camera.width-100),usableH=Math.max(120,this.camera.height-210);
-    this.camera.targetZoom=clamp(Math.min(usableW/(maxX-minX),usableH/(maxY-minY)),.2,2.2);
+    const fittedZoom=clamp(Math.min(usableW/(maxX-minX),usableH/(maxY-minY)),.2,2.2);
+    this.camera.targetZoom=onlyOut?Math.min(this.camera.targetZoom,fittedZoom):fittedZoom;
     this.follow=null;return true;
   }
   populationVisibility(){

@@ -104,7 +104,7 @@ export class PixiObserverLayer{
     const hits=[];
     for(const e of this.staticEntries){if(!e.id)continue;const t=terrainAtPublic(state,e.position.x,e.position.y),p=this.screenPoint(e.position.x,e.position.y,t.elevation,camera);hits.push({...this.art.hitRecord(e,p,camera.zoom),depth:point(e.position.x,e.position.y,t.elevation).y});}
     for(const c of state.citizens||[]){if(!c.alive)continue;const e=this.citizenSprites.get(c.id),pos=citizenPosition(c,state),t=terrainAtPublic(state,pos.x,pos.y),p=point(pos.x,pos.y,t.elevation),a=c.currentAction,moving=a?.type==='MOVE'&&minute<Number(a.endsWorldMinute),active=c.id===selected||c.id===follow;
-      const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};p.x+=offset.x/Math.max(.001,camera.zoom);p.y+=offset.y/Math.max(.001,camera.zoom);
+      const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};p.x+=offset.x;p.y+=offset.y;
       const flip=Boolean(moving&&a?.targetPosition&&a?.fromPosition&&a.targetPosition.x-a.targetPosition.y<a.fromPosition.x-a.fromPosition.y);
       e.container.position.set(p.x,p.y);e.container.zIndex=p.y;
       if(e.spine){
@@ -127,7 +127,7 @@ export class PixiObserverLayer{
       }
       const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
       e.task.text=a&&(active||owned)?ACTION_ICON[a.type]||'·':'';
-      const body=e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x;sp.y+=offset.y;
+      const body=e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;
       if(e.spine){
         hits.push({id:c.id,kind:'citizen',x:sp.x,y:sp.y-12*camera.zoom,r:15*camera.zoom,depth:p.y});
       }else{
