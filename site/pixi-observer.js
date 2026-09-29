@@ -13,9 +13,9 @@ const point=isoPoint;
 const CITIZEN_STAND_SIZE=10.5;
 const CITIZEN_SLEEP_SIZE=15;
 const CITIZEN_STAND_ANCHOR_Y=1;
-const CITIZEN_SLEEP_ANCHOR_Y=.92;
+const CITIZEN_SLEEP_ANCHOR_Y=1;
 const CITIZEN_STAND_LIFT=0;
-const CITIZEN_SLEEP_LIFT=-1;
+const CITIZEN_SLEEP_LIFT=-6;
 
 export class PixiObserverLayer{
   constructor(canvasFallback,art){
