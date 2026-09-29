@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isoPoint,isoInverse,sceneEntries,staticSceneKey,spriteBounds} from '../site/medieval-art.js';
+import fs from 'node:fs';
+import {isoPoint,isoInverse,sceneEntries,staticSceneKey,spriteBounds,citizenSleepFrame} from '../site/medieval-art.js';
 
 test('isometric projection round trips camera coordinates',()=>{
   for(const [x,y] of [[0,0],[50,50],[13.7,86.2],[100,100]]){
@@ -22,6 +23,13 @@ test('art follows canonical depletion, construction progress and collapse withou
 });
 test('empty Genesis never acquires decorative buildings',()=>{
   assert.equal(sceneEntries({worldId:'genesis',seed:1},{decorations:false}).length,0);
+});
+
+test('sleeping citizens use the companion atlas while keeping identity variants',()=>{
+  assert.equal(fs.existsSync(new URL('../site/assets/medieval-sleep-atlas.png',import.meta.url)),true);
+  assert.equal(citizenSleepFrame({kind:'HUMAN_LINKED'}),9);
+  assert.ok(citizenSleepFrame({kind:'GENESIS',id:'genesis:001'})>=0);
+  assert.ok([0,1,8].includes(citizenSleepFrame({kind:'GENESIS',id:'genesis:002'})));
 });
 
 test('tall sprites retain their complete visible and selectable bounds at maximum zoom',()=>{
