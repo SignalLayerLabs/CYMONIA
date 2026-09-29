@@ -10,6 +10,12 @@ const ACTION_ICON={MOVE:'→',OBSERVE:'◉',REST:'·',SLEEP:'z',EAT:'•',DRINK:
 function colorNumber(css){const m=String(css).match(/rgb\((\d+),(\d+),(\d+)\)/);return m?(Number(m[1])<<16)|(Number(m[2])<<8)|Number(m[3]):0x587040;}
 function hashUnit(value){let h=2166136261>>>0;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0;}return(h>>>0)/4294967295;}
 const point=isoPoint;
+const CITIZEN_STAND_SIZE=15;
+const CITIZEN_SLEEP_SIZE=22;
+const CITIZEN_STAND_ANCHOR_Y=.90;
+const CITIZEN_SLEEP_ANCHOR_Y=.78;
+const CITIZEN_STAND_LIFT=-2;
+const CITIZEN_SLEEP_LIFT=-6;
 
 export class PixiObserverLayer{
   constructor(canvasFallback,art){
@@ -43,7 +49,7 @@ export class PixiObserverLayer{
   setOwnedCitizen(id){this.ownedCitizenId=id||null;}
   staticSignature(state){return `${staticSceneKey(state)}|${this.art.revision}`;}
   clearLayer(layer){for(const child of layer.removeChildren())child.destroy({children:true});}
-  sprite(frame,size,sleep=false){const s=new globalThis.PIXI.Sprite((sleep?this.sleepFrames:this.frames)[frame]);s.anchor.set(.5,.94);s.scale.set(size/s.texture.width);return s;}
+  sprite(frame,size,sleep=false){const s=new globalThis.PIXI.Sprite((sleep?this.sleepFrames:this.frames)[frame]);s.anchor.set(.5,sleep?CITIZEN_SLEEP_ANCHOR_Y:CITIZEN_STAND_ANCHOR_Y);s.scale.set(size/s.texture.width);s.y=sleep?CITIZEN_SLEEP_LIFT:CITIZEN_STAND_LIFT;return s;}
   rebuildStatic(){
     const PIXI=globalThis.PIXI,ground=this.art.groundFor(this.state);
     if(this.groundSource!==ground){
@@ -69,7 +75,7 @@ export class PixiObserverLayer{
       if(!c.alive)continue;alive.add(c.id);if(this.citizenSprites.has(c.id))continue;
       let entry=this.spineAdapter?.create(c)||null;
       if(!entry){
-        const container=new PIXI.Container(),body=this.sprite(citizenFrame(c),19),sleepBody=this.art.sleepAtlas?this.sprite(citizenSleepFrame(c),32,true):null,shadow=new PIXI.Graphics();
+        const container=new PIXI.Container(),body=this.sprite(citizenFrame(c),CITIZEN_STAND_SIZE),sleepBody=this.art.sleepAtlas?this.sprite(citizenSleepFrame(c),CITIZEN_SLEEP_SIZE,true):null,shadow=new PIXI.Graphics();
         if(sleepBody)sleepBody.visible=false;
         shadow.ellipse(1,1,6,2.8).fill({color:0x1d281c,alpha:.22});
         const task=new PIXI.Text({text:'',style:{fontFamily:'Georgia',fontSize:10,fill:0xf8e8b5,stroke:{color:0x283021,width:2}}});
@@ -99,17 +105,23 @@ export class PixiObserverLayer{
       if(e.spine){
         this.spineAdapter?.update(e,c,{flip});
       }else{
-        const pose=citizenVisualPose(c,performance.now());
         const sleeping=a?.type==='SLEEP',body=sleeping&&e.sleepBody?e.sleepBody:e.body;
         e.body.visible=!sleeping||!e.sleepBody;if(e.sleepBody)e.sleepBody.visible=sleeping;
-        body.y=pose.y;body.rotation=pose.rotation;
         const scale=sleeping?e.sleepBaseScale:e.baseScale;
-        body.scale.set((flip?-1:1)*scale*pose.scaleX,scale*pose.scaleY);
-        if(e.shadow)e.shadow.scale.x=pose.shadowScale;
+        if(sleeping){
+          body.y=CITIZEN_SLEEP_LIFT;body.rotation=0;
+          body.scale.set((flip?-1:1)*scale,scale);
+          if(e.shadow){e.shadow.scale.x=1.25;e.shadow.scale.y=.85;}
+        }else{
+          const pose=citizenVisualPose(c,performance.now());
+          body.y=CITIZEN_STAND_LIFT+pose.y;body.rotation=pose.rotation;
+          body.scale.set((flip?-1:1)*scale*pose.scaleX,scale*pose.scaleY);
+          if(e.shadow)e.shadow.scale.x=pose.shadowScale;
+        }
       }
       const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
       e.task.text=a&&(active||camera.zoom>2)?ACTION_ICON[a.type]||'·':'';
-      const sleeping=a?.type==='SLEEP'&&Boolean(e.sleepBody),body=sleeping?e.sleepBody:e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:sleeping?citizenSleepFrame(c):citizenFrame(c),size:sleeping?32:19,sleep:sleeping},{x:sp.x,y:sp.y+body.y*camera.zoom},camera.zoom,body.scale.x<0),depth:p.y});
+      const sleeping=a?.type==='SLEEP'&&Boolean(e.sleepBody),body=sleeping?e.sleepBody:e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:sleeping?citizenSleepFrame(c):citizenFrame(c),size:sleeping?CITIZEN_SLEEP_SIZE:CITIZEN_STAND_SIZE,sleep:sleeping},{x:sp.x,y:sp.y+body.y*camera.zoom},camera.zoom,body.scale.x<0),depth:p.y});
     }
     this.hits=hits.sort((a,b)=>a.depth-b.depth);
     this.waterLayer.alpha=.7+.3*Math.sin(minute*.13);
