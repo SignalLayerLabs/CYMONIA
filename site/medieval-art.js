@@ -6,10 +6,13 @@ export const isoPoint=(x,y,elevation=0)=>({x:(x-y)*ISO_X,y:(x+y)*ISO_Y-elevation
 export const isoInverse=(x,y)=>({x:(x/ISO_X+y/ISO_Y)/2,y:(y/ISO_Y-x/ISO_X)/2});
 export function spriteBounds(frame,size,x,y){const height=size*frame.h/frame.w;return{x:x-size/2,y:y-height*.94,width:size,height};}
 export const ATLAS_URL=new URL('./assets/medieval-atlas.png',import.meta.url).href;
+export const SLEEP_ATLAS_URL=new URL('./assets/medieval-sleep-atlas.png',import.meta.url).href;
 const GRASS_URL=new URL('./assets/meadow-texture.png',import.meta.url).href;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function artHash(value){let h=2166136261;for(const c of String(value)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
 export const citizenFrame=c=>c.kind==='HUMAN_LINKED'?15:12+Math.floor(artHash(c.id)*3);
+const SLEEP_FRAME_VARIANTS=[0,1,8];
+export const citizenSleepFrame=c=>c.kind==='HUMAN_LINKED'?9:SLEEP_FRAME_VARIANTS[Math.min(2,Math.floor(artHash(c.id)*3))];
 
 export function staticSceneKey(w){
   return JSON.stringify([w?.worldId,w?.seed,(w?.resourceDeposits||[]).map(d=>[d.id,d.quantity>0,d.position,d.type]),(w?.objects||[]).filter(o=>o.kind==='temporary_shelter').map(o=>[o.id,o.quantity,o.condition,o.position]),(w?.projects||[]).map(p=>[p.id,p.status,p.site,p.workDoneMinutes,p.workRequiredMinutes]),(w?.buildings||[]).map(b=>[b.id,b.position,b.condition,b.massKg,b.designId])]);
@@ -38,29 +41,33 @@ export function sceneEntries(w,{decorations=true}={}){
 
 function loadImage(url){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>resolve(null);im.src=url;});}
 export class MedievalArt{
-  constructor(){this.atlas=null;this.grass=null;this.revision=0;this.ground=null;this.groundKey='';this.frames=[];this.ready=Promise.all([loadImage(ATLAS_URL),loadImage(GRASS_URL)]).then(([atlas,grass])=>{this.atlas=atlas;this.grass=grass;if(atlas)this.measureFrames();this.revision++;return this;});}
-  measureFrames(){
+  constructor(){this.atlas=null;this.sleepAtlas=null;this.grass=null;this.revision=0;this.ground=null;this.groundKey='';this.frames=[];this.sleepFrames=[];this.ready=Promise.all([loadImage(ATLAS_URL),loadImage(SLEEP_ATLAS_URL),loadImage(GRASS_URL)]).then(([atlas,sleepAtlas,grass])=>{this.atlas=atlas;this.sleepAtlas=sleepAtlas;this.grass=grass;if(atlas)this.measureFrames(atlas,'base');if(sleepAtlas)this.measureFrames(sleepAtlas,'sleep');this.revision++;return this;});}
+  measureFrames(atlas=this.atlas,kind='base'){
     // Trim transparent margins per cell so every asset has a consistent foot anchor.
-    const canvas=document.createElement('canvas');canvas.width=this.atlas.width;canvas.height=this.atlas.height;
-    const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(this.atlas,0,0);
-    const {data}=ctx.getImageData(0,0,canvas.width,canvas.height);this.pixelData=data;const cw=canvas.width/4,ch=canvas.height/4;
+    const canvas=document.createElement('canvas');canvas.width=atlas.width;canvas.height=atlas.height;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(atlas,0,0);
+    const {data}=ctx.getImageData(0,0,canvas.width,canvas.height);const cw=canvas.width/4,ch=canvas.height/4;
+    const frames=[];
     for(let i=0;i<16;i++){const ox=Math.floor(i%4*cw),oy=Math.floor(Math.floor(i/4)*ch);let l=cw,t=ch,r=0,b=0;
       for(let y=0;y<ch;y++)for(let x=0;x<cw;x++)if(data[((oy+y)*canvas.width+ox+x)*4+3]>24){l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);b=Math.max(b,y);}
-      this.frames[i]={x:ox+l,y:oy+t,w:Math.max(1,r-l+1),h:Math.max(1,b-t+1)};
+      frames[i]={x:ox+l,y:oy+t,w:Math.max(1,r-l+1),h:Math.max(1,b-t+1)};
     }
+    if(kind==='sleep'){this.sleepFrames=frames;this.sleepPixelData=data;}else{this.frames=frames;this.pixelData=data;}
   }
-  hitRecord(e,p,zoom,flip=false){const size=e.size*zoom,f=this.frames[e.frame];return{id:e.id,kind:e.kind,frame:e.frame,flip,x:p.x,y:p.y,r:size*.5,...(f?{bounds:spriteBounds(f,size,p.x,p.y)}:{})};}
+  hitRecord(e,p,zoom,flip=false){const size=e.size*zoom,frames=e.sleep?this.sleepFrames:this.frames,f=frames[e.frame];return{id:e.id,kind:e.kind,frame:e.frame,sleep:Boolean(e.sleep),flip,x:p.x,y:p.y,r:size*.5,...(f?{bounds:spriteBounds(f,size,p.x,p.y)}:{})};}
   hitTest(hit,x,y){
     if(!hit.bounds)return Math.hypot(x-hit.x,y-hit.y)<=hit.r;
     const b=hit.bounds,u=(x-b.x)/b.width,v=(y-b.y)/b.height;if(u<0||u>=1||v<0||v>=1)return false;
-    const f=this.frames[hit.frame],px=f.x+Math.min(f.w-1,Math.floor((hit.flip?1-u:u)*f.w)),py=f.y+Math.floor(v*f.h);
-    return this.pixelData[(py*this.atlas.width+px)*4+3]>32;
+    const atlas=hit.sleep?this.sleepAtlas:this.atlas,frames=hit.sleep?this.sleepFrames:this.frames,pixels=hit.sleep?this.sleepPixelData:this.pixelData,f=frames[hit.frame],px=f.x+Math.min(f.w-1,Math.floor((hit.flip?1-u:u)*f.w)),py=f.y+Math.floor(v*f.h);
+    return pixels?.[(py*atlas.width+px)*4+3]>32;
   }
-  drawSprite(ctx,frame,x,y,size,flip=false){
-    if(!this.atlas||!this.frames[frame])return false;
-    const f=this.frames[frame],h=size*f.h/f.w;
-    ctx.save();ctx.translate(x,y);if(flip)ctx.scale(-1,1);ctx.drawImage(this.atlas,f.x,f.y,f.w,f.h,-size/2,-h*.94,size,h);ctx.restore();return true;
+  drawFromAtlas(ctx,atlas,frames,frame,x,y,size,flip=false){
+    if(!atlas||!frames[frame])return false;
+    const f=frames[frame],h=size*f.h/f.w;
+    ctx.save();ctx.translate(x,y);if(flip)ctx.scale(-1,1);ctx.drawImage(atlas,f.x,f.y,f.w,f.h,-size/2,-h*.94,size,h);ctx.restore();return true;
   }
+  drawSprite(ctx,frame,x,y,size,flip=false){return this.drawFromAtlas(ctx,this.atlas,this.frames,frame,x,y,size,flip);}
+  drawSleepSprite(ctx,frame,x,y,size,flip=false){return this.drawFromAtlas(ctx,this.sleepAtlas,this.sleepFrames,frame,x,y,size,flip);}
   groundFor(w){
     const key=`${seedOfWorld(w)}|${this.revision}`;if(this.ground&&this.groundKey===key)return this.ground;
     // A continuous top-down material map is projected once, not thousands of tile objects per frame.
