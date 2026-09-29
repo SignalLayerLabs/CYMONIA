@@ -37,14 +37,25 @@ function hasUnknownObservableProperty(citizen,target){
   return Object.keys(properties).some(property=>!knows(citizen,stableId('kprop',target.id,property)));
 }
 
+export function explorationTarget(world,citizen,at=world.clock.worldMinute){
+  const cycle=Math.floor(Number(at||0)/90),grid=8,span=88/grid;
+  const cellHash=hash32(`${world.seed}|${citizen.id}|${cycle}|explore-cell`);
+  const jitterHash=hash32(`${world.seed}|${citizen.id}|${cycle}|explore-jitter`);
+  const cell=(cellHash+cycle*17)%64,cx=cell%grid,cy=Math.floor(cell/grid);
+  const jx=((jitterHash&0xffff)/0xffff-.5)*.72,jy=(((jitterHash>>>16)&0xffff)/0xffff-.5)*.72;
+  let target={x:6+(cx+.5+jx)*span,y:6+(cy+.5+jy)*span};
+  target={x:Math.max(5,Math.min(95,target.x)),y:Math.max(5,Math.min(95,target.y))};
+  if(dist(citizen.position,target)<14)target={x:Math.max(5,Math.min(95,100-target.x)),y:Math.max(5,Math.min(95,100-target.y))};
+  return target;
+}
+
 function exploreCandidate(world,citizen,at){
-  const hash=hash32(`${world.seed}|${citizen.id}|${Math.floor(at/30)}|explore`);
-  const angle=(hash%10000)/10000*Math.PI*2,radius=5+((hash>>>8)%800)/100;
-  const target={x:Math.max(5,Math.min(95,citizen.position.x+Math.cos(angle)*radius)),y:Math.max(5,Math.min(95,citizen.position.y+Math.sin(angle)*radius))};
-  const distance=dist(citizen.position,target);
-  return {family:'explore',key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,utility:.12,novelty:.8,effort:Math.min(1,distance/30),risk:.25,proposal:proposal('explore',[],[
-    {type:'MOVE',durationMinutes:Math.max(4,Math.ceil(distance*2)),targetPosition:target,purpose:'explore',concepts:[]},
-    {type:'OBSERVE',durationMinutes:8,purpose:'explore',concepts:[]},
+  const target=explorationTarget(world,citizen,at),distance=dist(citizen.position,target);
+  const localCrowd=(world.citizens||[]).filter(other=>other.alive&&other.id!==citizen.id&&dist(citizen.position,other.position)<=12).length;
+  const crowdPressure=Math.min(.22,Math.max(0,localCrowd-5)*.012);
+  return {family:'explore',key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,utility:.10+crowdPressure,knowledgeGap:.15,novelty:.85,effort:Math.min(1,distance/65),risk:.18,proposal:proposal('explore',[],[
+    {type:'MOVE',durationMinutes:Math.max(6,Math.ceil(distance*2)),targetPosition:target,purpose:'explore',concepts:[]},
+    {type:'OBSERVE',durationMinutes:10,purpose:'explore',concepts:[]},
   ])};
 }
 
@@ -84,7 +95,42 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
     const distance=dist(citizen.position,project.site),conceptsForProject=(world.designs.find(design=>design.id===project.designId)?.concepts||[]).filter(concept=>knows(citizen,concept));
     if(!conceptsForProject.length)continue;
     const action={type:'BUILD',durationMinutes:Math.min(120,Math.max(15,project.workRequiredMinutes-project.workDoneMinutes)),targetId:project.id,purpose:'construct',concepts:conceptsForProject,payload:{projectId:project.id,workMinutes:120}};
-    candidates.push({family:project.initiatorId===citizen.id?'build':'cooperate',key:`build:${project.id}`,targetId:project.id,utility:.42,relationship:project.initiatorId===citizen.id?0:clamp01(relation(citizen,project.initiatorId).trust),inventoryFit:.8,novelty:.25,effort:Math.min(1,distance/50),risk:.1,proposal:proposal(project.initiatorId===citizen.id?'build':'cooperate',conceptsForProject,distance>1?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:project.id,targetPosition:project.site,purpose:'cooperate',concepts:conceptsForProject},action]:[action])});
+    const remaining=Math.max(0,project.workRequiredMinutes-project.workDoneMinutes);
+    const progress=project.workRequiredMinutes>0
+      ? clamp01(project.workDoneMinutes/project.workRequiredMinutes)
+      : 0;
+    const continuityBoost=.38+.22*progress;
+
+    candidates.push({
+      family:project.initiatorId===citizen.id?'build':'cooperate',
+      key:`build:${project.id}`,
+      targetId:project.id,
+      utility:.52+continuityBoost,
+      relationship:project.initiatorId===citizen.id
+        ? 0
+        : clamp01(relation(citizen,project.initiatorId).trust),
+      inventoryFit:1,
+      novelty:.08,
+      effort:Math.min(.55,distance/70),
+      risk:.06,
+      proposal:proposal(
+        project.initiatorId===citizen.id?'build':'cooperate',
+        conceptsForProject,
+        distance>1
+          ?[
+            {
+              type:'MOVE',
+              durationMinutes:Math.max(2,Math.ceil(distance*2)),
+              targetId:project.id,
+              targetPosition:project.site,
+              purpose:'cooperate',
+              concepts:conceptsForProject
+            },
+            action
+          ]
+          :[action]
+      )
+    });
   }
 
   const testedHeld=held.filter(object=>knowledgeForEntity(citizen,object.id).length);

@@ -19,10 +19,29 @@ export function terrainAt(world,x,y){
   else if(moisture<.29&&micro>.54){kind='dry_grass';movementCost=1.08;cover=.04;}
   return {kind,movementCost,elevation,moisture,riverDistance,cover,passable:true};
 }
-function structureRadius(entity){if(entity?.kind==='temporary_shelter')return .9;return Number(entity?.footprintRadius)||1.55;}
+function structureRadius(entity){
+  if(entity?.kind==='temporary_shelter')return .9;
+  const explicit=Number(entity?.footprintRadius);
+  if(Number.isFinite(explicit)&&explicit>1.65)return explicit;
+  const mass=Math.max(0,Number(entity?.massKg)||0);
+  return clamp(2.25+Math.sqrt(mass)/24,2.25,3.55);
+}
 export function structureOccupancyAt(world,x,y,{ignoreId=null}={}){
-  for(const b of world?.buildings||[]){if(b.id===ignoreId||!b.position)continue;const r=structureRadius(b);if(Math.hypot(x-b.position.x,y-b.position.y)<r)return {entity:b,radius:r};}
-  for(const o of world?.objects||[]){if(o.id===ignoreId||o.kind!=='temporary_shelter'||!(o.quantity>0)||!o.position)continue;const r=structureRadius(o);if(Math.hypot(x-o.position.x,y-o.position.y)<r)return {entity:o,radius:r};}
+  for(const b of world?.buildings||[]){
+    if(b.id===ignoreId||!b.position||!(Number(b.massKg||1)>0)||Number(b.condition??1)<=0)continue;
+    const r=structureRadius(b);
+    if(Math.hypot(x-b.position.x,y-b.position.y)<r)return {entity:b,radius:r};
+  }
+  for(const p of world?.projects||[]){
+    if(p.id===ignoreId||p.status!=='construction'||!p.site)continue;
+    const r=Math.max(1.8,Number(p.footprintRadius)||2.15);
+    if(Math.hypot(x-p.site.x,y-p.site.y)<r)return {entity:{...p,position:p.site,kind:'construction_site'},radius:r};
+  }
+  for(const o of world?.objects||[]){
+    if(o.id===ignoreId||o.kind!=='temporary_shelter'||!(o.quantity>0)||!o.position)continue;
+    const r=structureRadius(o);
+    if(Math.hypot(x-o.position.x,y-o.position.y)<r)return {entity:o,radius:r};
+  }
   return null;
 }
 export function resolveAccessibleTarget(world,citizen,target,targetId=null){

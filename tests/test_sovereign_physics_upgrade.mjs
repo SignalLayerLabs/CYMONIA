@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {terrainAt, travelProfile, carriedMassKg, resolveAccessibleTarget} from '../world/terrain.js';
+import {terrainAt, travelProfile, carriedMassKg, resolveAccessibleTarget, structureOccupancyAt} from '../world/terrain.js';
 import {createSovereignGenesis} from '../world/genesis.js';
 
 function world(){
@@ -79,4 +79,27 @@ test('weather and physical capacity influence travel time without changing desti
   assert.ok(slowTrip.capabilityFactor>wetFitTrip.capabilityFactor);
   assert.ok(wetFitTrip.weatherFactor>slowTrip.weatherFactor);
   assert.deepEqual(wetFitTrip.targetPosition,target);
+});
+
+
+test('completed houses expose a solid canonical collision volume',()=>{
+  const w=world();
+  w.buildings=[{id:'house',kind:'structure',position:{x:60,y:60},footprintRadius:2.8,massKg:80,condition:1}];
+  assert.ok(structureOccupancyAt(w,62.4,60),'house body must be solid away from the old 1.55 core');
+  const c={...citizen,position:{x:50,y:60}},profile=travelProfile(w,c,{x:70,y:60});
+  assert.ok(profile.path.length>=3,'MOVE should detour around a house');
+  for(let i=0;i<profile.path.length-1;i++){
+    for(let n=1;n<80;n++){
+      const t=n/80,x=profile.path[i].x+(profile.path[i+1].x-profile.path[i].x)*t,y=profile.path[i].y+(profile.path[i+1].y-profile.path[i].y)*t;
+      assert.equal(structureOccupancyAt(w,x,y),null,`route crossed solid house at ${x},${y}`);
+    }
+  }
+});
+
+test('unrelated citizens detour around active construction sites',()=>{
+  const w=world();
+  w.projects=[{id:'p1',status:'construction',site:{x:60,y:60},footprintRadius:2.5}];
+  const c={...citizen,position:{x:50,y:60}},profile=travelProfile(w,c,{x:70,y:60});
+  assert.ok(profile.path.length>=3);
+  assert.ok(profile.path.some(p=>Math.abs(p.y-60)>1));
 });

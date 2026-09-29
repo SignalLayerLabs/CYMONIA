@@ -4,7 +4,7 @@ import {createSovereignGenesis} from '../world/genesis.js';
 import {learn} from '../world/epistemics.js';
 import {resourceConceptId} from '../world/perception.js';
 import {recordAffordanceOutcome} from '../world/cognition-state.js';
-import {chooseAffordance,enumerateAffordances,scoreAffordance} from '../world/affordances.js';
+import {chooseAffordance,enumerateAffordances,scoreAffordance,explorationTarget} from '../world/affordances.js';
 import {applyAcceptedPlan} from '../world/cognition.js';
 import {advanceWorldTo} from '../world/engine.js';
 
@@ -100,4 +100,77 @@ test('resolved local plans feed bounded outcome learning',()=>{
   applyAcceptedPlan(world,citizen,selected,0);
   advanceWorldTo(world,20_000);
   assert.equal(citizen.cognition.local.outcomes.gather.successes,1);
+});
+
+
+test('exploration targets spread Genesis citizens across the map',()=>{
+  const world=createSovereignGenesis({seed:20260915,realEpochMs:0});
+  const targets=world.citizens.map(c=>explorationTarget(world,c,0));
+  const xs=targets.map(p=>p.x),ys=targets.map(p=>p.y);
+  const cells=new Set(targets.map(p=>`${Math.floor(p.x/10)}:${Math.floor(p.y/10)}`));
+  assert.ok(Math.max(...xs)-Math.min(...xs)>65);
+  assert.ok(Math.max(...ys)-Math.min(...ys)>65);
+  assert.ok(cells.size>=24);
+  assert.ok(targets.filter(p=>p.x<25||p.x>75||p.y<25||p.y>75).length>=45);
+});
+
+test('crowding increases exploration utility and encourages dispersion',()=>{
+  const world=createSovereignGenesis({seed:20260915,realEpochMs:0}),citizen=world.citizens[0];
+  const crowded=enumerateAffordances(world,citizen,0).find(x=>x.family==='explore');
+  for(let i=1;i<world.citizens.length;i++)world.citizens[i].position={x:95,y:95};
+  const dispersed=enumerateAffordances(world,citizen,0).find(x=>x.family==='explore');
+  assert.ok(crowded.utility>dispersed.utility);
+});
+
+
+test('an active construction project outranks free exploration until useful work is completed',()=>{
+  const world=createSovereignGenesis({seed:20260915,realEpochMs:0});
+  const citizen=world.citizens[0];
+
+  citizen.position={x:50,y:50};
+  citizen.body.hydration=100;
+  citizen.body.calories=100;
+  citizen.body.sleepPressure=0;
+  citizen.psychology.curiosity=1;
+  citizen.psychology.noveltySeeking=1;
+
+  const concept='test:construction';
+  learn(citizen,concept,{kind:'observation',eventId:'test:construction'});
+
+  world.designs.push({
+    id:'design:test',
+    creatorId:citizen.id,
+    concepts:[concept],
+    materials:{timber:2},
+    workMinutes:240,
+    functionConcept:null,
+    createdWorldMinute:0,
+    origin:'test'
+  });
+
+  world.projects.push({
+    id:'project:test',
+    designId:'design:test',
+    initiatorId:citizen.id,
+    site:{x:52,y:50},
+    terrainKind:'meadow',
+    foundationFactor:1,
+    materialObjectIds:[],
+    workRequiredMinutes:240,
+    workDoneMinutes:120,
+    status:'construction',
+    createdWorldMinute:0,
+    footprintRadius:2.4
+  });
+
+  const candidates=enumerateAffordances(world,citizen,500);
+  const build=candidates.find(x=>x.key==='build:project:test');
+  const explore=candidates.find(x=>x.family==='explore');
+
+  assert.ok(build);
+  assert.ok(explore);
+  assert.ok(
+    scoreAffordance(world,citizen,build,500)>
+    scoreAffordance(world,citizen,explore,500)
+  );
 });
