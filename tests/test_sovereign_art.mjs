@@ -27,9 +27,9 @@ test('empty Genesis never acquires decorative buildings',()=>{
 
 test('sleeping citizens use the companion atlas while keeping identity variants',()=>{
   assert.equal(fs.existsSync(new URL('../site/assets/medieval-sleep-atlas.png',import.meta.url)),true);
-  assert.equal(citizenSleepFrame({kind:'HUMAN_LINKED'}),9);
+  assert.equal(citizenSleepFrame({kind:'HUMAN_LINKED'}),3);
   assert.ok(citizenSleepFrame({kind:'GENESIS',id:'genesis:001'})>=0);
-  assert.ok([0,1,8].includes(citizenSleepFrame({kind:'GENESIS',id:'genesis:002'})));
+  assert.ok([0,1,2].includes(citizenSleepFrame({kind:'GENESIS',id:'genesis:002'})));
 });
 
 test('tall sprites retain their complete visible and selectable bounds at maximum zoom',()=>{

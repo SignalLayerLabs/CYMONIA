@@ -11,8 +11,8 @@ const GRASS_URL=new URL('./assets/meadow-texture.png',import.meta.url).href;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function artHash(value){let h=2166136261;for(const c of String(value)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
 export const citizenFrame=c=>c.kind==='HUMAN_LINKED'?15:12+Math.floor(artHash(c.id)*3);
-const SLEEP_FRAME_VARIANTS=[0,1,8];
-export const citizenSleepFrame=c=>c.kind==='HUMAN_LINKED'?9:SLEEP_FRAME_VARIANTS[Math.min(2,Math.floor(artHash(c.id)*3))];
+const SLEEP_FRAME_VARIANTS=[0,1,2];
+export const citizenSleepFrame=c=>c.kind==='HUMAN_LINKED'?3:SLEEP_FRAME_VARIANTS[Math.min(2,Math.floor(artHash(c.id)*3))];
 
 export function staticSceneKey(w){
   return JSON.stringify([w?.worldId,w?.seed,(w?.resourceDeposits||[]).map(d=>[d.id,d.quantity>0,d.position,d.type]),(w?.objects||[]).filter(o=>o.kind==='temporary_shelter').map(o=>[o.id,o.quantity,o.condition,o.position]),(w?.projects||[]).map(p=>[p.id,p.status,p.site,p.workDoneMinutes,p.workRequiredMinutes]),(w?.buildings||[]).map(b=>[b.id,b.position,b.condition,b.massKg,b.designId])]);
@@ -43,16 +43,49 @@ function loadImage(url){return new Promise(resolve=>{const im=new Image();im.onl
 export class MedievalArt{
   constructor(){this.atlas=null;this.sleepAtlas=null;this.grass=null;this.revision=0;this.ground=null;this.groundKey='';this.frames=[];this.sleepFrames=[];this.ready=Promise.all([loadImage(ATLAS_URL),loadImage(SLEEP_ATLAS_URL),loadImage(GRASS_URL)]).then(([atlas,sleepAtlas,grass])=>{this.atlas=atlas;this.sleepAtlas=sleepAtlas;this.grass=grass;if(atlas)this.measureFrames(atlas,'base');if(sleepAtlas)this.measureFrames(sleepAtlas,'sleep');this.revision++;return this;});}
   measureFrames(atlas=this.atlas,kind='base'){
-    // Trim transparent margins per cell so every asset has a consistent foot anchor.
+    // Base atlas is 4x4; sleep atlas is 2x2.
     const canvas=document.createElement('canvas');canvas.width=atlas.width;canvas.height=atlas.height;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(atlas,0,0);
-    const {data}=ctx.getImageData(0,0,canvas.width,canvas.height);const cw=canvas.width/4,ch=canvas.height/4;
+    const {data}=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+    const cols=kind==='sleep'?2:4;
+    const rows=kind==='sleep'?2:4;
+    const frameCount=cols*rows;
+    const cw=canvas.width/cols;
+    const ch=canvas.height/rows;
+
     const frames=[];
-    for(let i=0;i<16;i++){const ox=Math.floor(i%4*cw),oy=Math.floor(Math.floor(i/4)*ch);let l=cw,t=ch,r=0,b=0;
-      for(let y=0;y<ch;y++)for(let x=0;x<cw;x++)if(data[((oy+y)*canvas.width+ox+x)*4+3]>24){l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);b=Math.max(b,y);}
-      frames[i]={x:ox+l,y:oy+t,w:Math.max(1,r-l+1),h:Math.max(1,b-t+1)};
+
+    for(let i=0;i<frameCount;i++){
+      const ox=Math.floor((i%cols)*cw);
+      const oy=Math.floor(Math.floor(i/cols)*ch);
+
+      let l=cw,t=ch,r=0,b=0,found=false;
+
+      for(let y=0;y<ch;y++){
+        for(let x=0;x<cw;x++){
+          if(data[((oy+y)*canvas.width+ox+x)*4+3]>24){
+            found=true;
+            l=Math.min(l,x);
+            r=Math.max(r,x);
+            t=Math.min(t,y);
+            b=Math.max(b,y);
+          }
+        }
+      }
+
+      frames[i]=found
+        ? {x:ox+l,y:oy+t,w:r-l+1,h:b-t+1}
+        : {x:ox,y:oy,w:1,h:1};
     }
-    if(kind==='sleep'){this.sleepFrames=frames;this.sleepPixelData=data;}else{this.frames=frames;this.pixelData=data;}
+
+    if(kind==='sleep'){
+      this.sleepFrames=frames;
+      this.sleepPixelData=data;
+    }else{
+      this.frames=frames;
+      this.pixelData=data;
+    }
   }
   hitRecord(e,p,zoom,flip=false){const size=e.size*zoom,frames=e.sleep?this.sleepFrames:this.frames,f=frames[e.frame];return{id:e.id,kind:e.kind,frame:e.frame,sleep:Boolean(e.sleep),flip,x:p.x,y:p.y,r:size*.5,...(f?{bounds:spriteBounds(f,size,p.x,p.y)}:{})};}
   hitTest(hit,x,y){
