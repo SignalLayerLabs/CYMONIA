@@ -25,3 +25,4 @@ export * from './impact.js';
 export * from './strategy.js';
 export * from './cognition-state.js';
 export * from './cognition-queue.js';
+export * from './operational-state.js';

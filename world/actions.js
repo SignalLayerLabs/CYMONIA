@@ -16,7 +16,9 @@ export function startAction(world,citizen,spec,at=world.clock.worldMinute){
     duration=Math.max(duration,physics.minimumMinutes);
     targetPosition={...physics.targetPosition};
   }
-  const action={id:stableId('act',world.worldId,citizen.id,world.actions.length,at,spec.type),actorId:citizen.id,type:spec.type,status:'active',purpose:spec.purpose||null,planId:spec.planId||null,startedWorldMinute:at,endsWorldMinute:at+duration,fromPosition:{...citizen.position},targetPosition,targetId:spec.targetId||null,concepts:[...(spec.concepts||[])],payload:spec.payload||{},reservedObjectIds:[...(spec.reservedObjectIds||[])],physics,path:physics?.path||null};
+  const sequence=Math.max(Number(world.actionSequence)||0,world.actions.length);
+  const action={id:stableId('act',world.worldId,citizen.id,sequence,at,spec.type),actorId:citizen.id,type:spec.type,status:'active',purpose:spec.purpose||null,planId:spec.planId||null,startedWorldMinute:at,endsWorldMinute:at+duration,fromPosition:{...citizen.position},targetPosition,targetId:spec.targetId||null,concepts:[...(spec.concepts||[])],payload:spec.payload||{},reservedObjectIds:[...(spec.reservedObjectIds||[])],physics,path:physics?.path||null};
+  world.actionSequence=sequence+1;
   world.actions.push(action);citizen.currentActionId=action.id;
   appendEvent(world,'ACTION_STARTED',citizen.id,{actionId:action.id,type:action.type,planId:action.planId,endsWorldMinute:action.endsWorldMinute,physics:physics?{distance:physics.distance,minimumMinutes:physics.minimumMinutes,averageTerrainCost:physics.averageTerrainCost,loadKg:physics.loadKg,loadFactor:physics.loadFactor,physicalCapacity:physics.physicalCapacity,capabilityFactor:physics.capabilityFactor,weatherFactor:physics.weatherFactor,terrainKinds:physics.terrainKinds}:null},[],at);
   return action;

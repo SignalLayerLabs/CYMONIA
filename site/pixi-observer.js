@@ -5,8 +5,7 @@ import {citizenVisualPose} from './citizen-animation.js';
 import {SpineCitizenAdapter} from './spine-citizen-adapter.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function renderWorldMinute(state,nowMs=Date.now()){const raw=state?.clock?.realEpochMs,epoch=Number(raw),canonical=Number(state?.clock?.worldMinute)||0;return raw!=null&&Number.isFinite(epoch)?Math.max(canonical,(nowMs-epoch)/1000):canonical;}
-function citizenPosition(c,state,nowMs=Date.now()){const a=c?.currentAction;if(!a||a.type!=='MOVE'||!a.targetPosition||!a.fromPosition)return {...c.position};const now=renderWorldMinute(state,nowMs),span=Math.max(.001,Number(a.endsWorldMinute)-Number(a.startedWorldMinute)),t=clamp((now-Number(a.startedWorldMinute))/span,0,1),path=Array.isArray(a.path)&&a.path.length>=2?a.path:[a.fromPosition,a.targetPosition];let total=0;const lengths=[];for(let i=0;i<path.length-1;i++){const d=Math.hypot(path[i+1].x-path[i].x,path[i+1].y-path[i].y);lengths.push(d);total+=d;}if(total<=0)return {...a.targetPosition};let remaining=t*total;for(let i=0;i<lengths.length;i++){if(remaining<=lengths[i]||i===lengths.length-1){const u=lengths[i]?clamp(remaining/lengths[i],0,1):1;return{x:path[i].x+(path[i+1].x-path[i].x)*u,y:path[i].y+(path[i+1].y-path[i].y)*u};}remaining-=lengths[i];}return {...a.targetPosition};}
+import {citizenPosition,citizenDisplayOffsets} from './observer-motion.js';
 const ACTION_ICON={MOVE:'→',OBSERVE:'◉',REST:'·',SLEEP:'z',EAT:'•',DRINK:'≈',GATHER:'⌁',CARRY:'▣',CUT:'╱',DIG:'⌄',BUILD:'⌂',CARE:'+',TEACH:'◇',COMMUNICATE:'◇',EXPERIMENT:'✦',ATTACK:'⚠',DEFEND:'◈',TRANSFER:'↔',PROMISE:'∞',CLAIM:'⌁',REPRODUCE:'◌'};
 function colorNumber(css){const m=String(css).match(/rgb\((\d+),(\d+),(\d+)\)/);return m?(Number(m[1])<<16)|(Number(m[2])<<8)|Number(m[3]):0x587040;}
 function hashUnit(value){let h=2166136261>>>0;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0;}return(h>>>0)/4294967295;}
@@ -39,7 +38,7 @@ export class PixiObserverLayer{
       this.ready=true;
     }catch(error){console.warn('Pixi observer unavailable; Canvas fallback remains active.',error);this.app?.destroy(true,{children:true});this.app=null;this.failed=true;}
   }
-  setState(state){this.state=state;}
+  setState(state,offsets=citizenDisplayOffsets(state)){this.state=state;this.citizenOffsets=offsets;}
   setOwnedCitizen(id){this.ownedCitizenId=id||null;}
   staticSignature(state){return `${staticSceneKey(state)}|${this.art.revision}`;}
   clearLayer(layer){for(const child of layer.removeChildren())child.destroy({children:true});}
@@ -91,6 +90,7 @@ export class PixiObserverLayer{
     const hits=[];
     for(const e of this.staticEntries){if(!e.id)continue;const t=terrainAtPublic(state,e.position.x,e.position.y),p=this.screenPoint(e.position.x,e.position.y,t.elevation,camera);hits.push({...this.art.hitRecord(e,p,camera.zoom),depth:point(e.position.x,e.position.y,t.elevation).y});}
     for(const c of state.citizens||[]){if(!c.alive)continue;const e=this.citizenSprites.get(c.id),pos=citizenPosition(c,state),t=terrainAtPublic(state,pos.x,pos.y),p=point(pos.x,pos.y,t.elevation),a=c.currentAction,moving=a?.type==='MOVE'&&minute<Number(a.endsWorldMinute),active=c.id===selected||c.id===follow;
+      const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};p.x+=offset.x;p.y+=offset.y;
       const flip=Boolean(moving&&a?.targetPosition&&a?.fromPosition&&a.targetPosition.x-a.targetPosition.y<a.fromPosition.x-a.fromPosition.y);
       e.container.position.set(p.x,p.y);e.container.zIndex=p.y;
       if(e.spine){
@@ -103,7 +103,7 @@ export class PixiObserverLayer{
       }
       const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
       e.task.text=a&&(active||camera.zoom>2)?ACTION_ICON[a.type]||'·':'';
-      const sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:citizenFrame(c),size:19},{x:sp.x,y:sp.y+e.body.y*camera.zoom},camera.zoom,e.body.scale.x<0),depth:p.y});
+      const sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:citizenFrame(c),size:19},{x:sp.x,y:sp.y+e.body.y*camera.zoom},camera.zoom,e.body.scale.x<0),depth:p.y});
     }
     this.hits=hits.sort((a,b)=>a.depth-b.depth);
     this.waterLayer.alpha=.7+.3*Math.sin(minute*.13);

@@ -17,12 +17,15 @@ function renderTop(){
   const w=state.world;if(!w)return;
   const living=w.citizens.filter(c=>c.alive).length,embodied=w.citizens.length,human=w.citizens.filter(c=>c.kind==='HUMAN_LINKED').length,climate=climateState(w),visibility=state.renderer?.populationVisibility?.()||{visible:living,total:living};
   $('populationValue').textContent=living;
-  if($('populationLabel'))$('populationLabel').textContent=`LIVING · ${embodied} TOTAL · ${human} HUMAN · ${visibility.visible} VISIBLE`;
+  if($('populationLabel')){
+    $('populationLabel').textContent=`${visibility.visible} / ${living} IN VIEW`;
+    $('populationLabel').title=`${living} living · ${embodied} total · ${w.citizens.filter(c=>c.kind==='GENESIS').length} Genesis · ${human} human avatars`;
+  }
   $('structureValue').textContent=(w.buildings||[]).length;
   $('organizationValue').textContent=(w.organizations||[]).length;
   $('environmentValue').textContent=`${Math.round(climate.temperature)}° ${climate.season}`;
   $('weatherValue').textContent=climate.rain>.08?`RAIN ${Math.round(climate.rain*100)}%`:climate.night?'NIGHT':'CLEAR';
-  $('worldDate').textContent=dateLabel(worldMinute(w));
+  $('worldDate').textContent=dateLabel(w.clock.worldMinute);
   $('miniMode').textContent=state.mode===CONNECTION.LIVE?'LIVE':'OBSERVER';
   renderMyAvatarStatus();
 }

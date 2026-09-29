@@ -11,6 +11,7 @@ import {
   sanitizeAIStrategy,
   appendEvent,
   compactLedger,
+  compactOperationalState,
   worldMinuteAt,
   REAL_MS_PER_WORLD_MINUTE,
   queueCognition,
@@ -219,6 +220,7 @@ export class SovereignWorld {
       }
     }
     if(!world||world.version!==2||!Array.isArray(world.citizens)||!Array.isArray(world.ledger))throw new Error('sovereign_world_state_invalid');
+    compactOperationalState(world);
     return world;
   }
   async ensureAlarm(){
@@ -256,6 +258,7 @@ export class SovereignWorld {
       this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
       return {persisted:false,reason:'write_budget_exhausted'};
     }
+    compactOperationalState(this.world);
     compactLedger(this.world,HOT_LEDGER_EVENTS);
     const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
     const serialized=JSON.stringify(this.world);
@@ -499,6 +502,7 @@ export class SovereignWorld {
           nextAlarmRealMs:runtime.nextAlarmRealMs??null,
           ...tickDiagnostics(runtime),
         },
+        operational_state:{actions:this.world.actions.length,plans:this.world.citizens.reduce((n,c)=>n+c.plans.length,0),experiments:this.world.experiments.length},
         world_id:this.world.worldId,
         world_minute:this.world.clock.worldMinute,
         lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),

@@ -11,3 +11,13 @@ test('world catches up from canonical real time without browser presence',()=>{
   assert.equal(pub.clock.worldMinute,60);
   assert.equal(pub.citizens.length,100);
 });
+
+
+test('public state never invents elapsed world time during a runtime outage',()=>{
+  const w=createSovereignGenesis({realEpochMs:0});
+  advanceWorldTo(w,10_000);
+  const before=JSON.stringify(w);
+  const pub=publicWorld(w,400_000_000);
+  assert.equal(pub.clock.worldMinute,10);
+  assert.equal(JSON.stringify(w),before);
+});

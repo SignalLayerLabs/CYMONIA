@@ -79,11 +79,8 @@ test('Observer exposes owned-avatar marker, locate/follow controls and personal 
   assert.match(js,/refreshMyAvatar/);
   assert.match(js,/renderMyAvatar/);
 
-  assert.ok(
-    js.includes(
-      "LIVING · ${embodied} TOTAL · ${human} HUMAN · ${visibility.visible} VISIBLE"
-    )
-  );
+  assert.match(js, /\$\('\w+'\)\.textContent=`\$\{visibility\.visible\} \/ \$\{living\} IN VIEW`/);
+  assert.match(js, /Genesis · \$\{human\} human avatars/);
 
   assert.match(
     js,

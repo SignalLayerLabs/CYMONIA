@@ -24,3 +24,8 @@ test('citizen without canonical MOVE does not visually wander',()=>{
   const idle={position:{x:4,y:7},currentAction:{type:'OBSERVE',startedWorldMinute:1,endsWorldMinute:100}};
   assert.deepEqual(citizenPosition(idle,state,999999),{x:4,y:7});
 });
+
+
+test('observer interpolation stops after one heartbeat without a new canonical tick',()=>{
+  assert.equal(worldMinute(state,400_000_000),70);
+});
