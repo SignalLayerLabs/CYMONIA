@@ -1,6 +1,6 @@
 import {terrainAtPublic,terrainPalette,terrainDecoration,riverCenterXPublic,seedOfWorld} from './terrain-model.js';
 import {PixiObserverLayer} from './pixi-observer.js';
-import {MedievalArt,isoPoint,isoInverse,sceneEntries,staticSceneKey,citizenFrame,citizenSleepFrame,artHash,spriteBounds} from './medieval-art.js';
+import {MedievalArt,isoPoint,isoInverse,sceneEntries,staticSceneKey,artHash,spriteBounds} from './medieval-art.js';
 
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -106,24 +106,25 @@ export class SovereignRenderer{
     if(this.overlay==='relations')this.drawRelations(ctx,minute);
     const key=staticSceneKey(this.state);if(key!==this.artKey){this.artEntries=sceneEntries(this.state);this.artKey=key;}
     const entries=[...this.artEntries];
-    for(const c of this.state.citizens||[])if(c.alive){const sleeping=c.currentAction?.type==='SLEEP';entries.push({kind:'citizen',id:c.id,position:citizenPosition(c,this.state),data:c,frame:sleeping?citizenSleepFrame(c):citizenFrame(c),sleep:sleeping,size:sleeping?32:19});}
+    for(const c of this.state.citizens||[])if(c.alive)entries.push({kind:'citizen',id:c.id,position:citizenPosition(c,this.state),data:c,...this.art.citizenSprite(c)});
     for(const e of entries){const t=terrainAtPublic(this.state,e.position.x,e.position.y);e.screen=e.kind==='citizen'?this.projectCitizen(e.data):this.project(e.position.x,e.position.y,t.elevation);}
     entries.sort((a,b)=>a.screen.y-b.screen.y);this.hits=[];
     for(const e of entries){
       const p=e.screen,z=this.camera.zoom;
-      const f=e.sleep?this.art.sleepFrames[e.frame]:this.art.frames[e.frame],bounds=f?spriteBounds(f,e.size*z,p.x,p.y):{x:p.x-50*z,y:p.y-100*z,width:100*z,height:120*z};if(bounds.x+bounds.width<0||bounds.x>r.width||bounds.y+bounds.height<0||bounds.y>r.height)continue;
+      const f=this.art.atlasFor(e).frames[e.frame],bounds=f?spriteBounds(f,e.size*z,p.x,p.y):{x:p.x-50*z,y:p.y-100*z,width:100*z,height:120*z};if(bounds.x+bounds.width<0||bounds.x>r.width||bounds.y+bounds.height<0||bounds.y>r.height)continue;
       const active=e.id&&(e.id===this.selected||e.id===this.follow);
       if(active){ctx.strokeStyle='#f8df91';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(p.x,p.y,e.size*.58*z,Math.min(15,e.size*.2)*z,0,0,TAU);ctx.stroke();}
       const action=e.data?.currentAction,moving=action?.type==='MOVE'&&minute<Number(action.endsWorldMinute),bob=moving?Math.sin(performance.now()/125+artHash(e.id)*TAU)*z:0;
+      const flip=Boolean(moving&&action.targetPosition&&action.fromPosition&&action.targetPosition.x-action.targetPosition.y<action.fromPosition.x-action.fromPosition.y);
       if(e.frame===-1){ctx.strokeStyle='rgba(191,233,219,.6)';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(p.x,p.y,15*z,7*z,0,0,TAU);ctx.stroke();}
-      else if(!(e.sleep?this.art.drawSleepSprite(ctx,e.frame,p.x,p.y,e.size*z,false):this.art.drawSprite(ctx,e.frame,p.x,p.y+bob,e.size*z,moving&&action.targetPosition.x-action.targetPosition.y<action.fromPosition.x-action.fromPosition.y))){
+      else if(!this.art.drawEntry(ctx,e,p.x,p.y+bob,z,flip)){
         if(e.kind==='citizen')this.drawCitizen(ctx,e,p,light,minute);
         else if(e.kind!=='scenery'){ctx.fillStyle='#c4a66a';ctx.fillRect(p.x-4*z,p.y-8*z,8*z,8*z);}
       }
       if(e.kind==='project'){ctx.fillStyle='#2b3024';ctx.fillRect(p.x-22*z,p.y+7*z,44*z,3*z);ctx.fillStyle='#d8bd76';ctx.fillRect(p.x-22*z,p.y+7*z,44*z*e.progress,3*z);}
       if(e.kind==='citizen'&&action&&(active||e.id===this.ownedCitizen)){ctx.font='11px Georgia';ctx.textAlign='center';ctx.fillStyle='#f7e5b8';ctx.fillText(ACTION_ICON[action.type]||'·',p.x,p.y-40*z);}
       if(e.kind==='citizen'&&this.overlay==='knowledge')this.drawKnowledgeHalo(ctx,e.data,p,light);
-      if(e.id)this.hits.push(this.art.hitRecord(e,{x:p.x,y:p.y+bob},z,moving&&action.targetPosition.x-action.targetPosition.y<action.fromPosition.x-action.fromPosition.y));
+      if(e.id)this.hits.push(this.art.hitRecord(e,{x:p.x,y:p.y+bob},z,flip));
     }
   }
   drawKnowledgeHalo(ctx,c,p){const z=this.camera.zoom,count=Array.isArray(c.knowledge)?c.knowledge.length:Number(c.knowledge?.count||0);ctx.save();ctx.font=`${Math.max(8,Math.round(8*z))}px system-ui`;ctx.textAlign='center';ctx.fillStyle='rgba(20,35,25,.85)';ctx.fillRect(p.x-14*z,p.y-46*z,28*z,12*z);ctx.fillStyle='#d9edcd';ctx.fillText(`K ${count}`,p.x,p.y-37*z);ctx.restore();}

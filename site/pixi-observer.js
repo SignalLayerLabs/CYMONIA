@@ -1,6 +1,6 @@
 import {terrainAtPublic,terrainDecoration,terrainPalette} from './terrain-model.js';
 import {TransientMatterEffects} from './transient-physics.js';
-import {isoPoint,sceneEntries,staticSceneKey,citizenFrame,citizenSleepFrame,artHash} from './medieval-art.js';
+import {isoPoint,sceneEntries,staticSceneKey} from './medieval-art.js';
 import {citizenVisualPose} from './citizen-animation.js';
 import {SpineCitizenAdapter} from './spine-citizen-adapter.js';
 
@@ -39,7 +39,12 @@ export class PixiObserverLayer{
       if(!this.art.atlas)throw new Error('Art atlas unavailable');
       const source=PIXI.Texture.from(this.art.atlas).source;
       this.frames=this.art.frames.map(f=>new PIXI.Texture({source,frame:new PIXI.Rectangle(f.x,f.y,f.w,f.h)}));
-      if(this.art.sleepAtlas){const sleepSource=PIXI.Texture.from(this.art.sleepAtlas).source;this.sleepFrames=this.art.sleepFrames.map(f=>new PIXI.Texture({source:sleepSource,frame:new PIXI.Rectangle(f.x,f.y,f.w,f.h)}));}
+      this.citizenTextures=new Map([['base',this.frames]]);
+      for(const atlas of ['sleep',...this.art.citizenAtlases.map((_,i)=>`citizen:${i}`)]){
+        const asset=this.art.atlasFor({atlas});if(!asset.image)continue;
+        const source=PIXI.Texture.from(asset.image).source;
+        this.citizenTextures.set(atlas,asset.frames.map(f=>new PIXI.Texture({source,frame:new PIXI.Rectangle(f.x,f.y,f.w,f.h)})));
+      }
       this.spineAdapter=new SpineCitizenAdapter(PIXI,globalThis.CYMONIA_SPINE);
       await this.spineAdapter.preload();
       this.ready=true;
@@ -49,7 +54,7 @@ export class PixiObserverLayer{
   setOwnedCitizen(id){this.ownedCitizenId=id||null;}
   staticSignature(state){return `${staticSceneKey(state)}|${this.art.revision}`;}
   clearLayer(layer){for(const child of layer.removeChildren())child.destroy({children:true});}
-  sprite(frame,size,sleep=false){const s=new globalThis.PIXI.Sprite((sleep?this.sleepFrames:this.frames)[frame]);s.anchor.set(.5,sleep?CITIZEN_SLEEP_ANCHOR_Y:CITIZEN_STAND_ANCHOR_Y);s.scale.set(size/s.texture.width);s.y=sleep?CITIZEN_SLEEP_LIFT:CITIZEN_STAND_LIFT;return s;}
+  sprite(frame,size){const s=new globalThis.PIXI.Sprite(this.frames[frame]);s.anchor.set(.5,.94);s.scale.set(size/s.texture.width);return s;}
   rebuildStatic(){
     const PIXI=globalThis.PIXI,ground=this.art.groundFor(this.state);
     if(this.groundSource!==ground){
@@ -75,13 +80,13 @@ export class PixiObserverLayer{
       if(!c.alive)continue;alive.add(c.id);if(this.citizenSprites.has(c.id))continue;
       let entry=this.spineAdapter?.create(c)||null;
       if(!entry){
-        const container=new PIXI.Container(),body=this.sprite(citizenFrame(c),CITIZEN_STAND_SIZE),sleepBody=this.art.sleepAtlas?this.sprite(citizenSleepFrame(c),CITIZEN_SLEEP_SIZE,true):null,shadow=new PIXI.Graphics();
-        if(sleepBody)sleepBody.visible=false;
+        const visual=this.art.citizenSprite(c,CITIZEN_STAND_SIZE,CITIZEN_SLEEP_SIZE);
+        const container=new PIXI.Container(),body=new PIXI.Sprite(this.citizenTextures.get(visual.atlas)[visual.frame]),shadow=new PIXI.Graphics();
+        body.anchor.set(.5,CITIZEN_STAND_ANCHOR_Y);body.scale.set(visual.size/body.texture.width);
         shadow.ellipse(1,1,6,2.8).fill({color:0x1d281c,alpha:.22});
         const task=new PIXI.Text({text:'',style:{fontFamily:'Georgia',fontSize:10,fill:0xf8e8b5,stroke:{color:0x283021,width:2}}});
         task.anchor.set(.5);task.position.set(0,-25);container.addChild(shadow,body,task);
-        if(sleepBody)container.addChildAt(sleepBody,2);
-        entry={container,body,sleepBody,task,shadow,baseScale:Math.abs(body.scale.x),sleepBaseScale:sleepBody?Math.abs(sleepBody.scale.x):0,spine:false};
+        entry={container,body,task,shadow,spine:false,visual};
       }
       const ownedRing=new PIXI.Graphics();ownedRing.ellipse(0,1,11,5).stroke({width:1.5,color:0x8fd7ff,alpha:.95});ownedRing.visible=false;
       const ownerMark=new PIXI.Text({text:'YOU',style:{fontFamily:'system-ui',fontSize:8,fontWeight:'700',fill:0xbfe8ff,stroke:{color:0x17251f,width:2}}});ownerMark.anchor.set(.5);ownerMark.position.set(0,-31);ownerMark.visible=false;
@@ -105,9 +110,10 @@ export class PixiObserverLayer{
       if(e.spine){
         this.spineAdapter?.update(e,c,{flip});
       }else{
-        const sleeping=a?.type==='SLEEP',body=sleeping&&e.sleepBody?e.sleepBody:e.body;
-        e.body.visible=!sleeping||!e.sleepBody;if(e.sleepBody)e.sleepBody.visible=sleeping;
-        const scale=sleeping?e.sleepBaseScale:e.baseScale;
+        const visual=this.art.citizenSprite(c,CITIZEN_STAND_SIZE,CITIZEN_SLEEP_SIZE),sleeping=visual.sleep,body=e.body;
+        body.texture=this.citizenTextures.get(visual.atlas)[visual.frame];e.visual=visual;
+        body.anchor.set(.5,sleeping?CITIZEN_SLEEP_ANCHOR_Y:CITIZEN_STAND_ANCHOR_Y);
+        const scale=visual.size/body.texture.width;
         if(sleeping){
           body.y=CITIZEN_SLEEP_LIFT;body.rotation=0;
           body.scale.set((flip?-1:1)*scale,scale);
@@ -116,12 +122,19 @@ export class PixiObserverLayer{
           const pose=citizenVisualPose(c,performance.now());
           body.y=CITIZEN_STAND_LIFT+pose.y;body.rotation=pose.rotation;
           body.scale.set((flip?-1:1)*scale*pose.scaleX,scale*pose.scaleY);
-          if(e.shadow)e.shadow.scale.x=pose.shadowScale;
+          if(e.shadow)e.shadow.scale.set(pose.shadowScale,1);
         }
       }
       const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
       e.task.text=a&&(active||owned)?ACTION_ICON[a.type]||'·':'';
-      const sleeping=a?.type==='SLEEP'&&Boolean(e.sleepBody),body=sleeping?e.sleepBody:e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:sleeping?citizenSleepFrame(c):citizenFrame(c),size:sleeping?CITIZEN_SLEEP_SIZE:CITIZEN_STAND_SIZE,sleep:sleeping},{x:sp.x,y:sp.y+body.y*camera.zoom},camera.zoom,body.scale.x<0),depth:p.y});
+      const body=e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;
+      if(e.spine){
+        hits.push({id:c.id,kind:'citizen',x:sp.x,y:sp.y-12*camera.zoom,r:15*camera.zoom,depth:p.y});
+      }else{
+        hits.push({...this.art.hitRecord({...e.visual,id:c.id,kind:'citizen',size:body.texture.width*Math.abs(body.scale.x)},
+          {x:sp.x,y:sp.y+body.y*camera.zoom},camera.zoom,body.scale.x<0,
+          {anchorY:body.anchor.y,scaleY:Math.abs(body.scale.y/body.scale.x),rotation:body.rotation}),depth:p.y});
+      }
     }
     this.hits=hits.sort((a,b)=>a.depth-b.depth);
     this.waterLayer.alpha=.7+.3*Math.sin(minute*.13);

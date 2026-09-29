@@ -35,7 +35,7 @@ jobs:
           node-version: '22'
       - name: Install Playwright for integration smoke
         run: |
-          npm install --no-save playwright
+          npm install --no-save playwright pixi.js@8.19.0
           npx playwright install --with-deps chromium
       - name: Serve Observer shell and run sovereign browser smoke
         run: |
@@ -48,6 +48,7 @@ jobs:
           done
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-replay.mjs
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-sovereign.mjs
+          CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-state-sprites.mjs
 
   deploy-world:
     name: Deploy Sovereign World Worker
