@@ -222,6 +222,17 @@ try {
     `expected fractional canonical movement: ${before} -> ${after}`
   );
 
+  // The server sends a committed snapshot only once per heartbeat. The HUD
+  // must keep advancing between snapshots, like the movement renderer does.
+  const dateBefore = await page.locator('#worldDate').innerText();
+  await page.waitForTimeout(1250);
+  const dateAfter = await page.locator('#worldDate').innerText();
+  assert.notEqual(
+    dateAfter,
+    dateBefore,
+    'the visible clock must advance without a new canonical snapshot'
+  );
+
   await page.locator('#historyOpen').click();
 
   assert.ok(
@@ -258,7 +269,7 @@ try {
   );
 
   console.log(
-    'PASS: canonical state rendering, fractional movement, game-only shell, history, mobile containment and zero page errors.'
+    'PASS: canonical state rendering, fractional movement, continuously advancing HUD clock, game-only shell, history, mobile containment and zero page errors.'
   );
 } finally {
   await browser.close();
