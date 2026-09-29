@@ -12,14 +12,27 @@ function designFootprintRadius(design){
   const units=Object.values(design?.materials||{}).reduce((sum,q)=>sum+Math.max(0,Number(q)||0),0);
   return clamp(2.25+Math.sqrt(Math.max(1,units))*.16,2.35,3.45);
 }
+function constructionFootprintTouchesWater(world,site,footprintRadius,clearance=.55){
+  const x=Number(site?.x),y=Number(site?.y),radius=Math.max(.5,Number(footprintRadius)||2.35)+Math.max(0,Number(clearance)||0);
+  const samples=[{x,y}];
+  for(const fraction of [.25,.5,.75,1]){
+    const r=radius*fraction;
+    for(let step=0;step<24;step++){
+      const angle=step/24*Math.PI*2;
+      samples.push({x:x+Math.cos(angle)*r,y:y+Math.sin(angle)*r});
+    }
+  }
+  return samples.some(point=>terrainAt(world,point.x,point.y).kind==='river');
+}
+
 function validateSite(world,site,footprintRadius=2.35){
   const x=Number(site?.x),y=Number(site?.y);
   if(!Number.isFinite(x)||!Number.isFinite(y)||x<1||x>99||y<1||y>99)throw new Error('construction_site_invalid');
   const probes=[[0,0],[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>({x:x+dx*footprintRadius*.8,y:y+dy*footprintRadius*.8}));
   if(probes.some(q=>structureOccupancyAt(world,q.x,q.y)))throw new Error('construction_site_occupied');
   if((world.projects||[]).some(p=>p.status==='construction'&&Math.hypot(x-p.site.x,y-p.site.y)<footprintRadius+Math.max(1.8,Number(p.footprintRadius)||2.15)))throw new Error('construction_site_project_conflict');
+  if(constructionFootprintTouchesWater(world,{x,y},footprintRadius))throw new Error('construction_site_unstable_water');
   const terrain=terrainAt(world,x,y);
-  if(terrain.kind==='river')throw new Error('construction_site_unstable_water');
   return {x,y,terrain};
 }
 export function beginConstruction(world,citizen,designId,site,objectIds,at=world.clock.worldMinute){const d=world.designs.find(x=>x.id===designId);if(!d)throw new Error('design_not_found');const footprintRadius=designFootprintRadius(d),checked=validateSite(world,site,footprintRadius),objects=objectIds.map(id=>world.objects.find(o=>o.id===id));if(objects.some(x=>!x))throw new Error('material_object_not_found');for(const [material,needed] of Object.entries(d.materials)){const available=objects.filter(o=>o.material===material&&o.holderId===citizen.id&&!o.reservedProjectId).reduce((s,o)=>s+o.quantity,0);if(available<needed)throw new Error(`insufficient_material:${material}`);}const foundationFactor=foundationMultiplier(checked.terrain.kind),p={id:stableId('project',designId,citizen.id,world.projects.length),designId,initiatorId:citizen.id,site:{x:checked.x,y:checked.y},terrainKind:checked.terrain.kind,foundationFactor,materialObjectIds:[...objectIds],workRequiredMinutes:Math.ceil(d.workMinutes*foundationFactor),workDoneMinutes:0,status:'construction',createdWorldMinute:at,footprintRadius};world.projects.push(p);for(const o of objects)o.reservedProjectId=p.id;appendEvent(world,'CONSTRUCTION_STARTED',citizen.id,{projectId:p.id,designId,site:p.site,terrainKind:p.terrainKind,foundationFactor:p.foundationFactor,workRequiredMinutes:p.workRequiredMinutes},[],at);return p;}

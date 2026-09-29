@@ -32,3 +32,13 @@ test('Matter transient physics is observer-only and consumes canonical fracture 
   assert.doesNotMatch(source,/fetch\s*\(/);
   assert.doesNotMatch(source,/\/api\/v2\/(intent|avatar)/);
 });
+
+
+test('action glyphs are not broadcast above every NPC at high zoom',()=>{
+  const pixi=fs.readFileSync(path.join(root,'site/pixi-observer.js'),'utf8');
+  const renderer=fs.readFileSync(path.join(root,'site/sovereign-renderer.js'),'utf8');
+  assert.doesNotMatch(pixi,/active\|\|camera\.zoom>2/);
+  assert.match(pixi,/active\|\|owned/);
+  assert.doesNotMatch(renderer,/active\|\|z>2/);
+  assert.match(renderer,/active\|\|e\.id===this\.ownedCitizen/);
+});

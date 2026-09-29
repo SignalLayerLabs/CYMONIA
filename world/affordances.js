@@ -1,9 +1,10 @@
 import {knows} from './epistemics.js';
 import {ensureCognitionState,outcomeModifier} from './cognition-state.js';
-import {resourceConceptId} from './perception.js';
+import {resourceConceptId,explorationCellKey} from './perception.js';
 import {MATERIAL_PROPERTIES} from './materials.js';
 import {hash32,stableId} from './rng.js';
 import {activeStrategy} from './strategy.js';
+import {terrainAt} from './terrain.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -38,27 +39,52 @@ function hasUnknownObservableProperty(citizen,target){
 }
 
 export function explorationTarget(world,citizen,at=world.clock.worldMinute){
-  const cycle=Math.floor(Number(at||0)/90),grid=8,span=88/grid;
-  const cellHash=hash32(`${world.seed}|${citizen.id}|${cycle}|explore-cell`);
-  const jitterHash=hash32(`${world.seed}|${citizen.id}|${cycle}|explore-jitter`);
-  const cell=(cellHash+cycle*17)%64,cx=cell%grid,cy=Math.floor(cell/grid);
-  const jx=((jitterHash&0xffff)/0xffff-.5)*.72,jy=(((jitterHash>>>16)&0xffff)/0xffff-.5)*.72;
-  let target={x:6+(cx+.5+jx)*span,y:6+(cy+.5+jy)*span};
-  target={x:Math.max(5,Math.min(95,target.x)),y:Math.max(5,Math.min(95,target.y))};
-  if(dist(citizen.position,target)<14)target={x:Math.max(5,Math.min(95,100-target.x)),y:Math.max(5,Math.min(95,100-target.y))};
-  return target;
+  const map=citizen.explorationMap||{},cycle=Math.floor(Number(at||0)/90),candidates=[];
+  for(let cy=0;cy<10;cy++)for(let cx=0;cx<10;cx++){
+    const target={x:5+cx*10,y:5+cy*10},key=`${cx}:${cy}`;
+    const visits=Number(map[key]?.visits||0),distance=dist(citizen.position,target);
+    const crowd=(world.citizens||[]).filter(other=>other.alive&&other.id!==citizen.id&&dist(other.position,target)<=10).length;
+    const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&dist(deposit.position,target)<=12);
+    const deterministic=(hash32(`${world.seed}|${citizen.id}|${cycle}|frontier|${key}`)%10000)/10000;
+    const score=
+      (1/(1+visits))*2.4+
+      Math.min(1,distance/70)*.42+
+      (1-Math.min(1,crowd/14))*.55+
+      (knownResource?.55:0)+
+      deterministic*.7;
+    candidates.push({target,key,score});
+  }
+  candidates.sort((a,b)=>b.score-a.score||a.key.localeCompare(b.key));
+  return candidates[0]?.target||{x:50,y:50};
+}
+
+function localCrowding(world,position,radius=12){
+  return (world.citizens||[]).filter(other=>other.alive&&dist(other.position,position)<=radius).length;
 }
 
 function exploreCandidate(world,citizen,at){
   const target=explorationTarget(world,citizen,at),distance=dist(citizen.position,target);
-  const localCrowd=(world.citizens||[]).filter(other=>other.alive&&other.id!==citizen.id&&dist(citizen.position,other.position)<=12).length;
-  const crowdPressure=Math.min(.22,Math.max(0,localCrowd-5)*.012);
-  return {family:'explore',key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,utility:.10+crowdPressure,knowledgeGap:.15,novelty:.85,effort:Math.min(1,distance/65),risk:.18,proposal:proposal('explore',[],[
+  const localCrowd=Math.max(0,localCrowding(world,citizen.position,12)-1);
+  const crowdPressure=Math.min(.32,Math.max(0,localCrowd-8)*.012);
+  const visits=Number(citizen.explorationMap?.[explorationCellKey(target)]?.visits||0);
+  const frontierGap=visits===0?.34:Math.max(.08,.24/(1+visits));
+  return {family:'explore',key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,utility:.10+crowdPressure,knowledgeGap:frontierGap,novelty:visits===0?.92:.55,effort:Math.min(1,distance/70),risk:.16,proposal:proposal('explore',[],[
     {type:'MOVE',durationMinutes:Math.max(6,Math.ceil(distance*2)),targetPosition:target,purpose:'explore',concepts:[]},
-    {type:'OBSERVE',durationMinutes:10,purpose:'explore',concepts:[]},
+    {type:'OBSERVE',durationMinutes:12,purpose:'explore',concepts:[]},
   ])};
 }
-
+function buildTerrainConflict(world,site,footprintRadius=2.7,clearance=.55){
+  const radius=Math.max(.5,Number(footprintRadius)||2.7)+Math.max(0,Number(clearance)||0);
+  const samples=[{x:site.x,y:site.y}];
+  for(const fraction of [.25,.5,.75,1]){
+    const r=radius*fraction;
+    for(let step=0;step<24;step++){
+      const angle=step/24*Math.PI*2;
+      samples.push({x:site.x+Math.cos(angle)*r,y:site.y+Math.sin(angle)*r});
+    }
+  }
+  return samples.some(point=>terrainAt(world,point.x,point.y).kind==='river');
+}
 
 function buildSiteConflict(world,site,footprintRadius=2.7,buffer=1.9){
   const collides=(world.buildings||[]).some(building=>
@@ -75,23 +101,56 @@ function buildSiteConflict(world,site,footprintRadius=2.7,buffer=1.9){
 }
 
 export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
-  const seed=hash32(`${world.seed}|${citizen.id}|${Math.floor(at/120)}|build-site`);
-  const rings=[7,10,13,17,21];
-  const footprintRadius=2.7;
+  const footprintRadius=2.7,map=citizen.explorationMap||{},anchors=[{...citizen.position}];
 
-  for(const radius of rings){
-    for(let step=0;step<16;step++){
-      const h=hash32(`${seed}|${radius}|${step}`);
+  for(const [key,entry] of Object.entries(map)){
+    if(Number(entry?.visits||0)<=0)continue;
+    const [cx,cy]=key.split(':').map(Number);
+    if(Number.isFinite(cx)&&Number.isFinite(cy))anchors.push({x:5+cx*10,y:5+cy*10});
+  }
+  for(const deposit of world.resourceDeposits||[]){
+    if(deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id))anchors.push({...deposit.position});
+  }
+
+  const seen=new Set(),unique=[];
+  for(const anchor of anchors){
+    const key=`${Math.round(anchor.x)}:${Math.round(anchor.y)}`;
+    if(!seen.has(key)){seen.add(key);unique.push(anchor);}
+  }
+
+  const candidates=[];
+  for(let ai=0;ai<unique.length;ai++){
+    const anchor=unique[ai];
+    for(const radius of [4,7,10])for(let step=0;step<12;step++){
+      const h=hash32(`${world.seed}|${citizen.id}|${Math.floor(at/120)}|build-site|${ai}|${radius}|${step}`);
       const angle=((h%10000)/10000)*Math.PI*2;
       const site={
-        x:Math.max(4,Math.min(96,citizen.position.x+Math.cos(angle)*radius)),
-        y:Math.max(4,Math.min(96,citizen.position.y+Math.sin(angle)*radius))
+        x:Math.max(4,Math.min(96,anchor.x+Math.cos(angle)*radius)),
+        y:Math.max(4,Math.min(96,anchor.y+Math.sin(angle)*radius))
       };
-      if(buildSiteConflict(world,site,footprintRadius))continue;
-      return site;
+      if(buildSiteConflict(world,site,footprintRadius)||buildTerrainConflict(world,site,footprintRadius))continue;
+
+      const crowd=localCrowding(world,site,11);
+      const buildings=(world.buildings||[]).filter(b=>b.position&&dist(b.position,site)<=14).length;
+      const projects=(world.projects||[]).filter(pr=>pr.status==='construction'&&pr.site&&dist(pr.site,site)<=14).length;
+      const visited=Number(map[explorationCellKey(site)]?.visits||0)>0?1:0;
+      const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&dist(deposit.position,site)<=12)?1:0;
+      const fromCenter=Math.min(1,dist(site,{x:50,y:50})/55);
+      const travel=Math.min(1,dist(citizen.position,site)/70);
+      const score=
+        visited*.45+
+        knownResource*.38+
+        fromCenter*.18+
+        ((h%997)/997)*.12-
+        Math.min(1,crowd/12)*.72-
+        Math.min(1,(buildings+projects)/5)*.8-
+        travel*.14;
+      candidates.push({site,score});
     }
   }
-  return null;
+
+  candidates.sort((a,b)=>b.score-a.score||a.site.x-b.site.x||a.site.y-b.site.y);
+  return candidates[0]?.site||null;
 }
 
 export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
@@ -182,20 +241,29 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
         novelty:.78,
         effort:.34,
         risk:.18,
-        proposal:proposal('build',conceptsForBuild,[{
-          type:'BUILD',
-          durationMinutes:120,
-          purpose:'construct',
-          concepts:conceptsForBuild,
-          payload:{
-            inputObjectIds:testedHeld.map(object=>object.id),
-            site,
-            workMinutes:240,
-            form:'structure',
-            reasonSummary:'shelter_and_structure',
-            reasonConceptIds:conceptsForBuild
+        proposal:proposal('build',conceptsForBuild,[
+          ...(dist(citizen.position,site)>1.2?[{
+            type:'MOVE',
+            durationMinutes:Math.max(4,Math.ceil(dist(citizen.position,site)*2)),
+            targetPosition:site,
+            purpose:'construct',
+            concepts:conceptsForBuild
+          }]:[]),
+          {
+            type:'BUILD',
+            durationMinutes:120,
+            purpose:'construct',
+            concepts:conceptsForBuild,
+            payload:{
+              inputObjectIds:testedHeld.map(object=>object.id),
+              site,
+              workMinutes:240,
+              form:'structure',
+              reasonSummary:'shelter_and_structure',
+              reasonConceptIds:conceptsForBuild
+            }
           }
-        }])
+        ])
       });
     }
   }

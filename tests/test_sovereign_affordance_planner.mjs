@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createSovereignGenesis} from '../world/genesis.js';
 import {learn} from '../world/epistemics.js';
-import {resourceConceptId} from '../world/perception.js';
+import {resourceConceptId,recordExplorationVisit,explorationCellKey} from '../world/perception.js';
 import {recordAffordanceOutcome} from '../world/cognition-state.js';
 import {chooseAffordance,enumerateAffordances,scoreAffordance,explorationTarget} from '../world/affordances.js';
 import {applyAcceptedPlan} from '../world/cognition.js';
@@ -173,4 +173,51 @@ test('an active construction project outranks free exploration until useful work
     scoreAffordance(world,citizen,build,500)>
     scoreAffordance(world,citizen,explore,500)
   );
+});
+
+
+test('frontier exploration prefers the remaining unknown sector',()=>{
+  const world=createSovereignGenesis({seed:20260915,realEpochMs:0}),citizen=world.citizens[0];
+  citizen.explorationMap={};
+  for(let y=0;y<10;y++)for(let x=0;x<10;x++){
+    if(x===9&&y===9)continue;
+    recordExplorationVisit(citizen,{x:5+x*10,y:5+y*10},100);
+  }
+  const target=explorationTarget(world,citizen,180);
+  assert.equal(explorationCellKey(target),'9:9');
+});
+
+test('crowded center drives exploration toward less occupied territory',()=>{
+  const world=createSovereignGenesis({seed:20260915,realEpochMs:0}),citizen=world.citizens[0];
+  citizen.position={x:50,y:50};
+  for(let i=1;i<world.citizens.length;i++)world.citizens[i].position={x:50+(i%3)*.2,y:50+(i%5)*.2};
+  const target=explorationTarget(world,citizen,270);
+  const targetCrowd=world.citizens.filter(c=>c.alive&&Math.hypot(c.position.x-target.x,c.position.y-target.y)<=10).length;
+  const centerCrowd=world.citizens.filter(c=>c.alive&&Math.hypot(c.position.x-50,c.position.y-50)<=10).length;
+  assert.ok(targetCrowd<centerCrowd);
+  assert.ok(Math.hypot(target.x-50,target.y-50)>20);
+});
+
+test('new construction can use explored low-density territory and travels before building',()=>{
+  const world=createSovereignGenesis({seed:20260915,realEpochMs:0}),citizen=world.citizens[0];
+  citizen.position={x:50,y:50};
+  citizen.explorationMap={};
+  recordExplorationVisit(citizen,{x:85,y:85},100);
+  for(let i=1;i<world.citizens.length;i++)world.citizens[i].position={x:50+(i%4)*.15,y:50+(i%6)*.15};
+
+  const timber=world.resourceDeposits.find(d=>d.type==='timber');
+  reveal(world,citizen,timber);
+  citizen.position={x:50,y:50};
+
+  const a=hold(world,citizen,timber,'held:timber:a');
+  const b=hold(world,citizen,timber,'held:timber:b');
+  learn(citizen,'tested:a',{kind:'experiment',eventId:'tested:a',evidence:{entityId:a.id,property:'hardness',value:.5}});
+  learn(citizen,'tested:b',{kind:'experiment',eventId:'tested:b',evidence:{entityId:b.id,property:'hardness',value:.5}});
+
+  const candidate=enumerateAffordances(world,citizen,500).find(x=>x.key?.startsWith('build:new:'));
+  assert.ok(candidate);
+  assert.equal(candidate.proposal.actions.at(-1).type,'BUILD');
+  assert.ok(candidate.proposal.actions.some(action=>action.type==='MOVE'));
+  const site=candidate.proposal.actions.at(-1).payload.site;
+  assert.ok(Math.hypot(site.x-50,site.y-50)>15);
 });

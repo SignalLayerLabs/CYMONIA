@@ -17,12 +17,27 @@ test('construction refuses occupied structure core and unstable river site',()=>
   assert.throws(()=>beginConstruction(w,c,d.id,river,[o.id]),/construction_site_unstable_water/);
 });
 
-test('foundation terrain changes real construction work',()=>{
-  const meadowWorld=createSovereignGenesis({seed:20260915,realEpochMs:0}),cm=meadowWorld.citizens[0],om=addHeld(meadowWorld,cm),dm=registerDesign(meadowWorld,cm,{materials:{timber:10},workMinutes:100}),meadow=findTerrain(meadowWorld,'meadow'),pm=beginConstruction(meadowWorld,cm,dm.id,meadow,[om.id]);
-  const wetWorld=createSovereignGenesis({seed:20260915,realEpochMs:0}),cw=wetWorld.citizens[0],ow=addHeld(wetWorld,cw),dw=registerDesign(wetWorld,cw,{materials:{timber:10},workMinutes:100}),wet=findTerrain(wetWorld,'wetland'),pw=beginConstruction(wetWorld,cw,dw.id,wet,[ow.id]);
+test('dry foundation terrain changes real construction work',()=>{
+  const meadowWorld=createSovereignGenesis({seed:20260915,realEpochMs:0});
+  const cm=meadowWorld.citizens[0];
+  const om=addHeld(meadowWorld,cm);
+  const dm=registerDesign(meadowWorld,cm,{materials:{timber:10},workMinutes:100});
+  const meadow=findTerrain(meadowWorld,'meadow');
+  const pm=beginConstruction(meadowWorld,cm,dm.id,meadow,[om.id]);
+
+  const rockyWorld=createSovereignGenesis({seed:20260915,realEpochMs:0});
+  const cr=rockyWorld.citizens[0];
+  const orock=addHeld(rockyWorld,cr);
+  const dr=registerDesign(rockyWorld,cr,{materials:{timber:10},workMinutes:100});
+  const rocky=findTerrain(rockyWorld,'rocky');
+  const pr=beginConstruction(rockyWorld,cr,dr.id,rocky,[orock.id]);
+
   assert.equal(pm.workRequiredMinutes,100);
-  assert.ok(pw.workRequiredMinutes>pm.workRequiredMinutes);
-  assert.equal(pw.terrainKind,'wetland');
+  assert.equal(pm.terrainKind,'meadow');
+
+  assert.equal(pr.terrainKind,'rocky');
+  assert.equal(pr.foundationFactor,1.25);
+  assert.ok(pr.workRequiredMinutes>pm.workRequiredMinutes);
 });
 
 test('completed structure protection derives from incorporated material physics',()=>{
@@ -34,4 +49,34 @@ test('completed structure protection derives from incorporated material physics'
   assert.equal(Number(b.protection.precipitation.toFixed(2)),Number(MATERIAL_PROPERTIES.timber.waterResistance.toFixed(2)));
   assert.equal(b.massKg,10);
   assert.equal(o.quantity,0);
+});
+
+
+test('construction rejects a dry center whose physical footprint overlaps the river',()=>{
+  const w=createSovereignGenesis({seed:20260915,realEpochMs:0}),c=w.citizens[0],o=addHeld(w,c);
+  const d=registerDesign(w,c,{materials:{timber:10},workMinutes:100});
+
+  let site=null;
+  outer:
+  for(let y=4;y<96;y+=.5){
+    for(let x=4;x<96;x+=.5){
+      if(terrainAt(w,x,y).kind==='river')continue;
+      const radius=2.7+.55;
+      for(let step=0;step<32;step++){
+        const angle=step/32*Math.PI*2;
+        const px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
+        if(terrainAt(w,px,py).kind==='river'){
+          site={x,y};
+          break outer;
+        }
+      }
+    }
+  }
+
+  assert.ok(site,'expected to find a dry center with footprint crossing river');
+  assert.notEqual(terrainAt(w,site.x,site.y).kind,'river');
+  assert.throws(
+    ()=>beginConstruction(w,c,d.id,site,[o.id]),
+    /construction_site_unstable_water/
+  );
 });

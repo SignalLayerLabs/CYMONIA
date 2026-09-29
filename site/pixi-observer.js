@@ -120,7 +120,7 @@ export class PixiObserverLayer{
         }
       }
       const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
-      e.task.text=a&&(active||camera.zoom>2)?ACTION_ICON[a.type]||'·':'';
+      e.task.text=a&&(active||owned)?ACTION_ICON[a.type]||'·':'';
       const sleeping=a?.type==='SLEEP'&&Boolean(e.sleepBody),body=sleeping?e.sleepBody:e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;hits.push({...this.art.hitRecord({id:c.id,kind:'citizen',frame:sleeping?citizenSleepFrame(c):citizenFrame(c),size:sleeping?CITIZEN_SLEEP_SIZE:CITIZEN_STAND_SIZE,sleep:sleeping},{x:sp.x,y:sp.y+body.y*camera.zoom},camera.zoom,body.scale.x<0),depth:p.y});
     }
     this.hits=hits.sort((a,b)=>a.depth-b.depth);
