@@ -59,6 +59,41 @@ function exploreCandidate(world,citizen,at){
   ])};
 }
 
+
+function buildSiteConflict(world,site,footprintRadius=2.7,buffer=1.9){
+  const collides=(world.buildings||[]).some(building=>
+    building?.position &&
+    Math.hypot(site.x-building.position.x,site.y-building.position.y) <
+      footprintRadius + Math.max(2.25,Number(building.footprintRadius)||2.25) + buffer
+  ) || (world.projects||[]).some(project=>
+    project?.status==='construction' &&
+    project?.site &&
+    Math.hypot(site.x-project.site.x,site.y-project.site.y) <
+      footprintRadius + Math.max(2.15,Number(project.footprintRadius)||2.15) + buffer
+  );
+  return collides;
+}
+
+export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
+  const seed=hash32(`${world.seed}|${citizen.id}|${Math.floor(at/120)}|build-site`);
+  const rings=[7,10,13,17,21];
+  const footprintRadius=2.7;
+
+  for(const radius of rings){
+    for(let step=0;step<16;step++){
+      const h=hash32(`${seed}|${radius}|${step}`);
+      const angle=((h%10000)/10000)*Math.PI*2;
+      const site={
+        x:Math.max(4,Math.min(96,citizen.position.x+Math.cos(angle)*radius)),
+        y:Math.max(4,Math.min(96,citizen.position.y+Math.sin(angle)*radius))
+      };
+      if(buildSiteConflict(world,site,footprintRadius))continue;
+      return site;
+    }
+  }
+  return null;
+}
+
 export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   if(!citizen?.alive||citizen.currentActionId)return [];
   const candidates=[],held=heldObjects(world,citizen);
@@ -136,8 +171,33 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   const testedHeld=held.filter(object=>knowledgeForEntity(citizen,object.id).length);
   if(testedHeld.length>=2&&!activeProjects.some(project=>project.initiatorId===citizen.id)){
     const conceptsForBuild=[...new Set(testedHeld.flatMap(object=>knowledgeForEntity(citizen,object.id).map(entry=>entry.concept)))].slice(0,12);
-    const offset=2+(hash32(`${world.seed}|${citizen.id}|build`)%3),site={x:Math.max(2,Math.min(98,citizen.position.x+offset)),y:Math.max(2,Math.min(98,citizen.position.y+1))};
-    candidates.push({family:'build',key:`build:new:${Math.floor(site.x)}:${Math.floor(site.y)}`,utility:.28,inventoryFit:1,knowledgeGap:.2,novelty:.8,effort:.4,risk:.2,proposal:proposal('build',conceptsForBuild,[{type:'BUILD',durationMinutes:120,purpose:'construct',concepts:conceptsForBuild,payload:{inputObjectIds:testedHeld.map(object=>object.id),site,workMinutes:240,form:'structure'}}])});
+    const site=proposeBuildSite(world,citizen,at);
+    if(site){
+      candidates.push({
+        family:'build',
+        key:`build:new:${Math.floor(site.x)}:${Math.floor(site.y)}`,
+        utility:.30,
+        inventoryFit:1,
+        knowledgeGap:.2,
+        novelty:.78,
+        effort:.34,
+        risk:.18,
+        proposal:proposal('build',conceptsForBuild,[{
+          type:'BUILD',
+          durationMinutes:120,
+          purpose:'construct',
+          concepts:conceptsForBuild,
+          payload:{
+            inputObjectIds:testedHeld.map(object=>object.id),
+            site,
+            workMinutes:240,
+            form:'structure',
+            reasonSummary:'shelter_and_structure',
+            reasonConceptIds:conceptsForBuild
+          }
+        }])
+      });
+    }
   }
 
   candidates.push(exploreCandidate(world,citizen,at));
