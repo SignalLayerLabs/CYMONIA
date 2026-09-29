@@ -24,9 +24,9 @@ test('gzip snapshot codec round-trips unicode JSON and compresses repetitive sta
 });
 
 test('snapshot write estimate counts only rows actually mutated',()=>{
-  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:false}),6); // 4 chunks + manifest + budget row
-  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true}),7);  // plus seal row
-  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true,sealPruneRows:1}),8);
+  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:false}),8); // chunks + manifest + slot metadata + clock guard + budget
+  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true}),9);  // plus seal row
+  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true,sealPruneRows:1}),10);
 });
 
 test('snapshot slots alternate without unbounded generations',()=>{

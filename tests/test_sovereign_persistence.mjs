@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {splitSnapshot,joinSnapshot,advanceWorldBounded} from '../worker/src/index.js';
 import {createSovereignGenesis} from '../world/index.js';
+import {selectNewestSnapshot,assertMonotonicSnapshot} from '../worker/src/persistence.js';
 
 test('large canonical snapshots round-trip through rows safely below Cloudflare limits',()=>{
   const payload=JSON.stringify({world:'🌍'.repeat(700_000),ledger:Array.from({length:4000},(_,i)=>({i,text:`event-${i}`}))});
@@ -30,4 +31,19 @@ test('an evolved world rebases a long runtime outage and advances one safe minut
   assert.equal(result.recovered,true);
   assert.equal(world.clock.worldMinute,before+1);
   assert.ok(result.skippedWorldMinutes>360);
+});
+
+
+test('snapshot selection chooses the highest valid world minute',()=>{
+  const base=createSovereignGenesis({realEpochMs:0}),a=structuredClone(base),b=structuredClone(base);
+  a.clock.worldMinute=1200;b.clock.worldMinute=2400;
+  const selected=selectNewestSnapshot([{world:a,generation:'slot-a',updatedAt:20},{world:b,generation:'slot-b',updatedAt:10}]);
+  assert.equal(selected.generation,'slot-b');assert.equal(selected.world.clock.worldMinute,2400);
+});
+
+test('clock guard rejects rollback and world identity drift',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});world.clock.worldMinute=5000;
+  assert.doesNotThrow(()=>assertMonotonicSnapshot(world,{highWaterMark:5000,worldId:world.worldId}));
+  assert.throws(()=>assertMonotonicSnapshot(world,{highWaterMark:5001,worldId:world.worldId}),/clock_regression/);
+  assert.throws(()=>assertMonotonicSnapshot(world,{highWaterMark:5000,worldId:'wrong'}),/identity_regression/);
 });

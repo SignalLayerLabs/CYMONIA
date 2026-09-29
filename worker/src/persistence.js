@@ -40,7 +40,22 @@ export async function decodeSnapshot(encoded){
 export function estimateSnapshotRowWrites({chunkCount,sealDue=false,sealPruneRows=0}){
   const chunks=Math.max(0,Math.floor(Number(chunkCount)||0));
   const pruned=Math.max(0,Math.floor(Number(sealPruneRows)||0));
-  return chunks+1+1+(sealDue?1:0)+pruned; // chunks + manifest + budget + optional seal/prune
+  return chunks+1+1+1+1+(sealDue?1:0)+pruned; // chunks + manifest + slot metadata + clock guard + budget + optional seal/prune
+}
+
+export function selectNewestSnapshot(candidates){
+  const valid=(candidates||[]).filter(c=>c?.world&&c.world.version===2&&Array.isArray(c.world.citizens)&&Array.isArray(c.world.ledger)&&Number.isFinite(Number(c.world.clock?.worldMinute)));
+  valid.sort((a,b)=>Number(b.world.clock.worldMinute)-Number(a.world.clock.worldMinute)||Number(b.updatedAt||0)-Number(a.updatedAt||0));
+  return valid[0]||null;
+}
+
+export function assertMonotonicSnapshot(world,{highWaterMark=null,worldId=null}={}){
+  if(!world||world.version!==2||!Array.isArray(world.citizens)||!Array.isArray(world.ledger))throw new Error('sovereign_world_state_invalid');
+  const minute=Number(world.clock?.worldMinute);
+  if(!Number.isFinite(minute)||minute<0)throw new Error('sovereign_world_clock_invalid');
+  if(worldId&&world.worldId!==worldId)throw new Error('sovereign_world_identity_regression');
+  if(Number.isFinite(Number(highWaterMark))&&minute<Number(highWaterMark))throw new Error(`sovereign_world_clock_regression:${minute}<${Number(highWaterMark)}`);
+  return world;
 }
 
 export function nextSnapshotSlot(current){

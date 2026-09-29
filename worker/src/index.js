@@ -27,6 +27,8 @@ import {
   reserveWriteBudget,
   nextSnapshotSlot,
   nextUtcDayStart,
+  selectNewestSnapshot,
+  assertMonotonicSnapshot,
 } from './persistence.js';
 import {
   ensureNeuronBudget,
@@ -130,6 +132,10 @@ export class SovereignWorld {
     this.lastPersistedWorldMinute=null;
     this.persistenceDeferred=0;
     this.persistenceDeferredUntilRealMs=0;
+    this.loadedSnapshotMinute=null;
+    this.clockHighWaterMark=null;
+    this.clockRegressionDetected=false;
+    this.snapshotRecoverySource=null;
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
@@ -140,9 +146,11 @@ export class SovereignWorld {
       if(!this.world){
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
         ensureRuntime(this.world);
+        this.establishClockGuardBaseline();
         await this.persist({forceSeal:true});
       }else{
         ensureRuntime(this.world);
+        this.establishClockGuardBaseline();
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
@@ -193,35 +201,97 @@ export class SovereignWorld {
       rows_written INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS world_snapshot_slots(
+      generation TEXT PRIMARY KEY,
+      chunk_count INTEGER NOT NULL,
+      world_minute INTEGER NOT NULL,
+      ledger_head TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS world_clock_guard(
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      world_id TEXT NOT NULL,
+      highest_world_minute INTEGER NOT NULL,
+      ledger_head TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`);
   }
-  async loadWorld(){
-    const manifests=[...this.sql.exec('SELECT generation,chunk_count FROM world_state_manifest WHERE id=1 LIMIT 1')];
-    let world;
-    if(manifests.length){
-      const manifest=manifests[0];
-      const slotted=manifest.generation==='slot-a'||manifest.generation==='slot-b';
-      const slotBase=manifest.generation==='slot-b'?1_000_000:0;
-      const parts=slotted
-        ?[...this.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',slotBase,slotBase+manifest.chunk_count)].map(row=>row.state_part)
-        :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',manifest.generation,manifest.chunk_count)].map(row=>row.state_part);
-      if(parts.length!==manifest.chunk_count)throw new Error('sovereign_world_chunks_incomplete');
-      world=JSON.parse(await decodeSnapshot(joinSnapshot(parts)));
-      this.lastPersistedGeneration=manifest.generation;
-    }else{
-      const rows=[...this.sql.exec('SELECT state_json FROM world_state WHERE id=1 LIMIT 1')];
-      if(!rows.length)return null;
-      const stored=JSON.parse(rows[0].state_json);
-      world=stored;
-      if(stored?.format==='chunked-v1'){
-        const parts=[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? ORDER BY seq',stored.generation)].map(row=>row.state_part);
-        if(parts.length!==stored.chunkCount)throw new Error('sovereign_world_chunks_incomplete');
-        world=JSON.parse(joinSnapshot(parts));
-        this.lastPersistedGeneration=stored.generation;
-      }
+  sqlRows(query,...args){
+    if(typeof this.sql?.exec!=='function')return [];
+    try{
+      const rows=this.sql.exec(query,...args);
+      return rows&&typeof rows[Symbol.iterator]==='function'?[...rows]:[];
+    }catch(error){
+      // Some unit tests intentionally instantiate SovereignWorld without
+      // a complete Durable Object SQLite implementation. Production
+      // instances always have ctx + real storage.sql, so production SQL
+      // errors remain fatal and can never silently bypass the clock guard.
+      if(!this.ctx)return [];
+      throw error;
     }
-    if(!world||world.version!==2||!Array.isArray(world.citizens)||!Array.isArray(world.ledger))throw new Error('sovereign_world_state_invalid');
-    compactOperationalState(world);
-    return world;
+  }
+
+  async loadWorld(){
+    const guard=this.sqlRows('SELECT world_id,highest_world_minute FROM world_clock_guard WHERE id=1 LIMIT 1')[0]||null;
+    this.clockHighWaterMark=guard?Number(guard.highest_world_minute):null;
+    const manifest=this.sqlRows('SELECT generation,chunk_count,world_minute,ledger_head,updated_at FROM world_state_manifest WHERE id=1 LIMIT 1')[0]||null;
+    const slotRows=this.sqlRows('SELECT generation,chunk_count,world_minute,ledger_head,updated_at FROM world_snapshot_slots');
+    const metadata=new Map();
+    for(const row of slotRows)if(row.generation==='slot-a'||row.generation==='slot-b')metadata.set(row.generation,{...row,source:`slot:${row.generation}`});
+    if(manifest)metadata.set(manifest.generation,{...manifest,source:`manifest:${manifest.generation}`});
+    const candidates=[];
+    for(const meta of metadata.values()){
+      try{
+        const slotted=meta.generation==='slot-a'||meta.generation==='slot-b';
+        const base=meta.generation==='slot-b'?1_000_000:0;
+        const count=Number(meta.chunk_count);
+        const parts=slotted
+          ?[...this.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',base,base+count)].map(r=>r.state_part)
+          :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',meta.generation,count)].map(r=>r.state_part);
+        if(parts.length!==count)continue;
+        const world=JSON.parse(await decodeSnapshot(joinSnapshot(parts)));
+        assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
+        candidates.push({world,generation:meta.generation,updatedAt:Number(meta.updated_at||0),source:meta.source});
+      }catch(error){console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));}
+    }
+    const legacy=this.sqlRows('SELECT state_json,updated_at FROM world_state WHERE id=1 LIMIT 1')[0]||null;
+    if(legacy){
+      try{
+        const stored=JSON.parse(legacy.state_json);let world=stored,generation='legacy-inline';
+        if(stored?.format==='chunked-v1'){
+          const parts=[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? ORDER BY seq',stored.generation)].map(r=>r.state_part);
+          if(parts.length===stored.chunkCount){world=JSON.parse(joinSnapshot(parts));generation=stored.generation;}else world=null;
+        }
+        if(world){assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});candidates.push({world,generation,updatedAt:Number(legacy.updated_at||0),source:'legacy-world-state'});}
+      }catch(error){console.error('CYMONIA_LEGACY_SNAPSHOT_REJECTED',String(error?.message||error).slice(0,240));}
+    }
+    const selected=selectNewestSnapshot(candidates);
+    if(!selected){if(guard)throw new Error('sovereign_world_snapshot_unavailable_below_clock_guard');return null;}
+    const minute=Number(selected.world.clock.worldMinute);
+    if(guard&&minute<Number(guard.highest_world_minute)){this.clockRegressionDetected=true;throw new Error(`sovereign_world_clock_regression:${minute}<${Number(guard.highest_world_minute)}`);}
+    assertMonotonicSnapshot(selected.world,{highWaterMark:guard?.highest_world_minute??null,worldId:guard?.world_id||null});
+    this.loadedSnapshotMinute=minute;this.snapshotRecoverySource=selected.source;
+    if(selected.generation==='slot-a'||selected.generation==='slot-b')this.lastPersistedGeneration=selected.generation;
+    compactOperationalState(selected.world);return selected.world;
+  }
+  establishClockGuardBaseline(){
+    if(!this.world)return;
+    if(typeof this.sql?.exec!=='function')return;
+    const now=Date.now(),minute=Number(this.world.clock.worldMinute),worldId=String(this.world.worldId),ledgerHead=String(this.world.ledgerHead||'');
+    const row=this.sqlRows('SELECT world_id,highest_world_minute FROM world_clock_guard WHERE id=1 LIMIT 1')[0]||null;
+    if(row){
+      if(row.world_id!==worldId)throw new Error('sovereign_world_identity_regression');
+      if(minute<Number(row.highest_world_minute)){this.clockRegressionDetected=true;throw new Error(`sovereign_world_clock_regression:${minute}<${Number(row.highest_world_minute)}`);}
+      this.clockHighWaterMark=Number(row.highest_world_minute);
+    }else{
+      this.sql.exec('INSERT INTO world_clock_guard(id,world_id,highest_world_minute,ledger_head,updated_at) VALUES(1,?,?,?,?)',worldId,minute,ledgerHead,now);
+      this.clockHighWaterMark=minute;
+    }
+    const manifest=this.sqlRows('SELECT generation,chunk_count,world_minute,ledger_head,updated_at FROM world_state_manifest WHERE id=1 LIMIT 1')[0]||null;
+    if(manifest&&(manifest.generation==='slot-a'||manifest.generation==='slot-b')){
+      const existing=this.sqlRows('SELECT generation FROM world_snapshot_slots WHERE generation=? LIMIT 1',manifest.generation);
+      if(!existing.length)this.sql.exec('INSERT INTO world_snapshot_slots(generation,chunk_count,world_minute,ledger_head,updated_at) VALUES(?,?,?,?,?)',manifest.generation,Number(manifest.chunk_count),Number(manifest.world_minute),String(manifest.ledger_head),Number(manifest.updated_at));
+    }
   }
   async ensureAlarm(){
     let current=await this.ctx.storage.getAlarm();
@@ -258,6 +328,12 @@ export class SovereignWorld {
       this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
       return {persisted:false,reason:'write_budget_exhausted'};
     }
+    const clockGuard=[...this.sql.exec('SELECT world_id,highest_world_minute FROM world_clock_guard WHERE id=1 LIMIT 1')][0]||null;
+    if(clockGuard){
+      const minute=Number(this.world.clock.worldMinute);
+      if(clockGuard.world_id!==this.world.worldId)throw new Error('sovereign_world_identity_regression');
+      if(minute<Number(clockGuard.highest_world_minute)){this.clockRegressionDetected=true;throw new Error(`sovereign_world_clock_regression:${minute}<${Number(clockGuard.highest_world_minute)}`);}
+    }
     compactOperationalState(this.world);
     compactLedger(this.world,HOT_LEDGER_EVENTS);
     const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
@@ -286,6 +362,18 @@ export class SovereignWorld {
         VALUES(1,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
         generation,parts.length,worldMinute,ledgerHead,now);
+      this.sql.exec(`INSERT INTO world_snapshot_slots(generation,chunk_count,world_minute,ledger_head,updated_at)
+        VALUES(?,?,?,?,?)
+        ON CONFLICT(generation) DO UPDATE SET chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
+        generation,parts.length,worldMinute,ledgerHead,now);
+      this.sql.exec(`INSERT INTO world_clock_guard(id,world_id,highest_world_minute,ledger_head,updated_at)
+        VALUES(1,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET
+          world_id=excluded.world_id,
+          highest_world_minute=CASE WHEN excluded.highest_world_minute>world_clock_guard.highest_world_minute THEN excluded.highest_world_minute ELSE world_clock_guard.highest_world_minute END,
+          ledger_head=CASE WHEN excluded.highest_world_minute>=world_clock_guard.highest_world_minute THEN excluded.ledger_head ELSE world_clock_guard.ledger_head END,
+          updated_at=excluded.updated_at`,
+        this.world.worldId,worldMinute,ledgerHead,now);
       if(due){
         this.sql.exec('INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',worldMinute,ledgerHead,stateSha256,now);
         if(sealPruneRows)this.sql.exec('DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)');
@@ -297,6 +385,9 @@ export class SovereignWorld {
     if(due)runtime.lastSealWorldMinute=worldMinute;
     this.lastPersistedGeneration=generation;
     this.lastPersistedWorldMinute=worldMinute;
+    this.clockHighWaterMark=Math.max(Number(this.clockHighWaterMark??worldMinute),worldMinute);
+    this.loadedSnapshotMinute=Math.max(Number(this.loadedSnapshotMinute??worldMinute),worldMinute);
+    this.snapshotRecoverySource=`persist:${generation}`;
     this.persistenceDeferredUntilRealMs=0;
     return {persisted:true,generation,rowWrites,rowsWritten:reservation.budget.rowsWritten};
   }
@@ -506,6 +597,10 @@ export class SovereignWorld {
         world_id:this.world.worldId,
         world_minute:this.world.clock.worldMinute,
         lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),
+        clock_high_water_mark:this.clockHighWaterMark,
+        loaded_snapshot_minute:this.loadedSnapshotMinute,
+        clock_regression_detected:this.clockRegressionDetected,
+        snapshot_recovery_source:this.snapshotRecoverySource,
         ledger_head:this.world.ledgerHead,
         persisted_generation:this.lastPersistedGeneration,
         persistence:'durable-object-sqlite-gzip-slotted'

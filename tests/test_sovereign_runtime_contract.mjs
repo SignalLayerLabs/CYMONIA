@@ -132,3 +132,10 @@ function askAIBlock(){
   const end=worker.indexOf('async function withTimeout',start);
   return worker.slice(start,end);
 }
+
+
+test('monotonic clock guard prevents loading older snapshots and exposes recovery state',()=>{
+  assert.match(worker,/world_clock_guard/);assert.match(worker,/world_snapshot_slots/);assert.match(worker,/selectNewestSnapshot/);
+  assert.match(worker,/sovereign_world_clock_regression/);assert.match(worker,/clock_high_water_mark/);assert.match(worker,/loaded_snapshot_minute/);
+  assert.match(worker,/clock_regression_detected/);assert.match(worker,/snapshot_recovery_source/);
+});
