@@ -16,7 +16,7 @@ function dayLight(minute){const phase=((minute%1440)+1440)%1440/1440,sun=Math.si
 
 export class SovereignRenderer{
   constructor(canvas,mini){
-    this.canvas=canvas;this.canvasFallback=canvas;this.gpuCanvas=null;this.art=new MedievalArt();this.gpu=new PixiObserverLayer(this.canvasFallback,this.art);this.artEntries=[];this.artKey='';this.mini=mini;this.state=null;this.selected=null;this.follow=null;this.ownedCitizen=null;this.overlay=null;this.hits=[];this.drag=null;this.lastFrame=performance.now?.()||0;
+    this.canvas=canvas;this.canvasFallback=canvas;this.gpuCanvas=null;this.art=new MedievalArt();this.gpu=new PixiObserverLayer(this.canvasFallback,this.art);this.artEntries=[];this.artKey='';this.mini=mini;this.state=null;this.selected=null;this.follow=null;this.ownedCitizen=null;this.overlay=null;this.hits=[];this.drag=null;this.lastFrame=performance.now?.()||0;this.autoFramePopulation=true;this.lastAutoFitAt=0;
     this.camera={x:50,y:50,zoom:1.55,targetX:50,targetY:50,targetZoom:1.55,width:1000,height:700};
     this.terrainCache=null;this.terrainCacheKey='';this.wire();
   }
@@ -24,21 +24,36 @@ export class SovereignRenderer{
     const oldId=this.state?.worldId;this.state=state;
     this.citizenOffsets=citizenDisplayOffsets(state);
     this.gpu?.setState(state,this.citizenOffsets);this.gpuCanvas=this.gpu?.app?.canvas||null;
+
+    const r=this.canvas.getBoundingClientRect();
+    this.camera.width=r.width;this.camera.height=r.height;
+
     if(state?.worldId!==oldId){
       this.terrainCache=null;this.terrainCacheKey='';
-      const r=this.canvas.getBoundingClientRect();this.camera.width=r.width;this.camera.height=r.height;
+      this.autoFramePopulation=true;
       this.fitPopulation();
       this.camera.x=this.camera.targetX;this.camera.y=this.camera.targetY;this.camera.zoom=this.camera.targetZoom;
+      this.lastAutoFitAt=performance.now?.()||Date.now();
+    }else if(this.autoFramePopulation&&!this.follow){
+      const visibility=this.populationVisibility();
+      const now=performance.now?.()||Date.now();
+      if(visibility.total&&visibility.visible/visibility.total<.96&&now-this.lastAutoFitAt>1800){
+        this.fitPopulation();
+        this.lastAutoFitAt=now;
+      }
     }
   }
   citizenScenePoint(c){
-    const pos=citizenPosition(c,this.state),t=terrainAtPublic(this.state,pos.x,pos.y),p=isoPoint(pos.x,pos.y,t.elevation);
-    const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};
-    return {x:p.x+offset.x,y:p.y+offset.y};
+    const pos=citizenPosition(c,this.state),t=terrainAtPublic(this.state,pos.x,pos.y);
+    return isoPoint(pos.x,pos.y,t.elevation);
   }
   projectCitizen(c){
     const p=this.citizenScenePoint(c),origin=isoPoint(this.camera.x,this.camera.y),z=this.camera.zoom;
-    return {x:this.camera.width/2+(p.x-origin.x)*z,y:this.camera.height/2+(p.y-origin.y)*z};
+    const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};
+    return {
+      x:this.camera.width/2+(p.x-origin.x)*z+offset.x,
+      y:this.camera.height/2+(p.y-origin.y)*z+offset.y
+    };
   }
   setSelected(id){this.selected=id;}
   setFollow(id){this.follow=id||null;}
@@ -54,6 +69,7 @@ export class SovereignRenderer{
   }
   center(){this.camera.targetX=50;this.camera.targetY=50;this.camera.targetZoom=1.55;this.follow=null;}
   fitPopulation(){
+    this.autoFramePopulation=true;
     const alive=(this.state?.citizens||[]).filter(c=>c.alive);
     if(!alive.length)return false;
     const projected=alive.map(c=>this.citizenScenePoint(c));
@@ -74,8 +90,8 @@ export class SovereignRenderer{
     }
     return {visible,total:alive.length};
   }
-  panBy(dx,dy){this.follow=null;const delta=isoInverse(dx/this.camera.zoom,dy/this.camera.zoom);this.camera.targetX=clamp(this.camera.targetX-delta.x,2,98);this.camera.targetY=clamp(this.camera.targetY-delta.y,2,98);}
-  zoomBy(factor){this.camera.targetZoom=clamp(this.camera.targetZoom*factor,.2,3.1);}
+  panBy(dx,dy){this.follow=null;this.autoFramePopulation=false;const delta=isoInverse(dx/this.camera.zoom,dy/this.camera.zoom);this.camera.targetX=clamp(this.camera.targetX-delta.x,2,98);this.camera.targetY=clamp(this.camera.targetY-delta.y,2,98);}
+  zoomBy(factor){this.autoFramePopulation=false;this.camera.targetZoom=clamp(this.camera.targetZoom*factor,.2,3.1);}
   toggleOverlay(name){this.overlay=this.overlay===name?null:name;}
   wire(){
     const c=this.canvas;
