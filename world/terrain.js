@@ -62,3 +62,27 @@ export function travelProfile(world,citizen,target,{targetId=null,samples=24}={}
   return {distance,minimumMinutes,averageTerrainCost,loadKg,loadFactor,detourFactor,physicalCapacity,capabilityFactor,weatherFactor,terrainKinds:[...kinds],targetPosition:path[path.length-1],path};
 }
 export function environmentalExposure(world,citizen){const here=terrainAt(world,citizen.position.x,citizen.position.y),rain=Math.max(0,Number(world?.environment?.precipitation)||0);let thermalProtection=0,precipitationProtection=0,shelterId=null;for(const o of world?.objects||[]){if(o.kind!=='temporary_shelter'||!(o.quantity>0)||!o.position)continue;if(Math.hypot(citizen.position.x-o.position.x,citizen.position.y-o.position.y)<=1.8){const t=Number(o.properties?.thermalProtection||0),p=Number(o.properties?.precipitationProtection||0);if(t+p>thermalProtection+precipitationProtection){thermalProtection=t;precipitationProtection=p;shelterId=o.id;}}}for(const b of world?.buildings||[]){if(!b.position)continue;if(Math.hypot(citizen.position.x-b.position.x,citizen.position.y-b.position.y)<=1.8){const t=Number(b.protection?.thermal||.75),p=Number(b.protection?.precipitation||.8);if(t+p>thermalProtection+precipitationProtection){thermalProtection=t;precipitationProtection=p;shelterId=b.id;}}}return {terrain:here.kind,moisture:here.moisture,rain,thermalProtection:clamp(thermalProtection,0,.98),precipitationProtection:clamp(precipitationProtection,0,.98),rainExposure:rain*(1-clamp(precipitationProtection,0,.98)),shelterId};}
+
+
+export function isWaterTerrainKind(kind){
+  return kind==='river';
+}
+
+export function isSleepUnsafeTerrainKind(kind){
+  return kind==='river'||kind==='wetland';
+}
+
+export function nearestDryLandPoint(world,start,maxRadius=10,{sleepSafe=true}={}){
+  const origin={x:Number(start?.x||0),y:Number(start?.y||0)};
+  const ok=(kind)=>sleepSafe?!isSleepUnsafeTerrainKind(kind):!isWaterTerrainKind(kind);
+  const base=terrainAt(world,origin.x,origin.y).kind;
+  if(ok(base))return origin;
+  for(let radius=.5;radius<=maxRadius;radius+=.5){
+    for(let step=0;step<32;step++){
+      const angle=step/32*Math.PI*2;
+      const point={x:origin.x+Math.cos(angle)*radius,y:origin.y+Math.sin(angle)*radius};
+      if(ok(terrainAt(world,point.x,point.y).kind))return point;
+    }
+  }
+  return origin;
+}

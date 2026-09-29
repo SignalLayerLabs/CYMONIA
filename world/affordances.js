@@ -4,7 +4,7 @@ import {resourceConceptId,explorationCellKey} from './perception.js';
 import {MATERIAL_PROPERTIES} from './materials.js';
 import {hash32,stableId} from './rng.js';
 import {activeStrategy} from './strategy.js';
-import {terrainAt} from './terrain.js';
+import {terrainAt,nearestDryLandPoint,isWaterTerrainKind,isSleepUnsafeTerrainKind} from './terrain.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -48,14 +48,15 @@ export function explorationTarget(world,citizen,at=world.clock.worldMinute){
     const deterministic=(hash32(`${world.seed}|${citizen.id}|${cycle}|frontier|${key}`)%10000)/10000;
     const score=
       (1/(1+visits))*2.4+
-      Math.min(1,distance/70)*.42+
-      (1-Math.min(1,crowd/14))*.55+
+      Math.min(1,distance/70)*.62+
+      (1-Math.min(1,crowd/14))*1.05+
       (knownResource?.55:0)+
       deterministic*.7;
     candidates.push({target,key,score});
   }
   candidates.sort((a,b)=>b.score-a.score||a.key.localeCompare(b.key));
-  return candidates[0]?.target||{x:50,y:50};
+  const picked=candidates[0]?.target||{x:50,y:50};
+  return nearestDryLandPoint(world,picked,8,{sleepSafe:false});
 }
 
 function localCrowding(world,position,radius=12){
@@ -65,14 +66,53 @@ function localCrowding(world,position,radius=12){
 function exploreCandidate(world,citizen,at){
   const target=explorationTarget(world,citizen,at),distance=dist(citizen.position,target);
   const localCrowd=Math.max(0,localCrowding(world,citizen.position,12)-1);
-  const crowdPressure=Math.min(.32,Math.max(0,localCrowd-8)*.012);
+
+  // Crowding should encourage outward movement, but only after the local area
+  // is genuinely dense. Exploration must not override an immediately useful
+  // known resource.
+  const crowdPressure=Math.min(.30,Math.max(0,localCrowd-10)*.018);
+
+  const immediateKnownResource=(world.resourceDeposits||[]).some(deposit=>
+    deposit.quantity>0 &&
+    citizen.knownEntityIds.includes(deposit.id) &&
+    knows(citizen,resourceConceptId(deposit)) &&
+    dist(citizen.position,deposit.position)<=3
+  );
+
+  const opportunityPenalty=immediateKnownResource?.22:0;
   const visits=Number(citizen.explorationMap?.[explorationCellKey(target)]?.visits||0);
-  const frontierGap=visits===0?.34:Math.max(.08,.24/(1+visits));
-  return {family:'explore',key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,utility:.10+crowdPressure,knowledgeGap:frontierGap,novelty:visits===0?.92:.55,effort:Math.min(1,distance/70),risk:.16,proposal:proposal('explore',[],[
-    {type:'MOVE',durationMinutes:Math.max(6,Math.ceil(distance*2)),targetPosition:target,purpose:'explore',concepts:[]},
-    {type:'OBSERVE',durationMinutes:12,purpose:'explore',concepts:[]},
-  ])};
+  const frontierGap=visits===0?.15:Math.max(.05,.15/(1+visits));
+
+  return {
+    family:'explore',
+    key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,
+    utility:Math.max(.03,.08+crowdPressure-opportunityPenalty),
+    knowledgeGap:frontierGap,
+    novelty:visits===0?.84:.52,
+    effort:Math.min(1,distance/70),
+    risk:.14,
+    proposal:proposal('explore',[],[
+      {
+        type:'MOVE',
+        durationMinutes:Math.max(6,Math.ceil(distance*2)),
+        targetPosition:target,
+        purpose:'explore',
+        concepts:[]
+      },
+      {
+        type:'OBSERVE',
+        durationMinutes:12,
+        purpose:'explore',
+        concepts:[]
+      },
+    ])
+  };
 }
+function terrainBlocksSleep(world,site){
+  const kind=terrainAt(world,site.x,site.y).kind;
+  return isSleepUnsafeTerrainKind(kind);
+}
+
 function buildTerrainConflict(world,site,footprintRadius=2.7,clearance=.55){
   const radius=Math.max(.5,Number(footprintRadius)||2.7)+Math.max(0,Number(clearance)||0);
   const samples=[{x:site.x,y:site.y}];
@@ -128,7 +168,7 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
         x:Math.max(4,Math.min(96,anchor.x+Math.cos(angle)*radius)),
         y:Math.max(4,Math.min(96,anchor.y+Math.sin(angle)*radius))
       };
-      if(buildSiteConflict(world,site,footprintRadius)||buildTerrainConflict(world,site,footprintRadius))continue;
+      if(buildSiteConflict(world,site,footprintRadius)||buildTerrainConflict(world,site,footprintRadius)||isWaterTerrainKind(terrainAt(world,site.x,site.y).kind))continue;
 
       const crowd=localCrowding(world,site,11);
       const buildings=(world.buildings||[]).filter(b=>b.position&&dist(b.position,site)<=14).length;
@@ -140,10 +180,10 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
       const score=
         visited*.45+
         knownResource*.38+
-        fromCenter*.18+
+        fromCenter*.42+
         ((h%997)/997)*.12-
-        Math.min(1,crowd/12)*.72-
-        Math.min(1,(buildings+projects)/5)*.8-
+        Math.min(1,crowd/12)*1.05-
+        Math.min(1,(buildings+projects)/5)*1.1-
         travel*.14;
       candidates.push({site,score});
     }

@@ -3,6 +3,7 @@ import {stableId} from './rng.js';
 import {appendEvent} from './ledger.js';
 import {restoreSleep} from './biology.js';
 import {travelProfile,resolveAccessibleTarget} from './terrain.js';
+import {nearestDryLandPoint,isWaterTerrainKind} from './terrain.js';
 
 export function startAction(world,citizen,spec,at=world.clock.worldMinute){
   if(!citizen.alive)throw new Error('citizen_dead');

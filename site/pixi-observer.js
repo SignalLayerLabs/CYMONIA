@@ -15,7 +15,7 @@ const CITIZEN_SLEEP_SIZE=15;
 const CITIZEN_STAND_ANCHOR_Y=1;
 const CITIZEN_SLEEP_ANCHOR_Y=1;
 const CITIZEN_STAND_LIFT=0;
-const CITIZEN_SLEEP_LIFT=-6;
+const CITIZEN_SLEEP_LIFT=-2;
 
 export class PixiObserverLayer{
   constructor(canvasFallback,art){
@@ -117,7 +117,7 @@ export class PixiObserverLayer{
         if(sleeping){
           body.y=CITIZEN_SLEEP_LIFT;body.rotation=0;
           body.scale.set((flip?-1:1)*scale,scale);
-          if(e.shadow){e.shadow.scale.x=1.25;e.shadow.scale.y=.85;}
+          if(e.shadow){e.shadow.position.set(0,2);e.shadow.scale.x=1.1;e.shadow.scale.y=.78;}
         }else{
           const pose=citizenVisualPose(c,performance.now());
           body.y=CITIZEN_STAND_LIFT+pose.y;body.rotation=pose.rotation;
@@ -137,7 +137,11 @@ export class PixiObserverLayer{
       }
     }
     this.hits=hits.sort((a,b)=>a.depth-b.depth);
-    this.waterLayer.alpha=.7+.3*Math.sin(minute*.13);
+    this.waterLayer.alpha=.72+.24*Math.sin(minute*.13);
+    if(this.waterLayer&&'tilePosition' in this.waterLayer&&this.waterLayer.tilePosition){
+      this.waterLayer.tilePosition.x=minute*0.45;
+      this.waterLayer.tilePosition.y=Math.sin(minute*.09)*1.5;
+    }
     this.ingestCanonicalEffects(state.recentLedger||state.ledgerEvents||[],camera);this.clearLayer(this.effectsLayer);
     for(const d of this.transient?.update()||[]){const g=new globalThis.PIXI.Graphics();g.rect(-d.size/2,-d.size/2,d.size,d.size).fill({color:0x897b69,alpha:d.alpha});g.position.set((d.x-camera.width/2)/camera.zoom+origin.x,(d.y-camera.height/2)/camera.zoom+origin.y);g.rotation=d.angle;this.effectsLayer.addChild(g);}
     return true;

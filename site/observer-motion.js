@@ -17,12 +17,12 @@ export function citizenPosition(c,state,nowMs=Date.now()){
 
 // A display-only formation makes colocated people individually visible/selectable.
 // Canonical positions, paths, and collision/interaction rules stay untouched.
-export function citizenDisplayOffsets(state){
+export function citizenDisplayOffsets(state,nowMs=Date.now()){
   const groups=new Map(),offsets=new Map();
 
-  // Observer-only crowd formation.
-  // Screen-space basis vectors follow the two isometric ground axes.
-  // SLOT_SPACING guarantees >=20 px separation for colocated Citizens.
+  // Observer-only crowd formation is useful only for genuinely colocated idle
+  // citizens. Movers and sleepers keep zero display offset so they do not look
+  // frozen in place, float, or scatter across the ground.
   const SLOT_SPACING=24;
   const NORM=Math.sqrt(5);
 
@@ -40,7 +40,13 @@ export function citizenDisplayOffsets(state){
     .filter(c=>c.alive)
     .sort((a,b)=>a.id.localeCompare(b.id))){
 
-    const p=c.position;
+    const action=c.currentAction;
+    if(action?.type==='MOVE'||action?.type==='SLEEP'){
+      offsets.set(c.id,{x:0,y:0});
+      continue;
+    }
+
+    const p=citizenPosition(c,state,nowMs);
     const key=`${Math.round(p.x*4)},${Math.round(p.y*4)}`;
 
     if(!groups.has(key))groups.set(key,[]);
@@ -71,5 +77,6 @@ export function citizenDisplayOffsets(state){
     }
   }
 
+  for(const c of state?.citizens||[])if(c.alive&&!offsets.has(c.id))offsets.set(c.id,{x:0,y:0});
   return offsets;
 }
