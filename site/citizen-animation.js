@@ -5,6 +5,11 @@ const ACTION_ANIMATION={
   EXPERIMENT:'experiment',ATTACK:'attack',DEFEND:'defend',TRANSFER:'carry',
   PROMISE:'communicate',CLAIM:'communicate',REPRODUCE:'idle',
 };
+// Row-major order of every 4x4 Citizen action atlas. Sleep has its own atlas.
+export const CITIZEN_SPRITE_STATES=Object.freeze([
+  'idle','walk','observe','eat','drink','gather','carry','cut',
+  'dig','work','build','care','communicate','experiment','attack','defend',
+]);
 function hashUnit(value){
   let h=2166136261>>>0;
   for(const ch of String(value||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0;}

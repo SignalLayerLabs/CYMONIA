@@ -1,4 +1,6 @@
 import {terrainAtPublic, riverCenterXPublic, seedOfWorld} from './terrain-model.js';
+import {animationForCitizen,CITIZEN_SPRITE_STATES} from './citizen-animation.js';
+import {CITIZEN_SPRITE_ATLASES} from './citizen-sprite-frames.js';
 
 // Shared by WebGL and Canvas: all art uses the same ground plane and anchors.
 export const ISO_X=16, ISO_Y=8;
@@ -7,12 +9,18 @@ export const isoInverse=(x,y)=>({x:(x/ISO_X+y/ISO_Y)/2,y:(y/ISO_Y-x/ISO_X)/2});
 export function spriteBounds(frame,size,x,y){const height=size*frame.h/frame.w;return{x:x-size/2,y:y-height*.94,width:size,height};}
 export const ATLAS_URL=new URL('./assets/medieval-atlas.png',import.meta.url).href;
 export const SLEEP_ATLAS_URL=new URL('./assets/medieval-sleep-atlas.png',import.meta.url).href;
+export const CITIZEN_ATLAS_URLS=['blue','rust','green','linked'].map(name=>new URL(`./assets/citizen-${name}-states.png`,import.meta.url).href);
 const GRASS_URL=new URL('./assets/meadow-texture.png',import.meta.url).href;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function artHash(value){let h=2166136261;for(const c of String(value)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
 export const citizenFrame=c=>c.kind==='HUMAN_LINKED'?15:12+Math.floor(artHash(c.id)*3);
 const SLEEP_FRAME_VARIANTS=[0,1,2];
 export const citizenSleepFrame=c=>c.kind==='HUMAN_LINKED'?3:SLEEP_FRAME_VARIANTS[Math.min(2,Math.floor(artHash(c.id)*3))];
+export function citizenSprite(c){
+  const state=animationForCitizen(c);
+  if(state==='sleep')return {atlas:'sleep',frame:citizenSleepFrame(c),sleep:true};
+  return {atlas:`citizen:${citizenFrame(c)-12}`,frame:Math.max(0,CITIZEN_SPRITE_STATES.indexOf(state)),sleep:false};
+}
 
 export function staticSceneKey(w){
   return JSON.stringify([w?.worldId,w?.seed,(w?.resourceDeposits||[]).map(d=>[d.id,d.quantity>0,d.position,d.type]),(w?.objects||[]).filter(o=>o.kind==='temporary_shelter').map(o=>[o.id,o.quantity,o.condition,o.position]),(w?.projects||[]).map(p=>[p.id,p.status,p.site,p.workDoneMinutes,p.workRequiredMinutes]),(w?.buildings||[]).map(b=>[b.id,b.position,b.condition,b.massKg,b.designId])]);
@@ -41,12 +49,29 @@ export function sceneEntries(w,{decorations=true}={}){
 
 function loadImage(url){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>resolve(null);im.src=url;});}
 export class MedievalArt{
-  constructor(){this.atlas=null;this.sleepAtlas=null;this.grass=null;this.revision=0;this.ground=null;this.groundKey='';this.frames=[];this.sleepFrames=[];this.ready=Promise.all([loadImage(ATLAS_URL),loadImage(SLEEP_ATLAS_URL),loadImage(GRASS_URL)]).then(([atlas,sleepAtlas,grass])=>{this.atlas=atlas;this.sleepAtlas=sleepAtlas;this.grass=grass;if(atlas)this.measureFrames(atlas,'base');if(sleepAtlas)this.measureFrames(sleepAtlas,'sleep');this.revision++;return this;});}
+  constructor(){
+    this.atlas=null;this.sleepAtlas=null;this.grass=null;this.revision=0;
+    this.ground=null;this.groundKey='';this.frames=[];this.sleepFrames=[];this.citizenAtlases=[];
+    this.ready=Promise.all([ATLAS_URL,SLEEP_ATLAS_URL,GRASS_URL,...CITIZEN_ATLAS_URLS].map(loadImage)).then(([atlas,sleepAtlas,grass,...citizens])=>{
+      this.atlas=atlas;this.sleepAtlas=sleepAtlas;this.grass=grass;
+      if(atlas)this.measureFrames(atlas,'base');
+      if(sleepAtlas)this.measureFrames(sleepAtlas,'sleep');
+      citizens.forEach((image,i)=>{if(image)this.measureFrames(image,`citizen:${i}`);});
+      this.revision++;return this;
+    });
+  }
   measureFrames(atlas=this.atlas,kind='base'){
     // Base atlas is 4x4; sleep atlas is 2x2.
     const canvas=document.createElement('canvas');canvas.width=atlas.width;canvas.height=atlas.height;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(atlas,0,0);
     const {data}=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+    if(kind.startsWith('citizen:')){
+      const variant=Number(kind.split(':')[1]),layout=CITIZEN_SPRITE_ATLASES[variant];
+      // Generated poses have slightly uneven spacing: explicit bounds avoid clipped tools.
+      if(atlas.width===layout.width&&atlas.height===layout.height)this.citizenAtlases[variant]={image:atlas,frames:layout.frames,pixels:data};
+      return;
+    }
 
     const cols=kind==='sleep'?2:4;
     const rows=kind==='sleep'?2:4;
@@ -87,12 +112,37 @@ export class MedievalArt{
       this.pixelData=data;
     }
   }
-  hitRecord(e,p,zoom,flip=false){const size=e.size*zoom,frames=e.sleep?this.sleepFrames:this.frames,f=frames[e.frame];return{id:e.id,kind:e.kind,frame:e.frame,sleep:Boolean(e.sleep),flip,x:p.x,y:p.y,r:size*.5,...(f?{bounds:spriteBounds(f,size,p.x,p.y)}:{})};}
+  atlasFor(e){
+    if(e.atlas?.startsWith('citizen:'))return this.citizenAtlases?.[Number(e.atlas.split(':')[1])]||{frames:[]};
+    return e.atlas==='sleep'||e.sleep
+      ? {image:this.sleepAtlas,frames:this.sleepFrames,pixels:this.sleepPixelData}
+      : {image:this.atlas,frames:this.frames,pixels:this.pixelData};
+  }
+  citizenSprite(c,standSize=19,sleepSize=32){
+    const sprite=citizenSprite(c),asset=this.atlasFor(sprite),frame=asset.frames[sprite.frame];
+    if(!asset.image||!frame)return {atlas:'base',frame:citizenFrame(c),sleep:false,size:standSize};
+    // The idle cell fixes the scale; wide tools must not shrink the person.
+    const size=sprite.sleep?sleepSize:standSize*frame.w/asset.frames[0].w;
+    return {...sprite,size};
+  }
+  hitRecord(e,p,zoom,flip=false,{anchorY=.94,scaleY=1,rotation=0}={}){
+    const width=e.size*zoom,f=this.atlasFor(e).frames[e.frame];
+    const hit={id:e.id,kind:e.kind,atlas:e.atlas,frame:e.frame,sleep:Boolean(e.sleep),flip,x:p.x,y:p.y,r:width*.5};
+    if(!f)return hit;
+    const height=width*f.h/f.w*scaleY,c=Math.cos(rotation),s=Math.sin(rotation);
+    const corners=[[-width/2,-height*anchorY],[width/2,-height*anchorY],[-width/2,height*(1-anchorY)],[width/2,height*(1-anchorY)]].map(([x,y])=>({x:p.x+x*c-y*s,y:p.y+x*s+y*c}));
+    const xs=corners.map(q=>q.x),ys=corners.map(q=>q.y),x=Math.min(...xs),y=Math.min(...ys);
+    return {...hit,width,height,anchorY,rotation,bounds:{x,y,width:Math.max(...xs)-x,height:Math.max(...ys)-y}};
+  }
   hitTest(hit,x,y){
     if(!hit.bounds)return Math.hypot(x-hit.x,y-hit.y)<=hit.r;
-    const b=hit.bounds,u=(x-b.x)/b.width,v=(y-b.y)/b.height;if(u<0||u>=1||v<0||v>=1)return false;
-    const atlas=hit.sleep?this.sleepAtlas:this.atlas,frames=hit.sleep?this.sleepFrames:this.frames,pixels=hit.sleep?this.sleepPixelData:this.pixelData,f=frames[hit.frame],px=f.x+Math.min(f.w-1,Math.floor((hit.flip?1-u:u)*f.w)),py=f.y+Math.floor(v*f.h);
-    return pixels?.[(py*atlas.width+px)*4+3]>32;
+    const dx=x-hit.x,dy=y-hit.y,c=Math.cos(hit.rotation),s=Math.sin(hit.rotation);
+    const u=(dx*c+dy*s)/hit.width+.5,v=(-dx*s+dy*c)/hit.height+hit.anchorY;
+    if(u<0||u>=1||v<0||v>=1)return false;
+    const {image,frames,pixels}=this.atlasFor(hit),f=frames[hit.frame];
+    if(!image||!f)return false;
+    const px=f.x+Math.min(f.w-1,Math.floor((hit.flip?1-u:u)*f.w)),py=f.y+Math.floor(v*f.h);
+    return pixels?.[(py*image.width+px)*4+3]>32;
   }
   drawFromAtlas(ctx,atlas,frames,frame,x,y,size,flip=false){
     if(!atlas||!frames[frame])return false;
@@ -101,6 +151,7 @@ export class MedievalArt{
   }
   drawSprite(ctx,frame,x,y,size,flip=false){return this.drawFromAtlas(ctx,this.atlas,this.frames,frame,x,y,size,flip);}
   drawSleepSprite(ctx,frame,x,y,size,flip=false){return this.drawFromAtlas(ctx,this.sleepAtlas,this.sleepFrames,frame,x,y,size,flip);}
+  drawEntry(ctx,e,x,y,zoom=1,flip=false){const {image,frames}=this.atlasFor(e);return this.drawFromAtlas(ctx,image,frames,e.frame,x,y,e.size*zoom,flip);}
   groundFor(w){
     const key=`${seedOfWorld(w)}|${this.revision}`;if(this.ground&&this.groundKey===key)return this.ground;
     // A continuous top-down material map is projected once, not thousands of tile objects per frame.
