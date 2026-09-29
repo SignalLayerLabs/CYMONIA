@@ -34,7 +34,163 @@ function renderActivity(){const w=state.world;if(!w)return;const history=signifi
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function objectLabel(id){const o=state.world?.objects?.find(x=>x.id===id);return o?`${o.kind} × ${Number(o.quantity||1).toFixed(Number(o.quantity)%1?1:0)}`:id;}
 function relationRows(c){return Object.entries(c.relationships||{}).sort(([,a],[,b])=>Math.max(Math.abs(b.trust||0),Math.abs(b.affection||0),Math.abs(b.fear||0))-Math.max(Math.abs(a.trust||0),Math.abs(a.affection||0),Math.abs(a.fear||0))).slice(0,10);}
-function renderInspector(){const w=state.world;if(!w)return;const c=w.citizens.find(x=>x.id===state.selected),b=w.buildings?.find(x=>x.id===state.selected),p=w.projects?.find(x=>x.id===state.selected),d=w.resourceDeposits?.find(x=>x.id===state.selected);if(!c&&!b&&!p&&!d){$('inspector').hidden=true;return}$('inspector').hidden=false;if(b){$('inspectorBody').innerHTML=`<span class="eyebrow">PHYSICAL STRUCTURE</span><h2>${esc(b.id)}</h2><p>Completed at world minute ${esc(b.createdWorldMinute)}. It exists only because its project consumed material and labor.</p><div class="inspector-section"><h3>Provenance</h3><span class="tag">${esc(b.provenance?.projectId||'unknown project')}</span><span class="tag">${esc(b.designId||'unknown design')}</span></div>`;return}if(p){const progress=p.workRequiredMinutes?Math.round(p.workDoneMinutes/p.workRequiredMinutes*100):0;$('inspectorBody').innerHTML=`<span class="eyebrow">CONSTRUCTION PROJECT</span><h2>${esc(p.id)}</h2><div class="inspector-grid"><div><b>${progress}%</b><small>work</small></div><div><b>${esc(p.status)}</b><small>status</small></div></div><p>This site is canonical. Completion requires the project's remaining work and reserved materials.</p>`;return}if(d){$('inspectorBody').innerHTML=`<span class="eyebrow">NATURAL RESOURCE</span><h2>${esc(String(d.type).toUpperCase())}</h2><div class="inspector-grid"><div><b>${Math.round(d.quantity)}</b><small>quantity</small></div><div><b>${Number(d.position.x).toFixed(1)}, ${Number(d.position.y).toFixed(1)}</b><small>location</small></div></div><p>This marker represents a canonical resource deposit, not decorative scenery.</p>`;return}
+function renderInspector(){const w=state.world;if(!w)return;const c=w.citizens.find(x=>x.id===state.selected),b=w.buildings?.find(x=>x.id===state.selected),p=w.projects?.find(x=>x.id===state.selected),d=w.resourceDeposits?.find(x=>x.id===state.selected);if(!c&&!b&&!p&&!d){$('inspector').hidden=true;return}$('inspector').hidden=false;if(b){
+    const provenance=b.provenance||{};
+    const project=w.projects?.find(x=>x.id===(provenance.projectId||b.projectId));
+
+    const initiatorId=
+      provenance.initiatorId||
+      project?.initiatorId||
+      null;
+
+    const completedById=
+      provenance.completedByCitizenId||
+      project?.completedByCitizenId||
+      null;
+
+    const contributorIds=[
+      ...new Set(
+        (
+          provenance.contributorIds||
+          project?.contributorIds||
+          [initiatorId]
+        ).filter(Boolean)
+      )
+    ];
+
+    const contributionMinutes={
+      ...(project?.contributionMinutesByCitizenId||{}),
+      ...(provenance.contributionMinutesByCitizenId||{})
+    };
+
+    const personLabel=id=>{
+      if(!id)return 'Unknown';
+      const person=w.citizens.find(x=>x.id===id);
+      return person?citizenName(person):id.replace('genesis:','Citizen ');
+    };
+
+    const why=
+      provenance.whySummary||
+      project?.whySummary||
+      null;
+
+    const whyConceptIds=[
+      ...new Set(
+        (
+          provenance.whyConceptIds||
+          project?.whyConceptIds||
+          []
+        ).filter(Boolean)
+      )
+    ];
+
+    const materials=Object.entries(b.materials||{});
+
+    const contributorsHtml=contributorIds.length
+      ? contributorIds.map(id=>{
+          const minutes=Math.round(Number(contributionMinutes[id])||0);
+          const isInitiator=id===initiatorId;
+          const isCompleter=id===completedById;
+
+          return `<div class="inspector-person">
+            <b>${esc(personLabel(id))}</b>
+            <small>
+              ${isInitiator?'initiator':''}
+              ${isInitiator&&isCompleter?' · ':''}
+              ${isCompleter?'completed structure':''}
+              ${minutes?` · ${minutes} min contributed`:''}
+            </small>
+          </div>`;
+        }).join('')
+      : '<p>No individual contribution record is available for this legacy structure.</p>';
+
+    $('inspectorBody').innerHTML=`
+      <span class="eyebrow">PHYSICAL STRUCTURE</span>
+      <h2>${esc(b.id)}</h2>
+
+      <p>
+        Completed at world minute ${esc(b.createdWorldMinute)}.
+        This is a canonical structure created from real materials and construction work.
+      </p>
+
+      <div class="inspector-grid">
+        <div>
+          <b>${Math.round(Number(b.massKg)||0)} kg</b>
+          <small>incorporated mass</small>
+        </div>
+        <div>
+          <b>${contributorIds.length}</b>
+          <small>contributors</small>
+        </div>
+        <div>
+          <b>${Number(b.footprintRadius||0).toFixed(1)}</b>
+          <small>physical footprint</small>
+        </div>
+        <div>
+          <b>${esc(provenance.terrainKind||project?.terrainKind||'unknown')}</b>
+          <small>foundation terrain</small>
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <span class="eyebrow">WHY WAS IT BUILT?</span>
+        <h3>${esc(why||'Purpose not explicitly recorded')}</h3>
+        ${
+          whyConceptIds.length
+            ? `<p>${whyConceptIds.map(id=>`<span class="tag">${esc(id)}</span>`).join('')}</p>`
+            : `<p>This structure predates explicit purpose provenance or no purpose concept was retained.</p>`
+        }
+      </div>
+
+      <div class="inspector-section">
+        <h3>People</h3>
+
+        <p>
+          <b>Initiated by:</b>
+          ${esc(personLabel(initiatorId))}
+        </p>
+
+        ${
+          completedById
+            ? `<p><b>Completed by:</b> ${esc(personLabel(completedById))}</p>`
+            : ''
+        }
+
+        <div class="inspector-contributors">
+          ${contributorsHtml}
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <h3>Materials</h3>
+        ${
+          materials.length
+            ? materials.map(([material,quantity])=>
+                `<span class="tag">${esc(material)} × ${esc(quantity)}</span>`
+              ).join('')
+            : '<p>No incorporated-material breakdown exposed.</p>'
+        }
+      </div>
+
+      <div class="inspector-section">
+        <h3>Protection</h3>
+        <span class="tag">
+          thermal ${Math.round(Number(b.protection?.thermal||0)*100)}%
+        </span>
+        <span class="tag">
+          rain ${Math.round(Number(b.protection?.precipitation||0)*100)}%
+        </span>
+      </div>
+
+      <div class="inspector-section">
+        <h3>Canonical provenance</h3>
+        <span class="tag">${esc(provenance.projectId||project?.id||'unknown project')}</span>
+        <span class="tag">${esc(provenance.designId||b.designId||project?.designId||'unknown design')}</span>
+      </div>
+    `;
+
+    return;
+  }if(p){const progress=p.workRequiredMinutes?Math.round(p.workDoneMinutes/p.workRequiredMinutes*100):0;$('inspectorBody').innerHTML=`<span class="eyebrow">CONSTRUCTION PROJECT</span><h2>${esc(p.id)}</h2><div class="inspector-grid"><div><b>${progress}%</b><small>work</small></div><div><b>${esc(p.status)}</b><small>status</small></div></div><p>This site is canonical. Completion requires the project's remaining work and reserved materials.</p>`;return}if(d){$('inspectorBody').innerHTML=`<span class="eyebrow">NATURAL RESOURCE</span><h2>${esc(String(d.type).toUpperCase())}</h2><div class="inspector-grid"><div><b>${Math.round(d.quantity)}</b><small>quantity</small></div><div><b>${Number(d.position.x).toFixed(1)}, ${Number(d.position.y).toFixed(1)}</b><small>location</small></div></div><p>This marker represents a canonical resource deposit, not decorative scenery.</p>`;return}
   const k=Array.isArray(c.knowledge)?c.knowledge:[],conceptViews=k.map(entry=>observerConceptView(w,c,entry)),conceptById=new Map(conceptViews.map(v=>[v.canonicalId,v])),age=(c.body.ageMinutes/525600).toFixed(1),a=c.currentAction,rels=relationRows(c),poss=(c.possessions||[]).slice(0,12),psych=Object.entries(c.psychology||{}).filter(([,v])=>typeof v==='number').sort((a,b)=>b[1]-a[1]).slice(0,7);
   $('inspectorBody').innerHTML=`<span class="eyebrow">${esc(c.kind)} · ${c.alive?'ALIVE':'DEAD'}</span><h2>${esc(citizenName(c))}</h2><div class="inspector-grid"><div><b>${age}</b><small>years</small></div><div><b>${Math.round(c.body.health)}%</b><small>health</small></div><div><b>${Math.round(c.body.hydration)}%</b><small>water</small></div><div><b>${Math.round(c.body.calories)}%</b><small>energy</small></div></div><div class="inspector-section"><span class="eyebrow">CURRENT ACTION</span><h3>${esc(a?.type||'IDLE / THINKING')}</h3><p>${esc(a?.purpose||'No public physical action recorded.')}</p>${a?`<button class="tag" data-why-action="${esc(a.id)}">WHY?</button>`:''}</div><div class="inspector-section"><h3>Current goal</h3><p>${esc(goalLabel(c.activeGoal))}</p></div><div class="inspector-section"><h3>Body / exposure</h3><span class="tag">sleep ${Math.round(c.body.sleepPressure||0)}%</span><span class="tag">temperature ${Number(c.body.temperatureC||36.6).toFixed(1)}°C</span><span class="tag">terrain ${esc(c.body.exposure?.terrain||'unknown')}</span><span class="tag">rain exposure ${Math.round((c.body.exposure?.rainExposure||0)*100)}%</span><span class="tag">injuries ${Number(c.body.injuries||0)}</span><span class="tag">diseases ${Number(c.body.diseases||0)}</span></div><div class="inspector-section"><h3>Mind / traits</h3>${psych.map(([name,v])=>`<span class="tag">${esc(name)} ${Math.round(v*100)}%</span>`).join('')||'<p>No public trait state.</p>'}</div><div class="inspector-section"><h3>Known concepts</h3>${conceptViews.length?conceptViews.slice(0,28).map(v=>`<span class="tag concept-tag" title="${esc(v.tooltip)}">${esc(v.label)}</span>`).join(''):`<p>${c.knowledge?.count!=null?`${c.knowledge.count} private concepts`:'No exposed concepts yet.'}</p>`}</div><div class="inspector-section"><h3>Language</h3>${Object.entries(c.language?.lexicon||{}).slice(0,18).map(([concept,token])=>{const v=conceptById.get(concept)||observerConceptView(w,c,{concept,confidence:null,provenance:[]});return `<span class="tag concept-word" title="${esc(v.tooltip)}">${esc(token)} ↔ ${esc(v.label)}</span>`;}).join('')||'<p>No stable coined lexicon yet.</p>'}</div><div class="inspector-section"><h3>Relationships</h3>${rels.map(([id,r])=>`<span class="tag">${esc(id.replace('genesis:','C'))} · trust ${Math.round((r.trust||0)*100)} · affection ${Math.round((r.affection||0)*100)} · fear ${Math.round((r.fear||0)*100)}</span>`).join('')||'<p>No significant public relationship data yet.</p>'}</div><div class="inspector-section"><h3>Possessions</h3>${poss.map(id=>`<span class="tag">${esc(objectLabel(id))}</span>`).join('')||'<p>No individually held objects.</p>'}</div>`;}
 function renderHistory(){const history=state.world?.history||[],q=$('historySearch').value.trim().toLowerCase(),cat=$('historyCategory').value,rows=history.filter(e=>(cat==='all'||e.category===cat)&&(!q||JSON.stringify(e).toLowerCase().includes(q))).sort((a,b)=>b.worldMinute-a.worldMinute);$('historyTimeline').innerHTML=rows.length?rows.map(e=>`<article class="history-entry" data-event="${esc(e.eventId)}"><span class="history-date">${esc(e.date?.label||dateLabel(e.worldMinute))}</span><i class="history-node"></i><div><b>${esc(e.label)}</b><small>${esc(e.era||'Emergent history')} · ${esc(e.category)} · ${esc(e.actorId||'world')}</small></div></article>`).join(''):'<p>No canonical history matches this filter.</p>';}
