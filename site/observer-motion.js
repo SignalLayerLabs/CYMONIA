@@ -19,17 +19,57 @@ export function citizenPosition(c,state,nowMs=Date.now()){
 // Canonical positions, paths, and collision/interaction rules stay untouched.
 export function citizenDisplayOffsets(state){
   const groups=new Map(),offsets=new Map();
-  for(const c of [...(state?.citizens||[])].filter(c=>c.alive).sort((a,b)=>a.id.localeCompare(b.id))){
-    const p=c.position,key=`${Math.round(p.x*4)},${Math.round(p.y*4)}`;
+
+  // Observer-only crowd formation.
+  // Screen-space basis vectors follow the two isometric ground axes.
+  // SLOT_SPACING guarantees >=20 px separation for colocated Citizens.
+  const SLOT_SPACING=24;
+  const NORM=Math.sqrt(5);
+
+  const axisX={
+    x:2/NORM*SLOT_SPACING,
+    y:1/NORM*SLOT_SPACING
+  };
+
+  const axisY={
+    x:-2/NORM*SLOT_SPACING,
+    y:1/NORM*SLOT_SPACING
+  };
+
+  for(const c of [...(state?.citizens||[])]
+    .filter(c=>c.alive)
+    .sort((a,b)=>a.id.localeCompare(b.id))){
+
+    const p=c.position;
+    const key=`${Math.round(p.x*4)},${Math.round(p.y*4)}`;
+
     if(!groups.has(key))groups.set(key,[]);
     groups.get(key).push(c);
   }
+
   for(const group of groups.values()){
-    const columns=Math.ceil(Math.sqrt(group.length)),rows=Math.ceil(group.length/columns);
+    if(group.length===1){
+      offsets.set(group[0].id,{x:0,y:0});
+      continue;
+    }
+
+    const columns=Math.ceil(Math.sqrt(group.length));
+    const rows=Math.ceil(group.length/columns);
+
     for(let i=0;i<group.length;i++){
-      const row=Math.floor(i/columns),rowSize=Math.min(columns,group.length-row*columns);
-      offsets.set(group[i].id,{x:(i%columns-(rowSize-1)/2)*24,y:(row-(rows-1)/2)*22});
+      const row=Math.floor(i/columns);
+      const col=i%columns;
+      const rowSize=Math.min(columns,group.length-row*columns);
+
+      const gx=col-(rowSize-1)/2;
+      const gy=row-(rows-1)/2;
+
+      offsets.set(group[i].id,{
+        x:gx*axisX.x+gy*axisY.x,
+        y:gx*axisX.y+gy*axisY.y
+      });
     }
   }
+
   return offsets;
 }
