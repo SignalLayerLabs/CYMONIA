@@ -10,12 +10,12 @@ const ACTION_ICON={MOVE:'→',OBSERVE:'◉',REST:'·',SLEEP:'z',EAT:'•',DRINK:
 function colorNumber(css){const m=String(css).match(/rgb\((\d+),(\d+),(\d+)\)/);return m?(Number(m[1])<<16)|(Number(m[2])<<8)|Number(m[3]):0x587040;}
 function hashUnit(value){let h=2166136261>>>0;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0;}return(h>>>0)/4294967295;}
 const point=isoPoint;
-const CITIZEN_STAND_SIZE=15;
-const CITIZEN_SLEEP_SIZE=22;
-const CITIZEN_STAND_ANCHOR_Y=.90;
-const CITIZEN_SLEEP_ANCHOR_Y=.78;
-const CITIZEN_STAND_LIFT=-2;
-const CITIZEN_SLEEP_LIFT=-6;
+const CITIZEN_STAND_SIZE=10.5;
+const CITIZEN_SLEEP_SIZE=15;
+const CITIZEN_STAND_ANCHOR_Y=1;
+const CITIZEN_SLEEP_ANCHOR_Y=.92;
+const CITIZEN_STAND_LIFT=0;
+const CITIZEN_SLEEP_LIFT=-1;
 
 export class PixiObserverLayer{
   constructor(canvasFallback,art){
@@ -79,12 +79,12 @@ export class PixiObserverLayer{
         if(sleepBody)sleepBody.visible=false;
         shadow.ellipse(1,1,6,2.8).fill({color:0x1d281c,alpha:.22});
         const task=new PIXI.Text({text:'',style:{fontFamily:'Georgia',fontSize:10,fill:0xf8e8b5,stroke:{color:0x283021,width:2}}});
-        task.anchor.set(.5);task.position.set(0,-41);container.addChild(shadow,body,task);
+        task.anchor.set(.5);task.position.set(0,-25);container.addChild(shadow,body,task);
         if(sleepBody)container.addChildAt(sleepBody,2);
         entry={container,body,sleepBody,task,shadow,baseScale:Math.abs(body.scale.x),sleepBaseScale:sleepBody?Math.abs(sleepBody.scale.x):0,spine:false};
       }
       const ownedRing=new PIXI.Graphics();ownedRing.ellipse(0,1,11,5).stroke({width:1.5,color:0x8fd7ff,alpha:.95});ownedRing.visible=false;
-      const ownerMark=new PIXI.Text({text:'YOU',style:{fontFamily:'system-ui',fontSize:8,fontWeight:'700',fill:0xbfe8ff,stroke:{color:0x17251f,width:2}}});ownerMark.anchor.set(.5);ownerMark.position.set(0,-49);ownerMark.visible=false;
+      const ownerMark=new PIXI.Text({text:'YOU',style:{fontFamily:'system-ui',fontSize:8,fontWeight:'700',fill:0xbfe8ff,stroke:{color:0x17251f,width:2}}});ownerMark.anchor.set(.5);ownerMark.position.set(0,-31);ownerMark.visible=false;
       entry.container.addChildAt(ownedRing,0);entry.container.addChild(ownerMark);entry.ownedRing=ownedRing;entry.ownerMark=ownerMark;
       this.citizenLayer.addChild(entry.container);this.citizenSprites.set(c.id,entry);
     }
