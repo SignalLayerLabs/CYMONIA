@@ -49,3 +49,13 @@ test('successful outcomes reinforce behavior and accepted AI resets debt',()=>{
   assert.equal(state.lastAICognitionMinute,120);
   assert.equal(state.aiCognitionCount,1);
 });
+
+
+test('successful local outcomes activate a bounded family cooldown',()=>{
+  const citizen=createSovereignGenesis({seed:29,realEpochMs:0}).citizens[0];
+  recordAffordanceOutcome(citizen,'gather',{ok:true},100);
+  const state=ensureCognitionState(citizen,100);
+  assert.ok(state.cooldowns['family:gather']);
+  assert.ok(state.cooldowns['family:gather'].untilWorldMinute>100);
+  assert.ok(state.cooldowns['family:gather'].untilWorldMinute<=220);
+});

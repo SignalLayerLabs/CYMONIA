@@ -451,14 +451,18 @@ export class SovereignWorld {
         await this.persist();
       }
 
+      const cognitionChanged=!progress.recovered&&await this.processCognition(1);
+
+      if(cognitionChanged){
+        await this.persist();
+      }
+
+      // Publish the final state of this heartbeat, including a strategy
+      // accepted by cognition during the same tick.
       this.broadcast({
         type:'world_delta',
         state:publicWorld(this.readableWorld(),Date.now())
       });
-
-      if(!progress.recovered&&await this.processCognition(1)){
-        await this.persist();
-      }
     });
   }
   async alarm(alarmInfo){
@@ -602,6 +606,10 @@ export class SovereignWorld {
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
       const runtime=ensureRuntime(this.world),budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
+      const living=world.citizens.filter(citizen=>citizen.alive);
+      const activeActions=world.actions.filter(action=>action.status==='active');
+      const movingCitizens=living.filter(citizen=>activeActions.some(action=>action.actorId===citizen.id&&action.type==='MOVE'));
+      const outsideCenter20=living.filter(citizen=>Math.hypot(citizen.position.x-50,citizen.position.y-50)>20);
       return json({
         ok:true,
         service:'cymonia-sovereign-world',
@@ -637,7 +645,16 @@ export class SovereignWorld {
           nextAlarmRealMs:runtime.nextAlarmRealMs??null,
           ...tickDiagnostics(runtime),
         },
-        operational_state:{actions:world.actions.length,plans:world.citizens.reduce((n,c)=>n+c.plans.length,0),experiments:world.experiments.length},
+        operational_state:{
+          actions:world.actions.length,
+          active_actions:activeActions.length,
+          moving_citizens:movingCitizens.length,
+          living_citizens:living.length,
+          outside_center_20:outsideCenter20.length,
+          construction_projects:world.projects.filter(project=>project.status==='construction').length,
+          plans:world.citizens.reduce((n,c)=>n+c.plans.length,0),
+          experiments:world.experiments.length
+        },
         world_id:world.worldId,
         world_minute:world.clock.worldMinute,
         lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute),

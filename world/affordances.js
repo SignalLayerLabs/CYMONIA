@@ -67,17 +67,19 @@ function exploreCandidate(world,citizen,at){
   const target=explorationTarget(world,citizen,at),distance=dist(citizen.position,target);
   const localCrowd=Math.max(0,localCrowding(world,citizen.position,12)-1);
 
-  // Crowding should encourage outward movement, but only after the local area
-  // is genuinely dense. Exploration must not override an immediately useful
-  // known resource.
-  const crowdPressure=Math.min(.30,Math.max(0,localCrowd-10)*.018);
-
   const immediateKnownResource=(world.resourceDeposits||[]).some(deposit=>
     deposit.quantity>0 &&
     citizen.knownEntityIds.includes(deposit.id) &&
     knows(citizen,resourceConceptId(deposit)) &&
     dist(citizen.position,deposit.position)<=3
   );
+
+  // Population density is a real local pressure. Useful resources underfoot
+  // still win, but after a local routine completes the crowded center should
+  // no longer dominate every decision indefinitely.
+  const crowdPressure=immediateKnownResource
+    ? Math.min(.18,Math.max(0,localCrowd-10)*.012)
+    : Math.min(.55,Math.max(0,localCrowd-12)*.024);
 
   const opportunityPenalty=immediateKnownResource?.22:0;
   const visits=Number(citizen.explorationMap?.[explorationCellKey(target)]?.visits||0);
@@ -228,8 +230,9 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   for(const project of activeProjects){
     const distance=dist(citizen.position,project.site),conceptsForProject=(world.designs.find(design=>design.id===project.designId)?.concepts||[]).filter(concept=>knows(citizen,concept));
     if(!conceptsForProject.length)continue;
-    const action={type:'BUILD',durationMinutes:Math.min(120,Math.max(15,project.workRequiredMinutes-project.workDoneMinutes)),targetId:project.id,purpose:'construct',concepts:conceptsForProject,payload:{projectId:project.id,workMinutes:120}};
     const remaining=Math.max(0,project.workRequiredMinutes-project.workDoneMinutes);
+    const workChunk=Math.min(45,Math.max(15,remaining));
+    const action={type:'BUILD',durationMinutes:workChunk,targetId:project.id,purpose:'construct',concepts:conceptsForProject,payload:{projectId:project.id,workMinutes:workChunk}};
     const progress=project.workRequiredMinutes>0
       ? clamp01(project.workDoneMinutes/project.workRequiredMinutes)
       : 0;
@@ -291,7 +294,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
           }]:[]),
           {
             type:'BUILD',
-            durationMinutes:120,
+            durationMinutes:15,
             purpose:'construct',
             concepts:conceptsForBuild,
             payload:{
@@ -323,7 +326,9 @@ export function scoreAffordance(world,citizen,candidate,at=world.clock.worldMinu
   const intentFamilies={explore:['explore'],understand:['experiment','transform'],share:['communicate','teach','transfer'],cooperate:['cooperate','transfer','communicate','build'],care:['care'],construct:['build','gather','transform'],adapt:['explore','experiment','transform']};
   const intentAligned=Boolean(persistent&&intentFamilies[persistent.intent]?.includes(candidate.family));
   const strategy=actionAligned||partnerAligned||conceptAligned||intentAligned?1:0;
-  const cooldown=Number(state.cooldowns?.[candidate.key]?.untilWorldMinute||0)>at?1:0;
+  const candidateCooldown=Number(state.cooldowns?.[candidate.key]?.untilWorldMinute||0)>at;
+  const familyCooldown=Number(state.cooldowns?.[`family:${candidate.family}`]?.untilWorldMinute||0)>at;
+  const cooldown=candidateCooldown||familyCooldown?1:0;
   const relationValue=Math.max(clamp01(candidate.relationship),clamp01((Number(rel.trust)||0)+(Number(rel.familiarity)||0))/2);
   return Number(candidate.utility||0)
     +AFFORDANCE_WEIGHTS.strategy*strategy

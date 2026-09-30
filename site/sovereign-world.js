@@ -31,7 +31,25 @@ function renderTop(){
   renderMyAvatarStatus();
 }
 function significantHistory(w){const rows=[...(w.history||[])];const rank={conflict:9,life:8,construction:8,society:8,culture:8,language:7,knowledge:7,genesis:6};return rows.sort((a,b)=>(b.worldMinute-a.worldMinute)||(rank[b.category]||0)-(rank[a.category]||0)).slice(0,14);}
-function renderActivity(){const w=state.world;if(!w)return;const history=significantHistory(w);if(history.length){$('activityList').innerHTML=history.map(e=>`<button class="activity-row" data-event="${esc(e.eventId)}"><span>${e.category==='life'?'✦':e.category==='construction'?'⌂':e.category==='conflict'?'⚠':e.category==='language'?'◇':'•'}</span><div><b>${esc(e.label)}</b><small>${esc(e.date?.label||dateLabel(e.worldMinute))} · ${esc(e.category)}</small></div></button>`).join('');return;}const now=worldMinute(w),rows=w.citizens.filter(c=>c.alive&&c.currentAction).sort((a,b)=>{const am=a.currentAction.type==='MOVE'?1:0,bm=b.currentAction.type==='MOVE'?1:0;return am-bm||a.currentAction.endsWorldMinute-b.currentAction.endsWorldMinute;}).slice(0,14);$('activityList').innerHTML=rows.map(c=>{const a=c.currentAction,span=Math.max(1,a.endsWorldMinute-a.startedWorldMinute),progress=clamp((now-a.startedWorldMinute)/span*100,0,100);return `<button class="activity-row" data-citizen="${esc(c.id)}"><span>${ICON[a.type]||'·'}</span><div><b>${esc(citizenName(c))}</b><small>${esc(a.type.toLowerCase())} · ${esc(a.purpose||'self-directed')}</small><i class="action-progress"><i class="action-progress-fill" style="width:${progress.toFixed(1)}%"></i></i></div></button>`;}).join('')||'<div class="activity-row"><span>…</span><div><b>Quiet interval</b><small>No significant canonical event right now.</small></div></div>';}
+function renderActivity(){
+  const w=state.world;if(!w)return;
+  const now=worldMinute(w);
+  const actionRank={BUILD:0,MOVE:1,EXPERIMENT:2,GATHER:3,ASSEMBLE:4,COMMUNICATE:5,TEACH:6,CARE:7,REST:8,SLEEP:9};
+  const rows=w.citizens
+    .filter(c=>c.alive&&c.currentAction)
+    .sort((a,b)=>(actionRank[a.currentAction.type]??20)-(actionRank[b.currentAction.type]??20)||a.currentAction.endsWorldMinute-b.currentAction.endsWorldMinute)
+    .slice(0,9);
+
+  const live=rows.map(c=>{
+    const a=c.currentAction,span=Math.max(1,a.endsWorldMinute-a.startedWorldMinute),progress=clamp((now-a.startedWorldMinute)/span*100,0,100);
+    return `<button class="activity-row" data-citizen="${esc(c.id)}"><span>${ICON[a.type]||'·'}</span><div><b>${esc(citizenName(c))}</b><small>${esc(a.type.toLowerCase())} · ${esc(a.purpose||'self-directed')}</small><i class="action-progress"><i class="action-progress-fill" style="width:${progress.toFixed(1)}%"></i></i></div></button>`;
+  }).join('');
+
+  const history=significantHistory(w).slice(0,5);
+  const past=history.map(e=>`<button class="activity-row" data-event="${esc(e.eventId)}"><span>${e.category==='life'?'✦':e.category==='construction'?'⌂':e.category==='conflict'?'⚠':e.category==='language'?'◇':'•'}</span><div><b>${esc(e.label)}</b><small>${esc(e.date?.label||dateLabel(e.worldMinute))} · ${esc(e.category)}</small></div></button>`).join('');
+
+  $('activityList').innerHTML=(live+past)||'<div class="activity-row"><span>…</span><div><b>Quiet interval</b><small>No significant canonical event right now.</small></div></div>';
+}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function objectLabel(id){const o=state.world?.objects?.find(x=>x.id===id);return o?`${o.kind} × ${Number(o.quantity||1).toFixed(Number(o.quantity)%1?1:0)}`:id;}
 function relationRows(c){return Object.entries(c.relationships||{}).sort(([,a],[,b])=>Math.max(Math.abs(b.trust||0),Math.abs(b.affection||0),Math.abs(b.fear||0))-Math.max(Math.abs(a.trust||0),Math.abs(a.affection||0),Math.abs(a.fear||0))).slice(0,10);}

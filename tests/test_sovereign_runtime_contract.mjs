@@ -139,3 +139,24 @@ test('monotonic clock guard prevents loading older snapshots and exposes recover
   assert.match(worker,/sovereign_world_clock_regression/);assert.match(worker,/clock_high_water_mark/);assert.match(worker,/loaded_snapshot_minute/);
   assert.match(worker,/clock_regression_detected/);assert.match(worker,/snapshot_recovery_source/);
 });
+
+
+test('heartbeat broadcasts after cognition processing',()=>{
+  const start=worker.indexOf('async tick(){');
+  const end=worker.indexOf('async alarm(',start);
+  const tick=worker.slice(start,end);
+  const cognition=tick.indexOf('processCognition(1)');
+  const broadcast=tick.indexOf("type:'world_delta'");
+  assert.ok(cognition>=0);
+  assert.ok(broadcast>cognition);
+});
+
+test('health exposes physical emergence diagnostics',()=>{
+  const start=worker.indexOf("if(request.method==='GET'&&path==='/health')");
+  const end=worker.indexOf("if(request.method==='GET'&&path==='/state')",start);
+  const health=worker.slice(start,end);
+  assert.match(health,/moving_citizens/);
+  assert.match(health,/outside_center_20/);
+  assert.match(health,/construction_projects/);
+  assert.match(health,/active_actions/);
+});

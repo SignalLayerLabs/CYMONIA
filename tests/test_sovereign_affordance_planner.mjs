@@ -217,7 +217,23 @@ test('new construction can use explored low-density territory and travels before
   const candidate=enumerateAffordances(world,citizen,500).find(x=>x.key?.startsWith('build:new:'));
   assert.ok(candidate);
   assert.equal(candidate.proposal.actions.at(-1).type,'BUILD');
+  assert.equal(candidate.proposal.actions.at(-1).durationMinutes,15);
   assert.ok(candidate.proposal.actions.some(action=>action.type==='MOVE'));
   const site=candidate.proposal.actions.at(-1).payload.site;
   assert.ok(Math.hypot(site.x-50,site.y-50)>15);
+});
+
+
+test('family cooldown suppresses immediate routine repetition',()=>{
+  const world=createSovereignGenesis({seed:61,realEpochMs:0});
+  const citizen=world.citizens[0],deposit=world.resourceDeposits.find(d=>d.type==='timber');
+  reveal(world,citizen,deposit);
+  citizen.body.hydration=90;citizen.body.calories=90;citizen.body.sleepPressure=10;
+  const gather=enumerateAffordances(world,citizen,100).find(x=>x.family==='gather'&&x.targetId===deposit.id);
+  const before=scoreAffordance(world,citizen,gather,100);
+  recordAffordanceOutcome(citizen,'gather',{ok:true},100);
+  const during=scoreAffordance(world,citizen,gather,101);
+  const later=scoreAffordance(world,citizen,gather,500);
+  assert.ok(during<before);
+  assert.ok(later>during);
 });

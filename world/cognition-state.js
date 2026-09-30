@@ -1,4 +1,15 @@
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
+const AFFORDANCE_COOLDOWN_MINUTES=Object.freeze({
+  gather:60,
+  experiment:120,
+  transform:120,
+  communicate:45,
+  teach:90,
+  transfer:60,
+  care:30,
+  rest:20,
+  explore:30,
+});
 
 function trimOldest(record,limit,lastMinuteKey='lastWorldMinute'){
   const entries=Object.entries(record);
@@ -28,7 +39,7 @@ export function recordAffordanceOutcome(citizen,family,result={},at=0){
   const key=String(family||'unknown').slice(0,48);
   const prior=state.outcomes[key]||{attempts:0,successes:0,failures:0,utility:0,lastWorldMinute:null,lastReason:null,lastOk:null};
   const ok=Boolean(result.ok);
-  const impulse=ok?.35:-.45;
+  const impulse=ok?.12:-.45;
   state.outcomes[key]={
     attempts:Math.max(0,Number(prior.attempts)||0)+1,
     successes:Math.max(0,Number(prior.successes)||0)+(ok?1:0),
@@ -39,6 +50,16 @@ export function recordAffordanceOutcome(citizen,family,result={},at=0){
     lastOk:ok,
   };
   state.lastOutcomeMinute=Number(at)||0;
+
+  const cooldownMinutes=Number(AFFORDANCE_COOLDOWN_MINUTES[key]||0);
+  if(cooldownMinutes>0){
+    const setWorldMinute=Number(at)||0;
+    state.cooldowns[`family:${key}`]={
+      untilWorldMinute:setWorldMinute+cooldownMinutes,
+      setWorldMinute
+    };
+  }
+
   trimOldest(state.outcomes,24);
   trimOldest(state.cooldowns,48,'setWorldMinute');
   return state;
