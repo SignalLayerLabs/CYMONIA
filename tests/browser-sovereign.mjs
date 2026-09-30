@@ -222,15 +222,14 @@ try {
     `expected fractional canonical movement: ${before} -> ${after}`
   );
 
-  // The server sends a committed snapshot only once per heartbeat. The HUD
-  // must keep advancing between snapshots, like the movement renderer does.
+  // Movement interpolates, but the calendar must only show committed time.
   const dateBefore = await page.locator('#worldDate').innerText();
   await page.waitForTimeout(1250);
   const dateAfter = await page.locator('#worldDate').innerText();
-  assert.notEqual(
+  assert.equal(
     dateAfter,
     dateBefore,
-    'the visible clock must advance without a new canonical snapshot'
+    'the calendar must not invent minutes before the next committed snapshot'
   );
 
   await page.locator('#historyOpen').click();
@@ -249,6 +248,21 @@ try {
     await page.locator('#societyHistory').isVisible(),
     false
   );
+
+  // A long outage can rebase the epoch while the canonical year has not yet
+  // ended. Reloading either snapshot must show the same year and day.
+  liveWorld.clock={worldMinute:525599,realEpochMs:Date.now()-525660000};
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
+  liveWorld.clock.realEpochMs=Date.now()-525599000;
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
+  liveWorld.clock={worldMinute:525600,realEpochMs:Date.now()-525600000};
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  assert.equal(await page.locator('#worldDate').innerText(),'YEAR 2 · DAY 1 · 00:00');
 
   await page.setViewportSize({
     width: 390,
@@ -269,7 +283,7 @@ try {
   );
 
   console.log(
-    'PASS: canonical state rendering, fractional movement, continuously advancing HUD clock, game-only shell, history, mobile containment and zero page errors.'
+    'PASS: canonical state rendering, fractional movement, durable year rollover, game-only shell, history, mobile containment and zero page errors.'
   );
 } finally {
   await browser.close();

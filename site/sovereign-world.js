@@ -25,7 +25,8 @@ function renderTop(){
   $('organizationValue').textContent=(w.organizations||[]).length;
   $('environmentValue').textContent=`${Math.round(climate.temperature)}° ${climate.season}`;
   $('weatherValue').textContent=climate.rain>.08?`RAIN ${Math.round(climate.rain*100)}%`:climate.night?'NIGHT':'CLEAR';
-  $('worldDate').textContent=dateLabel(worldMinute(w));
+  // Motion may interpolate ahead; dates must never announce an uncommitted year.
+  $('worldDate').textContent=dateLabel(w.clock.worldMinute);
   $('miniMode').textContent=state.mode===CONNECTION.LIVE?'LIVE':'OBSERVER';
   renderMyAvatarStatus();
 }
