@@ -178,16 +178,14 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
       const projects=(world.projects||[]).filter(pr=>pr.status==='construction'&&pr.site&&dist(pr.site,site)<=14).length;
       const visited=Number(map[explorationCellKey(site)]?.visits||0)>0?1:0;
       const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&dist(deposit.position,site)<=12)?1:0;
-      const fromCenter=Math.min(1,dist(site,{x:50,y:50})/55);
       const travel=Math.min(1,dist(citizen.position,site)/70);
       const score=
         visited*.45+
         knownResource*.38+
-        fromCenter*.42+
         ((h%997)/997)*.12-
         Math.min(1,crowd/12)*1.05-
         Math.min(1,(buildings+projects)/5)*1.1-
-        travel*.14;
+        travel*.38;
       candidates.push({site,score});
     }
   }
@@ -273,19 +271,21 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
 
   const testedHeld=held.filter(object=>knowledgeForEntity(citizen,object.id).length);
   if(testedHeld.length>=2&&!activeProjects.some(project=>project.initiatorId===citizen.id)){
-    const conceptsForBuild=[...new Set(testedHeld.flatMap(object=>knowledgeForEntity(citizen,object.id).map(entry=>entry.concept)))].slice(0,12);
-    const site=proposeBuildSite(world,citizen,at);
-    if(site){
-      const demand=constructionDemand(world,citizen,site,at);
-      if(demand.shouldBuild)candidates.push({
+    // Demand is evaluated where the Citizen currently lives/experiences the
+    // problem, BEFORE looking for empty land. Empty land is not itself demand.
+    const demand=constructionDemand(world,citizen,citizen.position,at);
+    if(demand.shouldBuild){
+      const conceptsForBuild=[...new Set(testedHeld.flatMap(object=>knowledgeForEntity(citizen,object.id).map(entry=>entry.concept)))].slice(0,12);
+      const site=proposeBuildSite(world,citizen,at);
+      if(site)candidates.push({
         family:'build',
         key:`build:new:${Math.floor(site.x)}:${Math.floor(site.y)}`,
-        utility:.08+demand.score*.58,
+        utility:.06+demand.score*.52,
         inventoryFit:1,
-        knowledgeGap:.08+demand.score*.18,
-        novelty:.18+demand.score*.32,
+        knowledgeGap:.06,
+        novelty:.10,
         effort:.34,
-        risk:.16,
+        risk:.18,
         proposal:proposal('build',conceptsForBuild,[
           ...(dist(citizen.position,site)>1.2?[{
             type:'MOVE',
@@ -304,7 +304,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
               site,
               workMinutes:240,
               form:'structure',
-              reasonSummary:`observed_${demand.reason}_need`,
+              reasonSummary:'observed_unsheltered_need',
               reasonConceptIds:conceptsForBuild,
               demandEvidence:demand.evidence
             }

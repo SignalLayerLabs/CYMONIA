@@ -96,11 +96,10 @@ export function recordHarvest(world,deposit,quantity,at=world.clock?.worldMinute
 export function resourceRenewalFactor(world,deposit,at=world.clock?.worldMinute??0){
   const state=ensureLivingWorld(world),entry=state.resourcePressure[String(deposit?.id)]||null;
   const pressure=entry?decay(entry.pressure,entry.lastWorldMinute,at,HARVEST_HALF_LIFE):0;
+  const development=deposit?.position?developmentPressureAt(world,deposit.position,18):0;
 
-  // Preserve the sovereign baseline exactly until this deposit has actually
-  // been exploited. This keeps Genesis/resource invariants stable while
-  // allowing ecology to react causally after local extraction occurs.
-  if(pressure<=0)return 1;
+  // Genesis and untouched undeveloped land retain the exact sovereign baseline.
+  if(pressure<=0&&development<=0)return 1;
 
   const season=Number(world.environment?.seasonPhase||0),moisture=clamp(world.environment?.soilMoisture,.1,1);
   let seasonal=1;
@@ -108,7 +107,8 @@ export function resourceRenewalFactor(world,deposit,at=world.clock?.worldMinute?
   else if(deposit?.type==='timber')seasonal=.72+.28*moisture;
   else if(deposit?.type==='water')seasonal=.8+.35*clamp(world.environment?.precipitation,0,1);
   const pressurePenalty=1/(1+pressure/18);
-  return clamp(seasonal*pressurePenalty,.08,1.35);
+  const developmentPenalty=1-.62*development;
+  return clamp(seasonal*pressurePenalty*developmentPenalty,.05,1.35);
 }
 export function riverHydrology(world,y=50){
   const rain=clamp(world?.environment?.precipitation,0,1),soil=clamp(world?.environment?.soilMoisture,.1,1);
@@ -235,111 +235,152 @@ function latestConstructionBy(world,citizen){
  * unused supply, ongoing construction and very recent building work push the
  * score down; isolation, crowding, exposure and storage pressure push it up.
  */
-export function constructionDemand(world,citizen,site=citizen?.position,at=world.clock?.worldMinute??0){
-  if(!citizen?.alive||!site)return {score:0,shouldBuild:false,reason:'no_actor',evidence:{}};
+export function developmentPressureAt(world,position,radius=18){
+  if(!position)return 0;
+  const r=Math.max(6,Number(radius)||18),area=Math.PI*r*r;
+  let disturbed=0;
+  for(const building of world.buildings||[]){
+    if(!building?.position||Number(building.condition??1)<=0)continue;
+    const distance=Math.hypot(position.x-building.position.x,position.y-building.position.y);
+    if(distance>r)continue;
+    const footprint=Math.max(1.5,Number(building.footprintRadius)||2.25);
+    disturbed+=Math.PI*footprint*footprint*clamp(1-distance/r,0,1)*clamp(building.condition??1,0,1);
+  }
+  for(const project of world.projects||[]){
+    if(project.status!=='construction'||!project.site)continue;
+    const distance=Math.hypot(position.x-project.site.x,position.y-project.site.y);
+    if(distance>r)continue;
+    const footprint=Math.max(1.5,Number(project.footprintRadius)||2.15);
+    disturbed+=Math.PI*footprint*footprint*clamp(1-distance/r,0,1)*.65;
+  }
+  return clamp(disturbed/Math.max(1,area*.12),0,1);
+}
+
+function citizenHasShelterNeed(world,person){
+  if(!person?.alive)return false;
+  const exposure=person.body?.exposure||{},ambient=Number(world.environment?.temperatureC??18);
+  const unsheltered=!exposure.shelterId;
+  if(!unsheltered)return false;
+  const rain=clamp(exposure.rainExposure,0,1);
+  const cold=clamp((8-ambient)/18,0,1),heat=clamp((ambient-34)/12,0,1);
+  const sleep=clamp((Number(person.body?.sleepPressure||0)-62)/38,0,1);
+  return rain>=.28||cold>=.25||heat>=.25||sleep>=.42;
+}
+
+export function constructionNeedStillOpen(world,evidence,at=world.clock?.worldMinute??0){
+  if(!evidence||Number(evidence.generation)!==2)return false;
+  const ids=Array.isArray(evidence.needCitizenIds)?evidence.needCitizenIds:[];
+  if(!ids.length)return false;
+  const activeNeed=ids.some(id=>citizenHasShelterNeed(world,(world.citizens||[]).find(c=>c.id===id)));
+  if(!activeNeed)return false;
+
+  const origin=evidence.origin;
+  if(!origin||!Number.isFinite(Number(origin.x))||!Number.isFinite(Number(origin.y)))return false;
 
   const structures=[
-    ...(world.buildings||[]).filter(b=>b.position&&Number(b.condition??1)>0),
+    ...(world.buildings||[]).filter(b=>b.position&&Number(b.condition??1)>.15),
+    ...(world.objects||[]).filter(o=>o.kind==='temporary_shelter'&&o.quantity>0&&o.position)
+  ];
+  const nearby=structures.filter(structure=>Math.hypot(origin.x-structure.position.x,origin.y-structure.position.y)<=14);
+  let freeCapacity=0;
+  for(const structure of nearby){
+    const capacity=structureCapacity(structure),use=ensureLivingWorld(world).structureUse[structure.id];
+    const recentUsers=Object.values(use?.byCitizen||{}).filter(value=>Number(at)-Number(value.lastWorldMinute||0)<=720).length;
+    freeCapacity+=Math.max(0,capacity-recentUsers);
+  }
+  return freeCapacity<=0;
+}
+
+/**
+ * New construction requires evidence of an unmet physical shelter need.
+ *
+ * Crucially:
+ * - not knowing a structure is not a need;
+ * - being far from a structure is not a need;
+ * - possessing building materials is not a need;
+ * - curiosity / novelty / a "construct" strategy cannot create the gate.
+ */
+export function constructionDemand(world,citizen,origin=citizen?.position,at=world.clock?.worldMinute??0){
+  if(!citizen?.alive||!origin)return {score:0,shouldBuild:false,reason:'no_actor',evidence:{generation:2}};
+
+  const structures=[
+    ...(world.buildings||[]).filter(b=>b.position&&Number(b.condition??1)>.15),
     ...(world.objects||[]).filter(o=>o.kind==='temporary_shelter'&&o.quantity>0&&o.position)
   ];
   const known=structures.filter(structure=>citizenKnowsStructure(citizen,structure));
-  const local=known.filter(structure=>Math.hypot(site.x-structure.position.x,site.y-structure.position.y)<=18);
+  const local=known.filter(structure=>Math.hypot(origin.x-structure.position.x,origin.y-structure.position.y)<=14);
   const projects=(world.projects||[]).filter(project=>
     project.status==='construction' &&
     project.site &&
     knownProject(citizen,project) &&
-    Math.hypot(site.x-project.site.x,site.y-project.site.y)<=18
+    Math.hypot(origin.x-project.site.x,origin.y-project.site.y)<=16
   );
 
-  const rememberedPeople=rememberedCrowding(citizen,site,at,18);
-  const citizenAtSite=Math.hypot(citizen.position.x-site.x,citizen.position.y-site.y)<=18?1:0;
-  const localPopulation=Math.max(citizenAtSite,rememberedPeople+citizenAtSite);
+  const knownPeople=(world.citizens||[]).filter(person=>
+    person.alive &&
+    (person.id===citizen.id||(citizen.knownEntityIds||[]).includes(person.id)) &&
+    Math.hypot(origin.x-person.position.x,origin.y-person.position.y)<=12
+  );
+  if(!knownPeople.some(person=>person.id===citizen.id))knownPeople.push(citizen);
 
-  let capacity=0,recentCapacity=0,vacantCapacity=0;
+  const needCitizenIds=knownPeople.filter(person=>citizenHasShelterNeed(world,person)).map(person=>person.id);
+
+  let capacity=0,recentUsers=0,vacantCapacity=0,recentCapacity=0;
   for(const structure of local){
     const c=structureCapacity(structure),use=ensureLivingWorld(world).structureUse[structure.id];
-    const last=Number(use?.lastUseWorldMinute);
-    const recent=Number.isFinite(last)&&Number(at)-last<=1440&&Number(use?.minutes||0)>0;
-    capacity+=c;
-    if(recent)recentCapacity+=c;
-    else vacantCapacity+=c;
+    const users=Object.values(use?.byCitizen||{}).filter(value=>Number(at)-Number(value.lastWorldMinute||0)<=720).length;
+    capacity+=c;recentUsers+=Math.min(c,users);
+    const free=Math.max(0,c-users);vacantCapacity+=free;
+    if(Number(use?.minutes||0)>0&&Number(at)-Number(use?.lastUseWorldMinute||0)<=1440)recentCapacity+=c;
   }
 
-  const nearestKnown=known.length
-    ? Math.min(...known.map(structure=>Math.hypot(citizen.position.x-structure.position.x,citizen.position.y-structure.position.y)))
-    : Infinity;
-
-  const capacityGap=localPopulation>0
-    ? clamp((localPopulation-capacity*.8)/Math.max(1,localPopulation),0,1)
-    : 0;
-  const isolationNeed=Number.isFinite(nearestKnown)
-    ? clamp((nearestKnown-8)/22,0,1)
-    : 1;
-  const utilization=capacity>0?clamp(recentCapacity/capacity,0,1):0;
+  const utilization=capacity>0?clamp(recentUsers/capacity,0,1):0;
   const vacancyRatio=capacity>0?clamp(vacantCapacity/capacity,0,1):0;
-  const activeProjectPressure=clamp(projects.length/2,0,1);
-
-  const exposure=citizen.body?.exposure||{};
-  const rainExposure=clamp(exposure.rainExposure,0,1);
-  const ambient=Number(world.environment?.temperatureC??18);
-  const cold=clamp((8-ambient)/18,0,1),heat=clamp((ambient-34)/12,0,1);
-  const exposureNeed=Math.max(rainExposure,cold,heat);
-
-  const heldMass=(world.objects||[])
-    .filter(object=>object.holderId===citizen.id&&object.quantity>0&&!object.reservedProjectId)
-    .reduce((sum,object)=>sum+Math.max(0,Number(object.quantity)||0)*Math.max(0,Number(object.massPerUnitKg)||1),0);
-  const storagePressure=clamp((heldMass-4)/24,0,1);
-
+  const activeProjectPressure=projects.length?1:0;
   const lastConstruction=latestConstructionBy(world,citizen);
   const sinceConstruction=lastConstruction===null?Infinity:Math.max(0,Number(at)-lastConstruction);
-  const recentConstructionPressure=Number.isFinite(sinceConstruction)
-    ? Math.exp(-sinceConstruction/2880)
+  const recentConstructionPressure=Number.isFinite(sinceConstruction)?Math.exp(-sinceConstruction/4320):0;
+  const developmentPressure=developmentPressureAt(world,origin,18);
+
+  const exposureNeed=needCitizenIds.length
+    ? clamp(needCitizenIds.length/Math.max(1,knownPeople.length),0,1)
     : 0;
 
-  const frontierGap=known.length===0?1:0;
   const score=clamp(
-    .30*isolationNeed+
-    .30*capacityGap+
-    .22*exposureNeed+
-    .16*storagePressure+
-    .12*utilization+
-    .10*frontierGap-
-    .45*vacancyRatio-
-    .32*activeProjectPressure-
-    .42*recentConstructionPressure,
+    .58*exposureNeed+
+    .18*utilization-
+    .72*vacancyRatio-
+    .55*activeProjectPressure-
+    .38*recentConstructionPressure-
+    .20*developmentPressure,
     0,1
   );
 
-  const signals={
-    isolation:isolationNeed,
-    crowding:capacityGap,
-    exposure:exposureNeed,
-    storage:storagePressure,
-    utilization,
-  };
-  const reason=Object.entries(signals).sort((a,b)=>b[1]-a[1])[0]?.[0]||'structure_need';
-  const shouldBuild=score>=.34;
+  const hardNeed=needCitizenIds.length>0;
+  const noUsableVacancy=vacantCapacity<=0;
+  const noCompetingProject=projects.length===0;
+  const coolingOff=recentConstructionPressure>.72&&exposureNeed<.75;
+  const shouldBuild=hardNeed&&noUsableVacancy&&noCompetingProject&&!coolingOff;
 
   return {
     score,
     shouldBuild,
-    reason,
+    reason:hardNeed?'observed_unsheltered_need':'no_observed_need',
     evidence:{
+      generation:2,
+      origin:{x:Number(origin.x),y:Number(origin.y)},
+      needCitizenIds,
+      knownPeople:knownPeople.length,
       knownStructures:known.length,
       localStructures:local.length,
-      localPopulation,
       capacity,
-      recentCapacity,
+      recentUsers,
       vacantCapacity,
       vacancyRatio:Number(vacancyRatio.toFixed(3)),
-      activeProjects:projects.length,
-      nearestKnownStructure:Number.isFinite(nearestKnown)?Number(nearestKnown.toFixed(2)):null,
-      isolationNeed:Number(isolationNeed.toFixed(3)),
-      capacityGap:Number(capacityGap.toFixed(3)),
-      exposureNeed:Number(exposureNeed.toFixed(3)),
-      storagePressure:Number(storagePressure.toFixed(3)),
       utilization:Number(utilization.toFixed(3)),
+      activeProjects:projects.length,
       recentConstructionPressure:Number(recentConstructionPressure.toFixed(3)),
+      developmentPressure:Number(developmentPressure.toFixed(3)),
       score:Number(score.toFixed(3)),
     }
   };

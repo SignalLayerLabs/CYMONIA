@@ -130,8 +130,11 @@ The landscape now changes through ordinary life instead of waiting for scripted 
 - repeated movement leaves **trails** that slowly become easier to travel;
 - the **river** changes width, depth and flow with rain and soil moisture;
 - construction materials must be **carried to and staged at the site**;
-- **new construction is demand-driven**: unused known structures, active projects and very recent building work suppress more building, while isolation, crowding, exposure and storage pressure can justify it;
-- there is **no global building cap and no one-house-per-person rule** — Citizens act from their own bounded evidence;
+- **new construction requires a hard physical need**: an observed unsheltered Citizen under sleep/weather stress and no usable vacant structure nearby;
+- **ignorance, empty land, curiosity, stored materials and a `construct` strategy are not enough to build**;
+- pending pre-fix build plans are revalidated at the moment construction would begin, preventing construction stampedes;
+- dense development has an **ecological cost** by reducing nearby renewable-resource recovery;
+- there is still **no global building cap and no one-house-per-person rule** — the brake is causal, not numerical;
 - buildings appear through visible **site → foundation → frame → roof → enclosed → complete** phases;
 - structures remember **actual use and sleep/rest time**, without assuming ownership;
 - loose material can form observer-visible **stockpiles**;

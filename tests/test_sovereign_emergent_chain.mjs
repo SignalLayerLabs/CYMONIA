@@ -30,7 +30,7 @@ function runEmergence(){
   return world;
 }
 
-test('local cognition produces a deterministic discovery-to-building chain without AI',()=>{
+test('local cognition produces a deterministic discovery-to-social chain without forcing construction',()=>{
   const first=runEmergence(),second=runEmergence();
   const types=new Set(first.ledger.map(event=>event.type));
   assert.ok(types.has('RESOURCE_GATHERED'));
@@ -38,8 +38,10 @@ test('local cognition produces a deterministic discovery-to-building chain witho
   assert.ok(types.has('SIGNAL_COINED'));
   assert.ok(types.has('COMMUNICATION'));
   assert.ok(first.citizens.some(citizen=>citizen.knowledge.some(entry=>entry.provenance.some(source=>source.kind==='communication'))));
-  assert.ok(types.has('CONSTRUCTION_STARTED'));
-  assert.ok(types.has('BUILDING_COMPLETED'));
+  // Construction is intentionally NOT a required endpoint of generic emergence.
+  // If it happens, every newly-started project must carry the hard-need evidence.
+  const starts=first.ledger.filter(event=>event.type==='CONSTRUCTION_STARTED');
+  for(const event of starts)assert.equal(event.payload?.demandEvidence?.generation,2);
   assert.equal(first.ledger.filter(event=>event.type==='AI_COGNITION').length,0);
   assert.equal(first.ledgerHead,second.ledgerHead);
   assert.equal(first.citizens.some(citizen=>citizen.activeGoal?.actionTypes?.includes('BUILD')),false);

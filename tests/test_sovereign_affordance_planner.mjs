@@ -198,12 +198,23 @@ test('crowded center drives exploration toward less occupied territory',()=>{
   assert.ok(Math.hypot(target.x-50,target.y-50)>20);
 });
 
-test('new construction can use explored low-density territory and travels before building',()=>{
+test('physical shelter need can still produce a new construction plan that travels before building',()=>{
   const world=createSovereignGenesis({seed:20260915,realEpochMs:0}),citizen=world.citizens[0];
   citizen.position={x:50,y:50};
   citizen.explorationMap={};
   recordExplorationVisit(citizen,{x:85,y:85},100);
   for(let i=1;i<world.citizens.length;i++)world.citizens[i].position={x:50+(i%4)*.15,y:50+(i%6)*.15};
+
+  // New construction is no longer justified by empty/explored land alone.
+  // Give the builder an actual unsheltered physical need.
+  citizen.body.sleepPressure=90;
+  citizen.body.exposure={
+    terrain:'meadow',
+    rainExposure:.65,
+    thermalProtection:0,
+    precipitationProtection:0,
+    shelterId:null
+  };
 
   const timber=world.resourceDeposits.find(d=>d.type==='timber');
   reveal(world,citizen,timber);
@@ -218,9 +229,8 @@ test('new construction can use explored low-density territory and travels before
   assert.ok(candidate);
   assert.equal(candidate.proposal.actions.at(-1).type,'BUILD');
   assert.equal(candidate.proposal.actions.at(-1).durationMinutes,15);
+  assert.equal(candidate.proposal.actions.at(-1).payload.demandEvidence.generation,2);
   assert.ok(candidate.proposal.actions.some(action=>action.type==='MOVE'));
-  const site=candidate.proposal.actions.at(-1).payload.site;
-  assert.ok(Math.hypot(site.x-50,site.y-50)>15);
 });
 
 

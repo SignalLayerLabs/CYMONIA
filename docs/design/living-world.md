@@ -31,23 +31,28 @@ Projects move through:
 The phase is derived from real accumulated work. Materials remain conserved and construction can be inspected before the final building exists.
 
 
-### New buildings require observed demand
+### New buildings require observed physical need
 
-Finishing a structure is not evidence that another one should immediately be built.
+A completed structure is not evidence that another structure should exist.
 
-The Local Brain now evaluates a bounded construction-demand signal before a **new** project can become an affordance. The signal can rise because of:
+A **new** construction project can now enter the Local Brain only when the Citizen has direct bounded evidence of at least one unsheltered known person under meaningful sleep or weather stress, and there is no usable vacant local structure already solving that need.
 
-- isolation from known usable structures;
-- crowding relative to local capacity;
-- rain, cold or heat exposure;
-- sustained use of existing structures;
-- material/storage pressure.
+The following are explicitly **not** sufficient reasons to build:
 
-It falls when the Citizen knows about unused local structures, when nearby construction is already in progress, or when that Citizen has only recently helped complete another structure.
+- knowing no buildings;
+- being far from a building;
+- finding empty land;
+- possessing tested materials;
+- curiosity or novelty;
+- an AI strategy biased toward `construct`.
 
-This is not a housing quota. There is no canonical maximum building count, no one-house-per-person rule and no global omniscient saturation check. A distant structure the Citizen has never perceived is not used as evidence against a local need.
+Demand is evaluated before a build site is chosen. This prevents the previous feedback loop where the planner first chose low-density frontier land and then treated the resulting isolation as justification for construction.
 
-Demand evidence is retained with a project so the Observer can explain why the project existed.
+Demand is checked again when the `BUILD` action would physically create the project. Old queued plans without the new evidence format are therefore safely rejected, while already-started canonical projects may continue to completion.
+
+Dense development also creates a physical externality: nearby renewable-resource recovery is reduced by local building/project footprint pressure. Overbuilding therefore consumes material, occupies land and degrades the productivity of its surroundings.
+
+There is still no building quota, no one-house-per-person rule and no silent deletion of historical structures.
 
 ### Structures become places
 
