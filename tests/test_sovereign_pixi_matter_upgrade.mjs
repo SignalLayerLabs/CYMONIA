@@ -13,6 +13,18 @@ test('Observer loads pinned PixiJS and Matter.js before the sovereign module',()
   assert.ok(html.indexOf('matter-js@0.20.0')<html.indexOf('sovereign-world.js'));
 });
 
+test('Observer runtime dependencies are bundled locally with their licenses',()=>{
+  const html=fs.readFileSync(path.join(root,'site/index.html'),'utf8');
+  const dependencies=[...html.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(dependencies.length,2);
+  for(const relative of dependencies){
+    assert.ok(!/^https?:/.test(relative),'runtime must not depend on a CDN');
+    assert.ok(fs.statSync(path.join(root,'site',relative)).size>1000);
+    const license=path.join(root,'site',relative.split('/').slice(0,2).join('/'),'LICENSE');
+    assert.match(fs.readFileSync(license,'utf8'),/MIT/);
+  }
+});
+
 test('Pixi observer keeps explicit render layers and a Canvas fallback',()=>{
   const source=fs.readFileSync(path.join(root,'site/pixi-observer.js'),'utf8');
   for(const layer of ['terrainLayer','waterLayer','vegetationLayer','resourceLayer','structureLayer','citizenLayer','effectsLayer','atmosphereLayer'])assert.match(source,new RegExp(layer));

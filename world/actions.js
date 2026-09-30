@@ -5,11 +5,14 @@ import {restoreSleep} from './biology.js';
 import {travelProfile,resolveAccessibleTarget} from './terrain.js';
 import {nearestDryLandPoint,isWaterTerrainKind} from './terrain.js';
 import {actionEfficiency,recordPractice,recordTravel} from './living-world.js';
+import {validatePhysicalAction} from './physical-actions.js';
 
 export function startAction(world,citizen,spec,at=world.clock.worldMinute){
   if(!citizen.alive)throw new Error('citizen_dead');
   if(citizen.currentActionId)throw new Error('citizen_busy');
   if(!ACTION_TYPES.has(spec.type))throw new Error('action_type_invalid');
+  const physical=validatePhysicalAction(world,citizen,spec);
+  if(!physical.ok)throw new Error(physical.reason);
   let targetPosition=spec.targetPosition?{x:Number(spec.targetPosition.x),y:Number(spec.targetPosition.y)}:null,physics=null;
   let duration=Math.max(1,Math.ceil(Number(spec.durationMinutes)||1));
   if(spec.type==='MOVE'&&targetPosition){

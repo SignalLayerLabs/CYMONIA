@@ -41,6 +41,10 @@ CYMONIA is part **artificial life simulation**, part **multi-agent AI system**, 
 
 ---
 
+## Open Civilization Kernel foundations
+
+The next kernel layer introduces bounded physical operations, personal procedure knowledge and locally bundled action animations. See [architecture, migration limits and verification](docs/architecture/open-civilization-kernel.md).
+
 ## Why CYMONIA is different
 
 | | CYMONIA |

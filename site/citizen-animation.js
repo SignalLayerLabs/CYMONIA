@@ -1,9 +1,12 @@
+import {actionAnimation,ANIMATED_SPRITE_STATES} from './action-animations.js';
+
 const ACTION_ANIMATION={
   MOVE:'walk',OBSERVE:'observe',REST:'idle',SLEEP:'sleep',EAT:'eat',DRINK:'drink',
   GATHER:'gather',CARRY:'carry',CUT:'cut',DIG:'dig',HEAT:'work',COOL:'work',MIX:'work',
   ASSEMBLE:'build',BUILD:'build',CARE:'care',TEACH:'communicate',COMMUNICATE:'communicate',
   EXPERIMENT:'experiment',ATTACK:'attack',DEFEND:'defend',TRANSFER:'carry',
-  PROMISE:'communicate',CLAIM:'communicate',REPRODUCE:'idle',
+  PROMISE:'communicate',CLAIM:'communicate',REPRODUCE:'idle',DESTROY:'attack',
+  DISMANTLE:'build',REPAIR:'build',PICKUP:'gather',DROP:'gather',
 };
 // Row-major order of every 4x4 Citizen action atlas. Sleep has its own atlas.
 export const CITIZEN_SPRITE_STATES=Object.freeze([
@@ -17,6 +20,16 @@ function hashUnit(value){
 }
 export function animationForCitizen(citizen){
   return ACTION_ANIMATION[citizen?.currentAction?.type]||'idle';
+}
+const stateIndices=new Map(ANIMATED_SPRITE_STATES.map((state,i)=>[state,i]));
+export function citizenAnimationFrame(citizen,nowMs=0){
+  const visual=actionAnimation(citizen?.currentAction);
+  const time=Number.isFinite(Number(nowMs))?Number(nowMs):0;
+  // Observer time and stable identity phase only. No wall-clock randomness or
+  // writes to the current action, procedure or canonical world.
+  const step=Math.floor(time/visual.frameMs)+Math.floor(hashUnit(citizen?.id)*4);
+  const phase=((step%4)+4)%4;
+  return {animation:visual.state,frame:stateIndices.get(visual.state)*4+visual.frames[phase],phase,frameMs:visual.frameMs};
 }
 export function citizenVisualPose(citizen,nowMs=Date.now()){
   const action=animationForCitizen(citizen);

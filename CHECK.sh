@@ -139,6 +139,8 @@ PORTPY
       cd "$TARGET"
       CYMONIA_URL="http://127.0.0.1:$PORT"         node tests/browser-replay.mjs
       CYMONIA_URL="http://127.0.0.1:$PORT"         node tests/browser-sovereign.mjs
+      CYMONIA_URL="http://127.0.0.1:$PORT" node tests/browser-state-sprites.mjs
+      CYMONIA_URL="http://127.0.0.1:$PORT" node tests/browser-graphics2.mjs
     )
 
     cleanup_http

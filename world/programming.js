@@ -1,6 +1,7 @@
 import {appendEvent} from './ledger.js';
 import {stableId} from './rng.js';
 import {strongestGrievance} from './destruction.js';
+import {validatePhysicalOperations} from './physical-operations.js';
 
 const ALLOWED_STEPS=new Set(['OBSERVE','REST','GATHER','CARE','COMMUNICATE','TRANSFER','EXPERIMENT','PICKUP','DROP','REPAIR','DISMANTLE','DESTROY']);
 const ALLOWED_SELECTORS=new Set(['self','nearest_known_resource','nearest_known_structure','nearest_damaged_structure','nearest_known_citizen','grievance_actor','loose_known_object','held_object']);
@@ -17,6 +18,7 @@ function cleanStep(raw={}){
   const type=String(raw.type||'OBSERVE').toUpperCase();
   return {
     type:ALLOWED_STEPS.has(type)?type:'OBSERVE',
+    ...(type==='EXPERIMENT'&&raw.operations!==undefined?{operations:validatePhysicalOperations(raw.operations).ok?structuredClone(raw.operations):[{primitive:'invalid',target:0}]}:{}),
     selector:ALLOWED_SELECTORS.has(raw.selector)?raw.selector:'self',
     resourceType:['water','food','timber','stone','clay','ore'].includes(raw.resourceType)?raw.resourceType:null,
     signal:['attention','danger','need','point','accept','reject'].includes(raw.signal)?raw.signal:'attention',
@@ -36,6 +38,7 @@ export function validateProgramSpec(spec){
   if(!spec||typeof spec!=='object'||!Array.isArray(spec.steps)||!spec.steps.length)return {ok:false,reason:'program_steps_required'};
   if(!ALLOWED_TRIGGERS.has(spec.trigger?.kind))return {ok:false,reason:'program_trigger_invalid'};
   for(const step of spec.steps){
+    if(step.operations){const v=validatePhysicalOperations(step.operations);if(!v.ok)return v;if(step.type!=='EXPERIMENT'||step.selector!=='held_object')return {ok:false,reason:'physical_program_selector_invalid'};}
     if(!ALLOWED_STEPS.has(step.type))return {ok:false,reason:`program_step_invalid:${step.type}`};
     if(!ALLOWED_SELECTORS.has(step.selector))return {ok:false,reason:`program_selector_invalid:${step.selector}`};
   }
@@ -116,6 +119,7 @@ function actionFor(world,citizen,step,target){
     const held=(world.objects||[]).find(o=>o.holderId===citizen.id&&o.quantity>0);
     return held?{...base,targetId:target.id,payload:{objectId:held.id}}:null;
   }
+  if(step.type==='EXPERIMENT'&&step.operations){const ids=[target.id,...(world.objects||[]).filter(o=>o.holderId===citizen.id&&o.id!==target.id&&o.quantity>0&&!o.reservedProjectId).slice(0,7).map(o=>o.id)];const maxSlot=Math.max(...step.operations.flatMap(op=>[op.target,op.source,op.tool].filter(Number.isInteger)));if(maxSlot>=ids.length)return null;return {...base,payload:{operations:structuredClone(step.operations),inputObjectIds:ids.slice(0,maxSlot+1)}};}
   if(step.type==='EXPERIMENT')return {...base,targetId:target.id,payload:{targetIds:[target.id],methodCode:'observe'}};
   if(step.type==='REPAIR'){
     const material=(world.objects||[]).find(o=>o.holderId===citizen.id&&o.quantity>0&&o.id!==target.id);
@@ -164,5 +168,5 @@ export function maybeLearnRoutineFromExperience(world,citizen,family,at=world.cl
   return spec?createCitizenProgram(world,citizen,{...spec,sourceFamily:family},at,'learned-routine'):null;
 }
 export function programSummary(citizen){
-  return ensurePrograms(citizen).map(p=>({id:p.id,name:p.name,trigger:p.trigger,stepTypes:p.steps.map(s=>s.type),enabled:p.enabled!==false,runCount:Number(p.runCount||0),source:p.source,createdWorldMinute:p.createdWorldMinute,lastRunWorldMinute:p.lastRunWorldMinute}));
+  return (citizen.programs||[]).slice(-16).map(p=>({id:p.id,name:p.name,trigger:p.trigger,stepTypes:p.steps.map(s=>s.type),enabled:p.enabled!==false,runCount:Number(p.runCount||0),source:p.source,createdWorldMinute:p.createdWorldMinute,lastRunWorldMinute:p.lastRunWorldMinute}));
 }

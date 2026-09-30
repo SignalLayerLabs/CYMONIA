@@ -29,3 +29,6 @@ export * from './operational-state.js';
 export * from './living-world.js';
 export * from './destruction.js';
 export * from './programming.js';
+export * from './physical-operations.js';
+export * from './physical-actions.js';
+export * from './procedures.js';

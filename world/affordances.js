@@ -208,6 +208,13 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   }
 
   for(const object of held){
+    // These are motor hypotheses over personally observed matter, not recipes or
+    // named technologies. The physical interpreter may reject any attempt.
+    if(knowledgeForEntity(citizen,object.id).length&&held.indexOf(object)<4){
+      const cycle=hash32(`${citizen.id}|${object.id}|${Math.floor(at/180)}`)%4;
+      const hypotheses=[{primitive:'rotate',target:0,angle:45,workJ:30},{primitive:'impact',target:0,forceN:120,workJ:150},{primitive:'abrade',target:0,workJ:150},{primitive:'shape',target:0,form:'hollow',workJ:200}];
+      candidates.push({family:'experiment',key:`physical:${object.id}:${cycle}`,targetId:object.id,utility:.24,inventoryFit:.65,knowledgeGap:.5,novelty:.6,effort:.12,risk:.12,proposal:proposal('experiment',[],[{type:'EXPERIMENT',durationMinutes:20,targetId:object.id,purpose:'experiment',concepts:[],payload:{inputObjectIds:[object.id],operations:[hypotheses[cycle]]}}])});
+    }
     if(hasUnknownObservableProperty(citizen,object))candidates.push({family:'experiment',key:`experiment:${object.id}:observe`,targetId:object.id,utility:.48,knowledgeGap:1,inventoryFit:.8,novelty:.85,effort:.05,risk:.05,proposal:proposal('experiment',[],[{type:'EXPERIMENT',durationMinutes:30,targetId:object.id,purpose:'experiment',concepts:[],payload:{targetIds:[object.id],methodCode:'observe'}}])});
     if(knowledgeForEntity(citizen,object.id).length)candidates.push({family:'transform',key:`transform:${object.id}`,targetId:object.id,utility:.24,inventoryFit:.9,knowledgeGap:.2,novelty:.55,effort:.2,risk:.12,proposal:proposal('transform',knowledgeForEntity(citizen,object.id).map(entry=>entry.concept),[{type:'ASSEMBLE',durationMinutes:35,purpose:'experiment',concepts:knowledgeForEntity(citizen,object.id).map(entry=>entry.concept),payload:{inputObjectIds:[object.id],quantities:[object.quantity],form:'bundle'}}])});
   }
