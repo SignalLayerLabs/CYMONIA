@@ -309,13 +309,25 @@ export class SovereignWorld {
   async ensureAlarm(){
     let current=await this.ctx.storage.getAlarm();
     const now=Date.now();
-    // A recently due alarm may be waking this object. Only replace one that
-    // has remained overdue beyond normal scheduling jitter.
-    if(current===null||current<now-2*ALARM_MS){
+    const runtime=ensureRuntime(this.world);
+
+    if(current===null){
       current=now+ALARM_MS;
       await this.ctx.storage.setAlarm(current);
+      runtime.lastAlarmRecoveryReason='missing_alarm';
+      runtime.lastAlarmRecoveryRealMs=now;
+    }else if(current<now-2*ALARM_MS){
+      // A stale alarm must be pulled toward the present, never pushed a full
+      // heartbeat interval away. Repeated /health polling then preserves the
+      // near-immediate successor instead of starving the alarm indefinitely.
+      current=now+1_000;
+      await this.ctx.storage.setAlarm(current);
+      runtime.lastAlarmRecoveryReason='stale_alarm_near_immediate';
+      runtime.lastAlarmRecoveryRealMs=now;
+      runtime.alarmRecoveryCount=Number(runtime.alarmRecoveryCount||0)+1;
     }
-    ensureRuntime(this.world).nextAlarmRealMs=current;
+
+    runtime.nextAlarmRealMs=current;
     return current;
   }
   persist(options={}){
@@ -644,6 +656,16 @@ export class SovereignWorld {
           scheduledAlarmRealMs,
           nextAlarmRealMs:runtime.nextAlarmRealMs??null,
           ...tickDiagnostics(runtime),
+          alarm_overdue_ms:scheduledAlarmRealMs===null?null:Math.max(0,Date.now()-Number(scheduledAlarmRealMs)),
+          tick_stale_ms:runtime.lastTickRealMs==null?null:Math.max(0,Date.now()-Number(runtime.lastTickRealMs)),
+          tick_stalled:Boolean(
+            worldMinuteAt(world,Date.now())>world.clock.worldMinute &&
+            runtime.lastTickRealMs!=null &&
+            Date.now()-Number(runtime.lastTickRealMs)>2*ALARM_MS
+          ),
+          last_alarm_recovery_reason:runtime.lastAlarmRecoveryReason??null,
+          last_alarm_recovery_real_ms:runtime.lastAlarmRecoveryRealMs??null,
+          alarm_recovery_count:Number(runtime.alarmRecoveryCount||0),
         },
         operational_state:{
           actions:world.actions.length,

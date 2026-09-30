@@ -63,13 +63,14 @@ test('an ordinary HTTP fetch repairs a missing alarm without advancing the world
   assert.equal(instance.world.clock.worldMinute,before);
 });
 
-test('an HTTP fetch repairs a long-overdue alarm once without postponing its replacement',async t=>{
+test('an HTTP fetch pulls a long-overdue alarm near the present and repeated polling cannot postpone it',async t=>{
   const {instance,alarms,alarmTime,setStoredAlarm}=runtime(t);
   setStoredAlarm(-180_000);
   await instance.fetch(new Request('https://example.com/world/state'));
-  assert.equal(alarmTime(),120_000);
+  assert.equal(alarmTime(),61_000);
   await instance.fetch(new Request('https://example.com/world/state'));
-  assert.deepEqual(alarms,[120_000]);
+  assert.equal(alarmTime(),61_000);
+  assert.deepEqual(alarms,[61_000]);
 });
 
 test('alarm stores its successor before running the world tick',async t=>{
@@ -132,6 +133,12 @@ test('health reports the real alarm and tick diagnostics without synthetic advan
     lastTickWorldMinute:7,
     lastTickError:'previous tick failed',
     lastAlarmRetryCount:2,
+    alarm_overdue_ms:0,
+    tick_stale_ms:5_000,
+    tick_stalled:false,
+    last_alarm_recovery_reason:'missing_alarm',
+    last_alarm_recovery_real_ms:60_000,
+    alarm_recovery_count:0,
   });
   assert.equal(health.world_minute,before);
   assert.equal(instance.world.clock.worldMinute,before);

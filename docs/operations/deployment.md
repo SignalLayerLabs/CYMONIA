@@ -52,6 +52,9 @@ Observer streaming uses the Durable Objects WebSocket Hibernation API. Active so
 
 Cloudflare observability emits `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, and `CYMONIA_WS_SEND_FAILED` events for stream diagnostics without persisting additional rows.
 
+Alarm recovery is deliberately non-postponing. A missing alarm is scheduled normally. A recently due alarm is left untouched so Cloudflare can deliver it. If an alarm is abnormally stale, HTTP traffic may pull it to a near-immediate recovery time, but repeated `/health` polling must never move that recovery farther into the future. See [heartbeat recovery](heartbeat-recovery.md).
+
+
 ## Workers AI neuron governor
 
 The Worker uses `@cf/zai-org/glm-4.7-flash` unless `BRAIN_MODEL` is overridden. AI produces a

@@ -132,8 +132,8 @@ jobs:
           console.log('health-b',b);
           console.log('health-c',c);
           if(!b.ok||b.service!=='cymonia-sovereign-world')throw new Error('canonical health unavailable');
-          if(!(b.world_minute>a.world_minute))throw new Error('canonical world minute did not advance');
-          if(!c.persisted_generation||c.persisted_generation===a.persisted_generation)throw new Error('canonical snapshot was not persisted within checkpoint window');
+          if(!(b.world_minute>a.world_minute))throw new Error(`canonical world minute did not advance; heartbeat=${JSON.stringify(b.heartbeat||{})}; lag=${b.lag_world_minutes}`);
+          if(!c.persisted_generation||c.persisted_generation===a.persisted_generation)throw new Error(`canonical snapshot was not persisted within checkpoint window; heartbeat=${JSON.stringify(c.heartbeat||{})}; persistence=${JSON.stringify(c.persistence_budget||{})}`);
           console.log({from:a.world_minute,to:b.world_minute,persisted_generation:c.persisted_generation});
           NODE
 
