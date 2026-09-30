@@ -5,7 +5,8 @@ import {MATERIAL_PROPERTIES} from './materials.js';
 import {hash32,stableId} from './rng.js';
 import {activeStrategy} from './strategy.js';
 import {terrainAt,nearestDryLandPoint,isWaterTerrainKind,isSleepUnsafeTerrainKind} from './terrain.js';
-import {constructionDemand,nightPressure,rememberedCrowding} from './living-world.js';
+import {constructionDemand,nightPressure,rememberedCrowding,structureUseSummary} from './living-world.js';
+import {grievancePressure,strongestGrievance} from './destruction.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -223,6 +224,40 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
     if(need>0)candidates.push({family:'care',key:`care:${other.id}`,targetId:other.id,utility:.16+need*.3,social:.8,relationship:clamp01(Number(relation(citizen,other.id).affection)||0),knowledgeGap:0,novelty:.15,effort:.05,risk:0,proposal:proposal('care',[],[{type:'CARE',durationMinutes:10,targetId:other.id,purpose:'care',concepts:[]}])});
     const gift=held[0],trust=Number(relation(citizen,other.id).trust)||0;
     if(gift&&trust>=.3)candidates.push({family:'transfer',key:`transfer:${other.id}:${gift.id}`,targetId:other.id,utility:.12,social:.7,relationship:clamp01(trust),inventoryFit:clamp01(gift.quantity/4),novelty:.2,effort:.05,risk:0,proposal:proposal('transfer',[],[{type:'TRANSFER',durationMinutes:5,targetId:other.id,purpose:'cooperate',concepts:[],payload:{objectId:gift.id}}])});
+  }
+
+
+  const looseKnown=(world.objects||[]).filter(object=>object.quantity>0&&(object.holderId===null||object.holderId===undefined)&&object.position&&citizen.knownEntityIds.includes(object.id)&&dist(citizen.position,object.position)<=14).slice(0,6);
+  for(const object of looseKnown){
+    const distance=dist(citizen.position,object.position);
+    candidates.push({family:'pickup',key:`pickup:${object.id}`,targetId:object.id,utility:.10,inventoryFit:.35,novelty:object.provenance?.type==='DESTRUCTION_SALVAGE'?.42:.12,effort:Math.min(.35,distance/40),risk:.03,proposal:proposal('pickup',[],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:object.id,targetPosition:object.position,purpose:'self_directed',concepts:[]},{type:'PICKUP',durationMinutes:5,targetId:object.id,purpose:'self_directed',concepts:[]}]:[{type:'PICKUP',durationMinutes:5,targetId:object.id,purpose:'self_directed',concepts:[]}])});
+  }
+
+  const repairMaterial=held.find(object=>object.quantity>.1);
+  for(const structure of (world.buildings||[]).filter(b=>b.position&&b.condition>0&&b.condition<.82&&citizen.knownEntityIds.includes(b.id)).slice(0,5)){
+    const distance=dist(citizen.position,structure.position),use=structureUseSummary(world,structure.id,at);
+    if(repairMaterial)candidates.push({family:'repair',key:`repair:${structure.id}`,targetId:structure.id,utility:.12+(1-structure.condition)*.3+Math.min(.2,use.minutes/5000),relationship:0,inventoryFit:.55,novelty:.12,effort:Math.min(.5,distance/50),risk:.04,proposal:proposal('repair',[],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:structure.id,targetPosition:structure.position,purpose:'cooperate',concepts:[]},{type:'REPAIR',durationMinutes:30,targetId:structure.id,purpose:'cooperate',concepts:[],payload:{materialObjectId:repairMaterial.id,effortMinutes:30}}]:[{type:'REPAIR',durationMinutes:30,targetId:structure.id,purpose:'cooperate',concepts:[],payload:{materialObjectId:repairMaterial.id,effortMinutes:30}}])});
+    if(structure.condition<.38&&use.minutes<240){
+      candidates.push({family:'dismantle',key:`dismantle:${structure.id}`,targetId:structure.id,utility:.12+(1-structure.condition)*.2,inventoryFit:.18,novelty:.16,effort:Math.min(.55,distance/50),risk:.16,proposal:proposal('dismantle',[],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:structure.id,targetPosition:structure.position,purpose:'self_directed',concepts:[]},{type:'DISMANTLE',durationMinutes:45,targetId:structure.id,purpose:'self_directed',concepts:[],payload:{effortMinutes:45}}]:[{type:'DISMANTLE',durationMinutes:45,targetId:structure.id,purpose:'self_directed',concepts:[],payload:{effortMinutes:45}}])});
+    }
+    const associated=[structure.provenance?.initiatorId,...(structure.provenance?.contributorIds||[])].filter(Boolean);
+    const retaliation=Math.max(0,...associated.map(id=>grievancePressure(world,citizen,id,at)));
+    if(retaliation>.2){
+      candidates.push({family:'destroy',key:`destroy:${structure.id}`,targetId:structure.id,utility:.04+retaliation*.48,novelty:.05,effort:Math.min(.55,distance/50),risk:.42,proposal:proposal('destroy',[],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:structure.id,targetPosition:structure.position,purpose:'self_directed',concepts:[]},{type:'DESTROY',durationMinutes:45,targetId:structure.id,purpose:'self_directed',concepts:[],payload:{effortMinutes:45}}]:[{type:'DESTROY',durationMinutes:45,targetId:structure.id,purpose:'self_directed',concepts:[],payload:{effortMinutes:45}}])});
+    }
+  }
+
+  const grievance=strongestGrievance(world,citizen,at);
+  if(grievance&&grievance.severity>.28){
+    const other=(world.citizens||[]).find(x=>x.id===grievance.againstId&&x.alive&&citizen.knownEntityIds.includes(x.id));
+    if(other&&dist(citizen.position,other.position)<=10)candidates.push({family:'conflict',key:`attack:${other.id}`,targetId:other.id,utility:.02+grievance.severity*.34+clamp01(citizen.psychology.aggression)*.15,relationship:0,novelty:.02,effort:.08,risk:.65,proposal:proposal('conflict',[],[{type:'ATTACK',durationMinutes:6,targetId:other.id,purpose:'defend',concepts:[]}])});
+  }
+
+  if(Number(citizen.psychology.stress||0)>.45&&Number(citizen.psychology.aggression||0)>.42){
+    for(const deposit of knownResources.filter(d=>d.type!=='water').slice(0,2)){
+      const distance=dist(citizen.position,deposit.position);
+      candidates.push({family:'destroy',key:`destroy-resource:${deposit.id}`,targetId:deposit.id,utility:.015+Number(citizen.psychology.aggression||0)*.08,novelty:.08,effort:Math.min(.5,distance/50),risk:.22,proposal:proposal('destroy',[resourceConceptId(deposit)],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:deposit.id,targetPosition:deposit.position,purpose:'self_directed',concepts:[resourceConceptId(deposit)]},{type:'DESTROY',durationMinutes:30,targetId:deposit.id,purpose:'self_directed',concepts:[resourceConceptId(deposit)],payload:{effortMinutes:30}}]:[{type:'DESTROY',durationMinutes:30,targetId:deposit.id,purpose:'self_directed',concepts:[resourceConceptId(deposit)],payload:{effortMinutes:30}}])});
+    }
   }
 
   const activeProjects=(world.projects||[]).filter(project=>project.status==='construction'&&(project.initiatorId===citizen.id||citizen.knownEntityIds.includes(project.id)));

@@ -9,6 +9,12 @@ const AFFORDANCE_COOLDOWN_MINUTES=Object.freeze({
   care:30,
   rest:20,
   explore:30,
+  destroy:360,
+  dismantle:180,
+  repair:90,
+  pickup:45,
+  drop:30,
+  'program-run':90,
 });
 
 function trimOldest(record,limit,lastMinuteKey='lastWorldMinute'){

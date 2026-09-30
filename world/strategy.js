@@ -2,6 +2,7 @@ import {ACTION_TYPES} from './constants.js';
 import {knows} from './epistemics.js';
 import {appendEvent} from './ledger.js';
 import {markAICognition} from './cognition-state.js';
+import {createCitizenProgram,sanitizeProgramSpec,validateProgramSpec} from './programming.js';
 
 const INTENTS=new Set(['explore','understand','share','cooperate','care','construct','adapt']);
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
@@ -18,6 +19,7 @@ export function sanitizeAIStrategy(raw){
     successSignals:strings(value.successSignals,8),
     horizonMinutes:Math.round(clamp(value.horizonMinutes||4320,60,10080)),
     confidence:clamp(value.confidence??.5,0,1),
+    programBlueprints:(Array.isArray(value.programBlueprints)?value.programBlueprints:[]).slice(0,2).map(sanitizeProgramSpec),
   };
 }
 
@@ -28,6 +30,7 @@ export function validateStrategy(world,citizen,strategy){
   if(!Number.isFinite(Number(strategy.confidence))||strategy.confidence<0||strategy.confidence>1)return {ok:false,reason:'strategy_confidence_invalid'};
   for(const action of strategy.actionBias||[])if(!ACTION_TYPES.has(action))return {ok:false,reason:`strategy_action_invalid:${action}`};
   for(const concept of [strategy.focus,...(strategy.successSignals||[])].filter(Boolean))if(!knows(citizen,concept))return {ok:false,reason:`unknown_concept:${concept}`};
+  for(const program of strategy.programBlueprints||[]){const pv=validateProgramSpec(program);if(!pv.ok)return {ok:false,reason:pv.reason};}
   for(const partnerId of strategy.partnerIds||[]){
     if(!citizen.knownEntityIds.includes(partnerId))return {ok:false,reason:`unknown_partner:${partnerId}`};
     if(!world.citizens.some(other=>other.id===partnerId&&other.alive))return {ok:false,reason:`partner_unavailable:${partnerId}`};
@@ -57,6 +60,7 @@ export function acceptAIStrategy(world,citizenId,strategy,at=world.clock.worldMi
   const clean=sanitizeAIStrategy(strategy),validation=validateStrategy(world,citizen,clean,at);
   if(!validation.ok)throw new Error(validation.reason);
   citizen.activeGoal={kind:'strategy-v1',...clean,source:'workers-ai',createdWorldMinute:at,expiresWorldMinute:at+clean.horizonMinutes,status:'active',progress:{completedActions:0,successfulFamilies:{}},failureCount:0};
+  for(const program of clean.programBlueprints||[])createCitizenProgram(world,citizen,program,at,'workers-ai');
   markAICognition(citizen,at);
   appendEvent(world,'STRATEGY_ACCEPTED',citizen.id,{intent:clean.intent,focus:clean.focus,actionBias:clean.actionBias,horizonMinutes:clean.horizonMinutes,confidence:clean.confidence},[],at);
   return citizen.activeGoal;

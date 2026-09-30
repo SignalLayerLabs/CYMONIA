@@ -101,6 +101,8 @@ test('AI schema supplies strategic intent while local cognition owns concrete pr
   assert.match(worker,/explore\|understand\|share\|cooperate\|care\|construct\|adapt/);
   assert.match(worker,/actionBias/);
   assert.match(worker,/horizonMinutes/);
+  assert.match(worker,/programBlueprints/);
+  assert.match(worker,/Programs never bypass the sovereign kernel/);
 });
 
 test('Workers AI emits compact persistent strategies instead of short action scripts',()=>{

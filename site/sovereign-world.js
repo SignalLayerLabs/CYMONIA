@@ -1,9 +1,10 @@
 import {SovereignRenderer,worldMinute,citizenPosition} from './sovereign-renderer.js';
 import {ObserverConnection,CONNECTION} from './observer-connection.js';
 import {observerConceptView} from './observer-concepts.js';
+import {ACTION_TYPES_VISUAL,EVENT_ACTION_VISUAL,actionImageHTML} from './action-visuals.js';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ICON={MOVE:'→',OBSERVE:'◉',REST:'·',SLEEP:'z',EAT:'•',DRINK:'≈',GATHER:'⌁',CARRY:'▣',CUT:'╱',DIG:'⌄',BUILD:'⌂',CARE:'+',TEACH:'◇',COMMUNICATE:'◇',EXPERIMENT:'✦',ATTACK:'⚠',DEFEND:'◈',TRANSFER:'↔',PROMISE:'∞',CLAIM:'⌁',REPRODUCE:'◌'};
+const ICON=Object.fromEntries(ACTION_TYPES_VISUAL.map(type=>[type,'']));
 const state={world:null,selected:null,renderer:null,myAvatar:null,keys:new Set(),lastFrame:performance.now(),lastHud:0,connection:null,mode:CONNECTION.CONNECTING};
 async function getJSON(url,opts={}){const r=await fetch(url,{cache:'no-store',credentials:'same-origin',...opts});if(!r.ok)throw new Error(`${r.status}`);return r.json();}
 function dateLabel(min){const m=Math.max(0,Math.floor(min)),year=Math.floor(m/525600)+1,rem=m%525600,day=Math.floor(rem/1440)+1,hour=Math.floor((rem%1440)/60),minute=rem%60;return `YEAR ${year} · DAY ${day} · ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;}
@@ -42,11 +43,11 @@ function renderActivity(){
 
   const live=rows.map(c=>{
     const a=c.currentAction,span=Math.max(1,a.endsWorldMinute-a.startedWorldMinute),progress=clamp((now-a.startedWorldMinute)/span*100,0,100);
-    return `<button class="activity-row" data-citizen="${esc(c.id)}"><span>${ICON[a.type]||'·'}</span><div><b>${esc(citizenName(c))}</b><small>${esc(a.type.toLowerCase())} · ${esc(a.purpose||'self-directed')}</small><i class="action-progress"><i class="action-progress-fill" style="width:${progress.toFixed(1)}%"></i></i></div></button>`;
+    return `<button class="activity-row" data-citizen="${esc(c.id)}"><span class="action-visual-cell">${actionImageHTML(a.type)}</span><div><b>${esc(citizenName(c))}</b><small>${esc(a.type.toLowerCase())} · ${esc(a.purpose||'self-directed')}</small><i class="action-progress"><i class="action-progress-fill" style="width:${progress.toFixed(1)}%"></i></i></div></button>`;
   }).join('');
 
   const history=significantHistory(w).slice(0,5);
-  const past=history.map(e=>`<button class="activity-row" data-event="${esc(e.eventId)}"><span>${e.category==='life'?'✦':e.category==='construction'?'⌂':e.category==='conflict'?'⚠':e.category==='language'?'◇':'•'}</span><div><b>${esc(e.label)}</b><small>${esc(e.date?.label||dateLabel(e.worldMinute))} · ${esc(e.category)}</small></div></button>`).join('');
+  const past=history.map(e=>{const action=EVENT_ACTION_VISUAL[e.type]||(e.category==='construction'?'BUILD':e.category==='conflict'?'ATTACK':e.category==='knowledge'?'EXPERIMENT':e.category==='language'?'COMMUNICATE':'OBSERVE');return `<button class="activity-row" data-event="${esc(e.eventId)}"><span class="action-visual-cell">${actionImageHTML(action)}</span><div><b>${esc(e.label)}</b><small>${esc(e.date?.label||dateLabel(e.worldMinute))} · ${esc(e.category)}</small></div></button>`;}).join('');
 
   $('activityList').innerHTML=(live+past)||'<div class="activity-row"><span>…</span><div><b>Quiet interval</b><small>No significant canonical event right now.</small></div></div>';
 }
@@ -277,7 +278,7 @@ function renderMyAvatar(){
   const possessionsCount=(c.possessions||[]).length;
   $('avatarStats').innerHTML=`<div><b>${Math.round(c.body.health||0)}%</b><small>health</small></div><div><b>${knowledgeCount}</b><small>knowledge</small></div><div><b>${vocabularyCount}</b><small>words</small></div><div><b>${relationshipsCount}</b><small>relations</small></div>`;
   const a=c.currentAction;
-  $('avatarNow').innerHTML=`<p><b>${esc(a?.type||'IDLE / THINKING')}</b> — ${esc(a?.purpose||'No public physical action recorded.')}</p><span class="tag">water ${Math.round(c.body.hydration||0)}%</span><span class="tag">energy ${Math.round(c.body.calories||0)}%</span><span class="tag">sleep ${Math.round(c.body.sleepPressure||0)}%</span><span class="tag">possessions ${possessionsCount}</span><p><small>Goal: ${esc(goalLabel(c.activeGoal))}</small></p>`;
+  $('avatarNow').innerHTML=`<div class="avatar-current-action">${a?actionImageHTML(a.type,{className:'action-image action-image-large'}):''}<p><b>${esc(a?.type||'IDLE / THINKING')}</b> — ${esc(a?.purpose||'No public physical action recorded.')}</p></div><span class="tag">water ${Math.round(c.body.hydration||0)}%</span><span class="tag">energy ${Math.round(c.body.calories||0)}%</span><span class="tag">sleep ${Math.round(c.body.sleepPressure||0)}%</span><span class="tag">possessions ${possessionsCount}</span><p><small>Goal: ${esc(goalLabel(c.activeGoal))}</small></p>`;
   $('avatarEvolution').innerHTML=`<div class="avatar-evolution-grid"><span><b>${knowledgeCount}</b><small>concepts learned</small></span><span><b>${vocabularyCount}</b><small>coined/shared words</small></span><span><b>${relationshipsCount}</b><small>known relationships</small></span><span><b>${possessionsCount}</b><small>possessions</small></span></div>`;
   const events=avatarRecentEvents(c);
   $('avatarTimeline').innerHTML=events.length?events.map(e=>`<div class="avatar-life-row"><span>${esc(dateLabel(e.worldMinute||0))}</span><b>${esc(e.label||e.type||'Canonical event')}</b></div>`).join(''):'<p>No recent public canonical events for this Citizen yet.</p>';

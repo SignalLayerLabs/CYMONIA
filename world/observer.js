@@ -62,6 +62,11 @@ export function classifyHistory(world){
     else if(e.type==='SIGNAL_COINED'){label='A new communicative symbol appears';category='language';}
     else if(e.type==='EXPERIMENT_COMPLETED'){label='An experiment changes the knowledge frontier';category='knowledge';}
     else if(e.type==='VIOLENCE'){label='Violent conflict recorded';category='conflict';}
+    else if(e.type==='ENTITY_DESTROYED'){label='A physical structure or artifact is destroyed';category='conflict';}
+    else if(e.type==='RESOURCE_PATCH_DAMAGED'){label='A natural resource patch is heavily damaged';category='ecology';}
+    else if(e.type==='REPAIR_COMPLETED'){label='A damaged physical object is repaired';category='construction';}
+    else if(e.type==='GRIEVANCE_CREATED'){label='A persistent grievance forms from experienced harm';category='society';}
+    else if(e.type==='PROGRAM_CREATED'){label='A Citizen creates a persistent behavioral program';category='knowledge';}
     else continue;
     entries.push(baseEntry(world,e,label,category));
   }

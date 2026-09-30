@@ -147,6 +147,23 @@ The landscape now changes through ordinary life instead of waiting for scripted 
 
 The result is physical continuity: paths, construction, resource pressure and habitation are consequences of what Citizens repeatedly do.
 
+
+### Destruction, repair and self-programming
+
+CYMONIA is no longer one-way. Citizens can now damage or dismantle buildings, artifacts and natural resource patches; destruction conserves matter by creating physical debris and salvage instead of deleting it.
+
+Destruction can also produce social consequences. Repeated users, builders, holders and explicit claimants may develop grievances against the actor. Trust can fall, fear and stress can rise, and sufficiently strong grievances can make retaliation or further conflict locally plausible.
+
+Damaged structures can be repaired with real material mass. Debris can be perceived, picked up, dropped, transferred, transformed and reused.
+
+Trees/timber, food plants, stone, clay and ore patches can be damaged. Heavy destruction leaves environmental scars that recover slowly and suppress nearby renewable-resource recovery.
+
+Citizens can also persist **in-world behavioral programs**. These are bounded declarative routines with triggers, selectors and canonical action steps. They can be learned from repeated successful routines or proposed by Workers AI as strategic cognition.
+
+Self-programming never executes arbitrary host JavaScript, shell commands or network calls. Citizens can change their own behavior inside the world, while the sovereign kernel still decides what is physically and epistemically valid.
+
+See **[Destruction and self-programming](docs/design/destruction-and-self-programming.md)**.
+
 ### Emergent society
 
 CYMONIA does not hard-code a government, religion, corporation, bank, police force, court or property regime. The kernel provides generic social primitives; meaning has to emerge from Citizen behavior.

@@ -27,3 +27,5 @@ export * from './cognition-state.js';
 export * from './cognition-queue.js';
 export * from './operational-state.js';
 export * from './living-world.js';
+export * from './destruction.js';
+export * from './programming.js';

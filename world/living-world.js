@@ -27,6 +27,7 @@ export function ensureLivingWorld(world){
   state.traffic.cells??={};
   state.structureUse??={};
   state.resourcePressure??={};
+  state.scars??={};
   return state;
 }
 function pruneRecord(record,limit,score){
@@ -85,6 +86,32 @@ export function trailStrengthAt(world,x,y,at=world.clock?.worldMinute??0){
 export function trailMultiplierAt(world,x,y,at=world.clock?.worldMinute??0){
   return 1-.28*trailStrengthAt(world,x,y,at);
 }
+
+export function recordEnvironmentalScar(world,position,kind='damage',severity=.1,at=world.clock?.worldMinute??0){
+  if(!position)return null;
+  const state=ensureLivingWorld(world),key=`${Math.floor(Number(position.x)/3)}:${Math.floor(Number(position.y)/3)}`;
+  const prior=state.scars[key]||{severity:0,lastWorldMinute:at,kind,position:{x:Number(position.x),y:Number(position.y)}};
+  const elapsed=Math.max(0,Number(at)-Number(prior.lastWorldMinute||0));
+  const decayed=Math.max(0,Number(prior.severity)||0)*Math.pow(.5,elapsed/129600);
+  state.scars[key]={severity:Math.min(1,decayed+Math.max(0,Number(severity)||0)),lastWorldMinute:Number(at)||0,kind:String(kind).slice(0,48),position:{x:Number(position.x),y:Number(position.y)}};
+  const entries=Object.entries(state.scars);
+  if(entries.length>160){
+    entries.sort((a,b)=>Number(b[1].severity||0)-Number(a[1].severity||0));
+    for(const [k] of entries.slice(160))delete state.scars[k];
+  }
+  return state.scars[key];
+}
+export function scarPressureAt(world,position,at=world.clock?.worldMinute??0,radius=12){
+  let pressure=0;
+  for(const scar of Object.values(ensureLivingWorld(world).scars||{})){
+    const distance=Math.hypot(Number(position?.x)-Number(scar.position?.x),Number(position?.y)-Number(scar.position?.y));
+    if(distance>radius)continue;
+    const elapsed=Math.max(0,Number(at)-Number(scar.lastWorldMinute||0));
+    const severity=Math.max(0,Number(scar.severity)||0)*Math.pow(.5,elapsed/129600);
+    pressure+=severity*(1-distance/radius);
+  }
+  return Math.max(0,Math.min(1,pressure));
+}
 export function recordHarvest(world,deposit,quantity,at=world.clock?.worldMinute??0){
   if(!deposit)return;
   const state=ensureLivingWorld(world),key=String(deposit.id),current=state.resourcePressure[key]||{pressure:0,lastWorldMinute:at};
@@ -97,9 +124,10 @@ export function resourceRenewalFactor(world,deposit,at=world.clock?.worldMinute?
   const state=ensureLivingWorld(world),entry=state.resourcePressure[String(deposit?.id)]||null;
   const pressure=entry?decay(entry.pressure,entry.lastWorldMinute,at,HARVEST_HALF_LIFE):0;
   const development=deposit?.position?developmentPressureAt(world,deposit.position,18):0;
+  const scar=deposit?.position?scarPressureAt(world,deposit.position,at,14):0;
 
   // Genesis and untouched undeveloped land retain the exact sovereign baseline.
-  if(pressure<=0&&development<=0)return 1;
+  if(pressure<=0&&development<=0&&scar<=0)return 1;
 
   const season=Number(world.environment?.seasonPhase||0),moisture=clamp(world.environment?.soilMoisture,.1,1);
   let seasonal=1;
@@ -108,7 +136,8 @@ export function resourceRenewalFactor(world,deposit,at=world.clock?.worldMinute?
   else if(deposit?.type==='water')seasonal=.8+.35*clamp(world.environment?.precipitation,0,1);
   const pressurePenalty=1/(1+pressure/18);
   const developmentPenalty=1-.62*development;
-  return clamp(seasonal*pressurePenalty*developmentPenalty,.05,1.35);
+  const scarPenalty=1-.68*scar;
+  return clamp(seasonal*pressurePenalty*developmentPenalty*scarPenalty,.03,1.35);
 }
 export function riverHydrology(world,y=50){
   const rain=clamp(world?.environment?.precipitation,0,1),soil=clamp(world?.environment?.soilMoisture,.1,1);
@@ -174,8 +203,9 @@ function toolScore(object,actionType){
   const p=object.properties||{},hard=clamp(p.hardness,0,1),tough=clamp(p.toughness,0,1),structure=clamp(Number(p.structuralIntegrity||0)/520,0,1);
   if(actionType==='CUT')return hard*.55+tough*.45;
   if(actionType==='DIG')return hard*.7+structure*.3;
-  if(actionType==='BUILD'||actionType==='ASSEMBLE')return tough*.55+structure*.45;
-  if(actionType==='GATHER'||actionType==='CARRY')return tough*.35+structure*.2;
+  if(actionType==='BUILD'||actionType==='ASSEMBLE'||actionType==='REPAIR')return tough*.55+structure*.45;
+  if(actionType==='DESTROY'||actionType==='DISMANTLE')return hard*.55+tough*.3+structure*.15;
+  if(actionType==='GATHER'||actionType==='CARRY'||actionType==='PICKUP')return tough*.35+structure*.2;
   return 0;
 }
 export function actionEfficiency(world,citizen,actionType){
@@ -186,7 +216,7 @@ export function actionEfficiency(world,citizen,actionType){
 }
 export function recordPractice(citizen,actionType,durationMinutes=0){
   const type=String(actionType||'').toUpperCase();
-  if(!['GATHER','CARRY','CUT','DIG','ASSEMBLE','BUILD'].includes(type)||!citizen)return 0;
+  if(!['GATHER','CARRY','CUT','DIG','ASSEMBLE','BUILD','DESTROY','DISMANTLE','REPAIR','PICKUP'].includes(type)||!citizen)return 0;
   citizen.skills??={};
   const key=type.toLowerCase(),prior=clamp(citizen.skills[key],0,1),gain=Math.min(.035,Math.max(0,Number(durationMinutes)||0)/9000)*(1-prior);
   citizen.skills[key]=clamp(prior+gain,0,1);
@@ -466,6 +496,10 @@ export function advanceLivingWorld(world,fromMinute,toMinute){
       const value=decay(entry.pressure,entry.lastWorldMinute,to,HARVEST_HALF_LIFE);
       if(value<.02)delete state.resourcePressure[key];
     }
+    for(const [key,entry] of Object.entries(state.scars||{})){
+      const value=Math.max(0,Number(entry.severity)||0)*Math.pow(.5,Math.max(0,to-Number(entry.lastWorldMinute||0))/129600);
+      if(value<.015)delete state.scars[key];
+    }
     state.traffic.lastPruneWorldMinute=to;
   }
   return state;
@@ -484,6 +518,7 @@ export function publicLivingWorld(world,at=world.clock?.worldMinute??0){
     stockpiles:deriveStockpiles(world),
     settlements:deriveSettlements(world,at),
     river:riverHydrology(world,50),
-    ecology
+    ecology,
+    scars:Object.entries(state.scars||{}).map(([key,s])=>({key,position:s.position,kind:s.kind,severity:Number(scarPressureAt(world,s.position,at,4).toFixed(3)),lastWorldMinute:s.lastWorldMinute})).filter(s=>s.severity>.01).slice(0,80)
   };
 }
