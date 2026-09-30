@@ -1,6 +1,7 @@
 import {terrainAtPublic, riverCenterXPublic, seedOfWorld} from './terrain-model.js';
-import {animationForCitizen,CITIZEN_SPRITE_STATES} from './citizen-animation.js';
+import {animationForCitizen,CITIZEN_SPRITE_STATES,citizenAnimationFrame} from './citizen-animation.js';
 import {CITIZEN_SPRITE_ATLASES} from './citizen-sprite-frames.js';
+import {ANIMATION_ATLAS} from './citizen-animation-atlas.js';
 
 // Shared by WebGL and Canvas: all art uses the same ground plane and anchors.
 export const ISO_X=16, ISO_Y=8;
@@ -10,6 +11,7 @@ export function spriteBounds(frame,size,x,y){const height=size*frame.h/frame.w;r
 export const ATLAS_URL=new URL('./assets/medieval-atlas.png',import.meta.url).href;
 export const SLEEP_ATLAS_URL=new URL('./assets/medieval-sleep-atlas.png',import.meta.url).href;
 export const CITIZEN_ATLAS_URLS=['blue','rust','green','linked'].map(name=>new URL(`./assets/citizen-${name}-states.png`,import.meta.url).href);
+export const ANIMATED_CITIZEN_ATLAS_URLS=['blue','rust','green','linked'].map(name=>new URL(`./assets/citizen-${name}-animated.png`,import.meta.url).href);
 const GRASS_URL=new URL('./assets/meadow-texture.png',import.meta.url).href;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function artHash(value){let h=2166136261;for(const c of String(value)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
@@ -23,7 +25,7 @@ export function citizenSprite(c){
 }
 
 export function staticSceneKey(w){
-  return JSON.stringify([w?.worldId,w?.seed,(w?.resourceDeposits||[]).map(d=>[d.id,d.quantity>0,d.position,d.type]),(w?.objects||[]).filter(o=>o.kind==='temporary_shelter').map(o=>[o.id,o.quantity,o.condition,o.position]),(w?.projects||[]).map(p=>[p.id,p.status,p.site,p.workDoneMinutes,p.workRequiredMinutes]),(w?.buildings||[]).map(b=>[b.id,b.position,b.condition,b.massKg,b.designId])]);
+  return JSON.stringify([w?.worldId,w?.seed,(w?.resourceDeposits||[]).map(d=>[d.id,d.quantity>0,d.position,d.type]),(w?.objects||[]).map(o=>[o.id,o.quantity,o.condition,o.position,o.holderId,o.kind,o.material,o.temperatureC??o.temperature,o.burning]),(w?.projects||[]).map(p=>[p.id,p.status,p.site,p.workDoneMinutes,p.workRequiredMinutes]),(w?.buildings||[]).map(b=>[b.id,b.position,b.condition,b.massKg,b.designId])]);
 }
 export function sceneEntries(w,{decorations=true}={}){
   const entries=[],seed=seedOfWorld(w);
@@ -41,7 +43,14 @@ export function sceneEntries(w,{decorations=true}={}){
     }
   }
   for(const d of w.resourceDeposits||[])if(d.quantity>0){const frames={timber:0,food:8,stone:3,ore:10,clay:11,water:-1};add('resource',d.id,d.position,frames[d.type]??3,d.type==='timber'?85:d.type==='water'?30:52);}
-  for(const o of w.objects||[])if(o.kind==='temporary_shelter'&&o.quantity>0&&o.condition!==0)add('shelter',o.id,o.position,4,54);
+  for(const o of w.objects||[])if(o.quantity>0&&!o.holderId){
+    if(o.kind==='temporary_shelter'&&o.condition!==0)add('shelter',o.id,o.position,4,54,{condition:o.condition});
+    else if(o.kind!=='temporary_shelter'){
+      const debris=/debris|fragment|salvage/.test(o.kind||''),frames={timber:9,wood:9,stone:3,ore:10,clay:11,food:8,water:-1};
+      const mass=Math.max(.01,Number(o.massKg)||Number(o.massPerUnitKg)*Number(o.quantity)||1);
+      add(debris?'debris':'object',o.id,o.position,frames[o.material]??3,clamp(7+Math.sqrt(mass)*3,8,debris?23:35),{condition:o.condition??1,material:o.material,temperatureC:o.temperatureC??o.temperature,burning:Boolean(o.burning)});
+    }
+  }
   for(const p of w.projects||[])if(p.status==='construction'){const progress=clamp(p.workDoneMinutes/Math.max(1,p.workRequiredMinutes),0,1),phase=p.phase||(progress<.08?'site':progress<.25?'foundation':progress<.55?'frame':progress<.8?'roof':'enclosed'),size=phase==='site'?42:phase==='foundation'?55:phase==='frame'?70:phase==='roof'?82:90;add('project',p.id,p.site,7,size,{progress,phase});}
   for(const b of w.buildings||[])if(b.massKg>0&&b.condition>0)add('building',b.id,b.position,/hall|communal|large/i.test(b.designId||'')?6:5,108,{condition:b.condition});
   return entries.sort((a,b)=>(a.position.x+a.position.y)-(b.position.x+b.position.y));
@@ -51,12 +60,13 @@ function loadImage(url){return new Promise(resolve=>{const im=new Image();im.onl
 export class MedievalArt{
   constructor(){
     this.atlas=null;this.sleepAtlas=null;this.grass=null;this.revision=0;
-    this.ground=null;this.groundKey='';this.frames=[];this.sleepFrames=[];this.citizenAtlases=[];
-    this.ready=Promise.all([ATLAS_URL,SLEEP_ATLAS_URL,GRASS_URL,...CITIZEN_ATLAS_URLS].map(loadImage)).then(([atlas,sleepAtlas,grass,...citizens])=>{
+    this.ground=null;this.groundKey='';this.frames=[];this.sleepFrames=[];this.citizenAtlases=[];this.animatedCitizenAtlases=[];
+    this.ready=Promise.all([ATLAS_URL,SLEEP_ATLAS_URL,GRASS_URL,...CITIZEN_ATLAS_URLS,...ANIMATED_CITIZEN_ATLAS_URLS].map(loadImage)).then(([atlas,sleepAtlas,grass,...citizens])=>{
       this.atlas=atlas;this.sleepAtlas=sleepAtlas;this.grass=grass;
       if(atlas)this.measureFrames(atlas,'base');
       if(sleepAtlas)this.measureFrames(sleepAtlas,'sleep');
-      citizens.forEach((image,i)=>{if(image)this.measureFrames(image,`citizen:${i}`);});
+      citizens.slice(0,4).forEach((image,i)=>{if(image)this.measureFrames(image,`citizen:${i}`);});
+      citizens.slice(4).forEach((image,i)=>{if(image)this.measureFrames(image,`animated:${i}`);});
       this.revision++;return this;
     });
   }
@@ -65,6 +75,14 @@ export class MedievalArt{
     const canvas=document.createElement('canvas');canvas.width=atlas.width;canvas.height=atlas.height;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(atlas,0,0);
     const {data}=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+    if(kind.startsWith('animated:')){
+      const variant=Number(kind.split(':')[1]),layout=ANIMATION_ATLAS;
+      if(atlas.width!==layout.variants[variant]?.width||atlas.height!==layout.variants[variant]?.height)return;
+      const frames=Array.from({length:layout.states.length*layout.framesPerState},(_,i)=>({x:(i%layout.columns)*layout.cellWidth,y:Math.floor(i/layout.columns)*layout.cellHeight,w:layout.cellWidth,h:layout.cellHeight}));
+      this.animatedCitizenAtlases[variant]={image:atlas,frames,pixels:data,referenceWidth:layout.variants[variant].referenceWidth};
+      return;
+    }
 
     if(kind.startsWith('citizen:')){
       const variant=Number(kind.split(':')[1]),layout=CITIZEN_SPRITE_ATLASES[variant];
@@ -113,6 +131,7 @@ export class MedievalArt{
     }
   }
   atlasFor(e){
+    if(e.atlas?.startsWith('animated:'))return this.animatedCitizenAtlases?.[Number(e.atlas.split(':')[1])]||{frames:[]};
     if(e.atlas?.startsWith('citizen:'))return this.citizenAtlases?.[Number(e.atlas.split(':')[1])]||{frames:[]};
     return e.atlas==='sleep'||e.sleep
       ? {image:this.sleepAtlas,frames:this.sleepFrames,pixels:this.sleepPixelData}
@@ -125,7 +144,12 @@ export class MedievalArt{
     const size=sprite.sleep?sleepSize:standSize*frame.w/asset.frames[0].w;
     return {...sprite,size};
   }
-  hitRecord(e,p,zoom,flip=false,{anchorY=.94,scaleY=1,rotation=0}={}){
+  animatedCitizenSprite(c,nowMs=0,standSize=10.5,sleepSize=15){
+    const variant=citizenFrame(c)-12,asset=this.animatedCitizenAtlases?.[variant],frame=citizenAnimationFrame(c,nowMs);
+    if(!asset?.image||!asset.frames[frame.frame])return this.citizenSprite(c,standSize,sleepSize);
+    return {...frame,atlas:`animated:${variant}`,sleep:frame.animation==='sleep',anchorY:104/112,size:standSize*ANIMATION_ATLAS.cellWidth/asset.referenceWidth};
+  }
+  hitRecord(e,p,zoom,flip=false,{anchorY=e.anchorY??.94,scaleY=1,rotation=0}={}){
     const width=e.size*zoom,f=this.atlasFor(e).frames[e.frame];
     const hit={id:e.id,kind:e.kind,atlas:e.atlas,frame:e.frame,sleep:Boolean(e.sleep),flip,x:p.x,y:p.y,r:width*.5};
     if(!f)return hit;
@@ -144,14 +168,14 @@ export class MedievalArt{
     const px=f.x+Math.min(f.w-1,Math.floor((hit.flip?1-u:u)*f.w)),py=f.y+Math.floor(v*f.h);
     return pixels?.[(py*image.width+px)*4+3]>32;
   }
-  drawFromAtlas(ctx,atlas,frames,frame,x,y,size,flip=false){
+  drawFromAtlas(ctx,atlas,frames,frame,x,y,size,flip=false,anchorY=.94){
     if(!atlas||!frames[frame])return false;
     const f=frames[frame],h=size*f.h/f.w;
-    ctx.save();ctx.translate(x,y);if(flip)ctx.scale(-1,1);ctx.drawImage(atlas,f.x,f.y,f.w,f.h,-size/2,-h*.94,size,h);ctx.restore();return true;
+    ctx.save();ctx.translate(x,y);if(flip)ctx.scale(-1,1);ctx.drawImage(atlas,f.x,f.y,f.w,f.h,-size/2,-h*anchorY,size,h);ctx.restore();return true;
   }
   drawSprite(ctx,frame,x,y,size,flip=false){return this.drawFromAtlas(ctx,this.atlas,this.frames,frame,x,y,size,flip);}
   drawSleepSprite(ctx,frame,x,y,size,flip=false){return this.drawFromAtlas(ctx,this.sleepAtlas,this.sleepFrames,frame,x,y,size,flip);}
-  drawEntry(ctx,e,x,y,zoom=1,flip=false){const {image,frames}=this.atlasFor(e);return this.drawFromAtlas(ctx,image,frames,e.frame,x,y,e.size*zoom,flip);}
+  drawEntry(ctx,e,x,y,zoom=1,flip=false){const {image,frames}=this.atlasFor(e);return this.drawFromAtlas(ctx,image,frames,e.frame,x,y,e.size*zoom,flip,e.anchorY??.94);}
   groundFor(w){
     const key=`${seedOfWorld(w)}|${this.revision}`;if(this.ground&&this.groundKey===key)return this.ground;
     // A continuous top-down material map is projected once, not thousands of tile objects per frame.

@@ -1,8 +1,14 @@
 import {worldDate} from './clock.js';
 import {deriveSettlements} from './living-world.js';
 
+// Public history carries causal IDs; full evidence remains available through WHY.
+export function publicPhysicalReceipt(r){
+  return {id:r.id,receiptId:r.id,eventId:r.eventId||null,actorId:r.actorId,worldMinute:r.worldMinute,actionId:r.actionId,procedureId:r.procedureId,inputObjectIds:r.inputObjectIds,outputObjectIds:r.outputObjectIds,primitives:(r.operations||[]).map(op=>op.primitive),workJ:r.workJ,heatJ:r.heatJ,ambientHeatJ:r.ambientHeatJ};
+}
+export function publicEventPayload(e){return e.type==='PHYSICAL_OPERATIONS_EXECUTED'?publicPhysicalReceipt(e.payload):e.payload;}
+
 function baseEntry(world,e,label,category='event'){
-  return {eventId:e.id,worldMinute:e.worldMinute,date:worldDate(e.worldMinute),category,label,actorId:e.actorId,payload:e.payload,observerOnly:true};
+  return {eventId:e.id,worldMinute:e.worldMinute,date:worldDate(e.worldMinute),category,label,actorId:e.actorId,payload:publicEventPayload(e),observerOnly:true};
 }
 
 function culturalClassifications(world){
@@ -66,6 +72,12 @@ export function classifyHistory(world){
     else if(e.type==='RESOURCE_PATCH_DAMAGED'){label='A natural resource patch is heavily damaged';category='ecology';}
     else if(e.type==='REPAIR_COMPLETED'){label='A damaged physical object is repaired';category='construction';}
     else if(e.type==='GRIEVANCE_CREATED'){label='A persistent grievance forms from experienced harm';category='society';}
+    else if(e.type==='PHYSICAL_OPERATIONS_EXECUTED'){label='A physical operation sequence produces an observed outcome';category='knowledge';}
+    else if(e.type==='PROCEDURE_DISCOVERED'){label='A Citizen remembers a successful physical procedure';category='knowledge';}
+    else if(e.type==='PROCEDURE_MODIFIED'){label='A Citizen changes a learned procedure';category='knowledge';}
+    else if(e.type==='PROCEDURE_TRANSMITTED'||e.type==='PROCEDURE_LEARNED'){label='Physical procedure knowledge is transmitted';category='knowledge';}
+    else if(e.type==='PROCEDURE_LOST'||e.type==='PROCEDURE_KNOWLEDGE_FORGOTTEN'){label='Physical procedure knowledge is lost';category='knowledge';}
+    else if(e.type==='PROCEDURE_ATTEMPT_FAILED'){label='A procedure attempt contradicts expectations';category='knowledge';}
     else if(e.type==='PROGRAM_CREATED'){label='A Citizen creates a persistent behavioral program';category='knowledge';}
     else continue;
     entries.push(baseEntry(world,e,label,category));
@@ -82,7 +94,7 @@ export function classifyHistory(world){
 }
 
 export function why(world,eventId,depth=4){
-  const by=new Map((world.ledger||[]).map(e=>[e.id,e]));const root=by.get(eventId);if(!root)return null;
+  const by=new Map((world.ledger||[]).map(e=>[e.id,e]));let root=by.get(eventId);if(!root){const receipt=(world.physicalReceipts||[]).find(r=>r.id===eventId||r.eventId===eventId);const object=(world.objects||[]).find(o=>o.id===eventId),procedure=(world.procedures||[]).find(p=>p.id===eventId);root=by.get(object?.lastPhysicalEventId||object?.provenance?.eventId||procedure?.evidenceEventId)||[...by.values()].find(e=>e.type==='ACTION_STARTED'&&e.payload?.actionId===eventId)||[...by.values()].findLast(e=>e.payload?.procedureId===eventId);if(!root&&receipt)root={id:receipt.eventId,type:'PHYSICAL_OPERATIONS_EXECUTED',actorId:receipt.actorId,worldMinute:receipt.worldMinute,payload:receipt,causes:[],archivedEvidence:true};}if(!root)return null;
   const walk=(e,d)=>({event:e,causes:d>0?(e.causes||[]).map(id=>by.get(id)).filter(Boolean).map(x=>walk(x,d-1)):[]});
   return walk(root,depth);
 }

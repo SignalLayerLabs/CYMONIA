@@ -23,7 +23,7 @@ try{
     if(mode==='gpu')await page.waitForFunction(()=>renderer.gpu.ready||renderer.gpu.failed);
     const result=await page.evaluate(({actions,mode})=>{
       const check=(value,message)=>{if(!value)throw new Error(message);};
-      const r=window.renderer,art=r.art;
+      const r=window.renderer,art=r.art,nowMs=1000;
       check(art.citizenAtlases.filter(Boolean).length===4,'four action atlases load');
       // Every visible pixel belongs to exactly one complete pose; no clipped tools or cell bleed.
       for(const asset of art.citizenAtlases){
@@ -50,13 +50,17 @@ try{
       for(const [index,type] of [...actions.entries(),[0,'REST']]){
         for(const c of citizens)c.currentAction={type,startedWorldMinute:0,endsWorldMinute:100,fromPosition:{...c.position},targetPosition:{x:c.position.x-10,y:c.position.y}};
         const before=JSON.stringify(state);
-        if(mode==='gpu')r.gpu.render(state,r.camera,0);else r.drawWorldObjects(ctx,{width:1200,height:900},{},0);
+        if(mode==='gpu')r.gpu.render(state,r.camera,0,{nowMs});else r.drawWorldObjects(ctx,{width:1200,height:900},{},0,nowMs);
         const hits=(mode==='gpu'?r.gpu.hits:r.hits).filter(h=>h.kind==='citizen');
         check(hits.length===4,`${mode} ${type}: all identities visible`);
         for(const [i,c] of citizens.entries()){
           const hit=hits.find(h=>h.id===c.id);
-          check(hit.atlas===(type==='SLEEP'?'sleep':`citizen:${ids[i]}`),`${type}: atlas identity`);
-          check(hit.frame===(type==='SLEEP'?ids[i]:index),`${type}: correct rendered pose`);
+          const expected=art.animatedCitizenSprite(c,nowMs);
+          check(hit.atlas===`animated:${ids[i]}`,`${type}: animated atlas identity`);
+          check(hit.frame===expected.frame,`${type}: correct animated frame`);
+          const legacy=art.citizenSprite(c);
+          check(legacy.atlas===(type==='SLEEP'?'sleep':`citizen:${ids[i]}`),`${type}: static API atlas identity`);
+          check(legacy.frame===(type==='SLEEP'?ids[i]:index),`${type}: static API pose preserved`);
           const asset=art.atlasFor(hit),f=asset.frames[hit.frame];let sample;
           for(let y=0;y<f.h&&!sample;y++)for(let x=0;x<f.w;x++)if(asset.pixels[((f.y+y)*asset.image.width+f.x+x)*4+3]>200){sample={x,y};break;}
           check(sample,`${type}: opaque sprite pixels`);

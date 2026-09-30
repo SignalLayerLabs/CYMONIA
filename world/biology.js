@@ -1,5 +1,6 @@
 import {appendEvent} from './ledger.js';
 import {stableId} from './rng.js';
+import {forgetCitizenProcedures} from './procedures.js';
 import {environmentalExposure} from './terrain.js';
 
 export function advanceBody(world,citizen,deltaMinutes){
@@ -17,4 +18,4 @@ export function advanceBody(world,citizen,deltaMinutes){
 export function restoreHydration(citizen,amount=20){citizen.body.hydration=Math.min(100,citizen.body.hydration+amount);}
 export function restoreCalories(citizen,amount=18){citizen.body.calories=Math.min(100,citizen.body.calories+amount);}
 export function restoreSleep(citizen,amount=35){citizen.body.sleepPressure=Math.max(0,citizen.body.sleepPressure-amount);}
-export function killCitizen(world,citizen,cause='unknown',at=world.clock.worldMinute){if(!citizen.alive)return citizen;citizen.alive=false;citizen.body.alive=false;citizen.deathWorldMinute=at;citizen.currentActionId=null;const corpseId=stableId('corpse',citizen.id,at);if(!world.objects.some(o=>o.id===corpseId))world.objects.push({id:corpseId,kind:'corpse',material:'biomass',quantity:Math.max(0,Number(citizen.body.massKg)||0),massPerUnitKg:1,holderId:null,position:{...citizen.position},condition:1,provenance:{type:'CORPSE',citizenId:citizen.id,deathWorldMinute:at,cause}});appendEvent(world,'DEATH',citizen.id,{cause,position:citizen.position,corpseObjectId:corpseId},[],at);return citizen;}
+export function killCitizen(world,citizen,cause='unknown',at=world.clock.worldMinute){if(!citizen.alive)return citizen;citizen.alive=false;citizen.body.alive=false;citizen.deathWorldMinute=at;citizen.currentActionId=null;const corpseId=stableId('corpse',citizen.id,at);if(!world.objects.some(o=>o.id===corpseId))world.objects.push({id:corpseId,kind:'corpse',material:'biomass',quantity:Math.max(0,Number(citizen.body.massKg)||0),massPerUnitKg:1,holderId:null,position:{...citizen.position},condition:1,provenance:{type:'CORPSE',citizenId:citizen.id,deathWorldMinute:at,cause}});const event=appendEvent(world,'DEATH',citizen.id,{cause,position:citizen.position,corpseObjectId:corpseId},[],at);forgetCitizenProcedures(world,citizen,at,event.id);return citizen;}

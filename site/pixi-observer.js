@@ -3,10 +3,10 @@ import {TransientMatterEffects} from './transient-physics.js';
 import {isoPoint,sceneEntries,staticSceneKey} from './medieval-art.js';
 import {citizenVisualPose} from './citizen-animation.js';
 import {SpineCitizenAdapter} from './spine-citizen-adapter.js';
+import {canonicalVisualIndex,actionVisualContext,actionContextShapes,drawActionContextPixi,materialColor,isHotObject} from './action-animations.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 import {citizenPosition,citizenDisplayOffsets} from './observer-motion.js';
-const ACTION_ICON={MOVE:'→',OBSERVE:'◉',REST:'·',SLEEP:'z',EAT:'•',DRINK:'≈',GATHER:'⌁',CARRY:'▣',CUT:'╱',DIG:'⌄',BUILD:'⌂',CARE:'+',TEACH:'◇',COMMUNICATE:'◇',EXPERIMENT:'✦',ATTACK:'⚠',DEFEND:'◈',TRANSFER:'↔',PROMISE:'∞',CLAIM:'⌁',REPRODUCE:'◌'};
 function colorNumber(css){const m=String(css).match(/rgb\((\d+),(\d+),(\d+)\)/);return m?(Number(m[1])<<16)|(Number(m[2])<<8)|Number(m[3]):0x587040;}
 function hashUnit(value){let h=2166136261>>>0;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0;}return(h>>>0)/4294967295;}
 const point=isoPoint;
@@ -21,7 +21,7 @@ export class PixiObserverLayer{
   constructor(canvasFallback,art){
     this.canvasFallback=canvasFallback;this.art=art;this.app=null;this.ready=false;this.failed=false;this.state=null;this.staticKey='';this.hits=[];this.citizenSprites=new Map();this.frames=[];this.groundSource=null;this.staticEntries=[];this.livingKey='';
     // Logical object layers share a depth-sorted container, so trees can occlude people correctly.
-    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;this.spineAdapter=null;this.ownedCitizenId=null;
+    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;this.spineAdapter=null;this.ownedCitizenId=null;this.debrisSprites=[];this.hotObjects=[];
     this.init();
   }
   async init(){
@@ -40,7 +40,7 @@ export class PixiObserverLayer{
       const source=PIXI.Texture.from(this.art.atlas).source;
       this.frames=this.art.frames.map(f=>new PIXI.Texture({source,frame:new PIXI.Rectangle(f.x,f.y,f.w,f.h)}));
       this.citizenTextures=new Map([['base',this.frames]]);
-      for(const atlas of ['sleep',...this.art.citizenAtlases.map((_,i)=>`citizen:${i}`)]){
+      for(const atlas of ['sleep',...this.art.citizenAtlases.map((_,i)=>`citizen:${i}`),...this.art.animatedCitizenAtlases.map((_,i)=>`animated:${i}`)]){
         const asset=this.art.atlasFor({atlas});if(!asset.image)continue;
         const source=PIXI.Texture.from(asset.image).source;
         this.citizenTextures.set(atlas,asset.frames.map(f=>new PIXI.Texture({source,frame:new PIXI.Rectangle(f.x,f.y,f.w,f.h)})));
@@ -50,7 +50,7 @@ export class PixiObserverLayer{
       this.ready=true;
     }catch(error){console.warn('Pixi observer unavailable; Canvas fallback remains active.',error);this.app?.destroy(true,{children:true});this.app=null;this.failed=true;}
   }
-  setState(state,offsets=citizenDisplayOffsets(state)){this.state=state;this.citizenOffsets=offsets;}
+  setState(state,offsets=citizenDisplayOffsets(state)){this.state=state;this.citizenOffsets=offsets;this.visualIndex=canonicalVisualIndex(state);}
   setOwnedCitizen(id){this.ownedCitizenId=id||null;}
   staticSignature(state){return `${staticSceneKey(state)}|${this.art.revision}`;}
   clearLayer(layer){for(const child of layer.removeChildren())child.destroy({children:true});}
@@ -62,12 +62,15 @@ export class PixiObserverLayer{
       const s=new PIXI.Sprite(PIXI.Texture.from(ground));s.position.set(-1600,0);this.terrainLayer.addChild(s);this.groundSprite=s;this.groundSource=ground;
     }
     for(const s of [...this.vegetationLayer,...this.resourceLayer,...this.structureLayer])s.destroy({children:true});
-    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.waterLayer.clear();
+    this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.hotObjects=[];this.waterLayer.clear();
     this.staticEntries=sceneEntries(this.state);
     for(const e of this.staticEntries){
       const t=terrainAtPublic(this.state,e.position.x,e.position.y),p=point(e.position.x,e.position.y,t.elevation);
       if(e.frame===-1){this.waterLayer.ellipse(p.x,p.y,15,7).stroke({width:1,color:0xbce4db,alpha:.5});continue;}
       const sprite=this.sprite(e.frame,e.size);sprite.position.set(p.x,p.y);sprite.zIndex=p.y;
+      if(e.condition!=null)sprite.tint=Number(e.condition)<.4?0xa69a81:Number(e.condition)<.75?0xc9bea3:0xffffff;
+      if(e.kind==='debris'){sprite.scale.y*=.6;sprite.rotation=(hashUnit(e.id)-.5)*.3;}
+      if(isHotObject(e)){const effect=new PIXI.Graphics();effect.position.set(p.x,p.y);effect.zIndex=p.y+.2;this.citizenLayer.addChild(effect);this.structureLayer.push(effect);this.hotObjects.push({entry:e,effect});}
       if(e.kind==='project'){const bar=new PIXI.Graphics();bar.rect(-22,6,44,3).fill(0x2b3024).rect(-22,6,44*e.progress,3).fill(0xd8bd76);bar.position.set(p.x,p.y);bar.zIndex=p.y+.1;this.structureLayer.push(bar);this.citizenLayer.addChild(bar);}
       this.citizenLayer.addChild(sprite);
       (e.kind==='scenery'?this.vegetationLayer:e.kind==='resource'?this.resourceLayer:this.structureLayer).push(sprite);
@@ -100,53 +103,61 @@ export class PixiObserverLayer{
       if(!c.alive)continue;alive.add(c.id);if(this.citizenSprites.has(c.id))continue;
       let entry=this.spineAdapter?.create(c)||null;
       if(!entry){
-        const visual=this.art.citizenSprite(c,CITIZEN_STAND_SIZE,CITIZEN_SLEEP_SIZE);
+        const visual=this.art.animatedCitizenSprite(c,0,CITIZEN_STAND_SIZE,CITIZEN_SLEEP_SIZE);
         const container=new PIXI.Container(),body=new PIXI.Sprite(this.citizenTextures.get(visual.atlas)[visual.frame]),shadow=new PIXI.Graphics();
         body.anchor.set(.5,CITIZEN_STAND_ANCHOR_Y);body.scale.set(visual.size/body.texture.width);
         shadow.ellipse(1,1,6,2.8).fill({color:0x1d281c,alpha:.22});
-        const task=new PIXI.Text({text:'',style:{fontFamily:'Georgia',fontSize:10,fill:0xf8e8b5,stroke:{color:0x283021,width:2}}});
-        task.anchor.set(.5);task.position.set(0,-25);container.addChild(shadow,body,task);
-        entry={container,body,task,shadow,spine:false,visual};
+        container.addChild(shadow,body);
+        entry={container,body,shadow,spine:false,visual};
       }
       const ownedRing=new PIXI.Graphics();ownedRing.ellipse(0,1,11,5).stroke({width:1.5,color:0x8fd7ff,alpha:.95});ownedRing.visible=false;
       const ownerMark=new PIXI.Text({text:'YOU',style:{fontFamily:'system-ui',fontSize:8,fontWeight:'700',fill:0xbfe8ff,stroke:{color:0x17251f,width:2}}});ownerMark.anchor.set(.5);ownerMark.position.set(0,-31);ownerMark.visible=false;
       entry.container.addChildAt(ownedRing,0);entry.container.addChild(ownerMark);entry.ownedRing=ownedRing;entry.ownerMark=ownerMark;
+      entry.actionGraphics=new PIXI.Graphics();entry.container.addChild(entry.actionGraphics);
       this.citizenLayer.addChild(entry.container);this.citizenSprites.set(c.id,entry);
     }
     for(const [id,e] of this.citizenSprites)if(!alive.has(id)){e.container.destroy({children:true});this.citizenSprites.delete(id);}
   }
   screenPoint(x,y,elevation=0,camera){const p=point(x,y,elevation),origin=point(camera.x,camera.y);return{x:camera.width/2+(p.x-origin.x)*camera.zoom,y:camera.height/2+(p.y-origin.y)*camera.zoom};}
   ingestCanonicalEffects(events,camera){for(const e of events||[])if(e.type==='STRUCTURE_FRACTURED')this.transient?.ingest(e,(x,y)=>this.screenPoint(x,y,terrainAtPublic(this.state,x,y).elevation,camera));}
-  render(state,camera,minute,{selected=null,follow=null}={}){
-    if(!this.ready||!this.app)return false;this.state=state;
+  render(state,camera,minute,{selected=null,follow=null,nowMs=performance.now()}={}){
+    if(!this.ready||!this.app)return false;if(this.state!==state||!this.visualIndex)this.visualIndex=canonicalVisualIndex(state);this.state=state;
     if(this.staticKey!==this.staticSignature(state))this.rebuildStatic();if(this.livingKey!==this.livingSignature(state))this.rebuildLiving();this.animateRiver(minute);this.ensureCitizens();
     const origin=point(camera.x,camera.y);this.root.scale.set(camera.zoom);this.root.position.set(camera.width/2-origin.x*camera.zoom,camera.height/2-origin.y*camera.zoom);this.hits=[];
     const hits=[];
     for(const e of this.staticEntries){if(!e.id)continue;const t=terrainAtPublic(state,e.position.x,e.position.y),p=this.screenPoint(e.position.x,e.position.y,t.elevation,camera);hits.push({...this.art.hitRecord(e,p,camera.zoom),depth:point(e.position.x,e.position.y,t.elevation).y});}
     for(const c of state.citizens||[]){if(!c.alive)continue;const e=this.citizenSprites.get(c.id),pos=citizenPosition(c,state),t=terrainAtPublic(state,pos.x,pos.y),p=point(pos.x,pos.y,t.elevation),a=c.currentAction,moving=a?.type==='MOVE'&&minute<Number(a.endsWorldMinute),active=c.id===selected||c.id===follow;
       const offset=this.citizenOffsets?.get(c.id)||{x:0,y:0};p.x+=offset.x;p.y+=offset.y;
-      const flip=Boolean(moving&&a?.targetPosition&&a?.fromPosition&&a.targetPosition.x-a.targetPosition.y<a.fromPosition.x-a.fromPosition.y);
+      const context=actionVisualContext(c,this.visualIndex),target=context.targetPosition;
+      const targetPoint=target?point(target.x,target.y,terrainAtPublic(state,target.x,target.y).elevation):null;
+      const vector=targetPoint?{x:targetPoint.x-p.x,y:targetPoint.y-p.y}:{x:12,y:0};
+      const flip=targetPoint?vector.x<0:Boolean(moving&&a?.targetPosition&&a?.fromPosition&&a.targetPosition.x-a.targetPosition.y<a.fromPosition.x-a.fromPosition.y);
       e.container.position.set(p.x,p.y);e.container.zIndex=p.y;
       if(e.spine){
         this.spineAdapter?.update(e,c,{flip});
       }else{
-        const visual=this.art.citizenSprite(c,CITIZEN_STAND_SIZE,CITIZEN_SLEEP_SIZE),sleeping=visual.sleep,body=e.body;
+        const visual=this.art.animatedCitizenSprite(c,nowMs,CITIZEN_STAND_SIZE,CITIZEN_SLEEP_SIZE),sleeping=visual.sleep,body=e.body;
         body.texture=this.citizenTextures.get(visual.atlas)[visual.frame];e.visual=visual;
-        body.anchor.set(.5,sleeping?CITIZEN_SLEEP_ANCHOR_Y:CITIZEN_STAND_ANCHOR_Y);
+        body.anchor.set(.5,visual.anchorY??(sleeping?CITIZEN_SLEEP_ANCHOR_Y:CITIZEN_STAND_ANCHOR_Y));
         const scale=visual.size/body.texture.width;
         if(sleeping){
-          body.y=CITIZEN_SLEEP_LIFT;body.rotation=0;
+          body.y=visual.atlas.startsWith('animated:')?0:CITIZEN_SLEEP_LIFT;body.rotation=0;
           body.scale.set((flip?-1:1)*scale,scale);
           if(e.shadow){e.shadow.position.set(0,2);e.shadow.scale.x=1.1;e.shadow.scale.y=.78;}
         }else{
-          const pose=citizenVisualPose(c,performance.now());
+          const pose=citizenVisualPose(c,nowMs);
           body.y=CITIZEN_STAND_LIFT+pose.y;body.rotation=pose.rotation;
           body.scale.set((flip?-1:1)*scale*pose.scaleX,scale*pose.scaleY);
           if(e.shadow)e.shadow.scale.set(pose.shadowScale,1);
         }
       }
       const owned=c.id===this.ownedCitizenId;if(e.ownedRing)e.ownedRing.visible=owned;if(e.ownerMark)e.ownerMark.visible=owned;
-      e.task.text=a&&(active||owned)?ACTION_ICON[a.type]||'·':'';
+      if(e.task)e.task.text='';
+      e.actionGraphics.visible=active||owned||camera.zoom>.7;
+      e.actionGraphics.scale.x=flip?-1:1;
+      let heatVector=null;
+      if(context.heatPosition&&context.heat?.holderId!==c.id){const hp=context.heatPosition,hq=point(hp.x,hp.y,terrainAtPublic(state,hp.x,hp.y).elevation);heatVector={x:(hq.x-p.x)*(flip?-1:1),y:hq.y-p.y};}
+      drawActionContextPixi(e.actionGraphics,actionContextShapes(context,nowMs,{x:vector.x*(flip?-1:1),y:vector.y},heatVector));
       const body=e.body,sp=this.screenPoint(pos.x,pos.y,t.elevation,camera);sp.x+=offset.x*camera.zoom;sp.y+=offset.y*camera.zoom;
       if(e.spine){
         hits.push({id:c.id,kind:'citizen',x:sp.x,y:sp.y-12*camera.zoom,r:15*camera.zoom,depth:p.y});
@@ -162,8 +173,15 @@ export class PixiObserverLayer{
       this.waterLayer.tilePosition.x=minute*0.45;
       this.waterLayer.tilePosition.y=Math.sin(minute*.09)*1.5;
     }
-    this.ingestCanonicalEffects(state.recentLedger||state.ledgerEvents||[],camera);this.clearLayer(this.effectsLayer);
-    for(const d of this.transient?.update()||[]){const g=new globalThis.PIXI.Graphics();g.rect(-d.size/2,-d.size/2,d.size,d.size).fill({color:0x897b69,alpha:d.alpha});g.position.set((d.x-camera.width/2)/camera.zoom+origin.x,(d.y-camera.height/2)/camera.zoom+origin.y);g.rotation=d.angle;this.effectsLayer.addChild(g);}
+    for(const {entry,effect} of this.hotObjects)drawActionContextPixi(effect,actionContextShapes({animation:{frameMs:210},heat:entry,target:entry},nowMs,{x:0,y:0}));
+    this.ingestCanonicalEffects(state.recentLedger||state.ledgerEvents||[],camera);
+    const debris=(this.transient?.update()||[]).slice(0,256);
+    for(let i=0;i<debris.length;i++){
+      const d=debris[i];let sprite=this.debrisSprites[i];
+      if(!sprite){sprite=new globalThis.PIXI.Sprite(globalThis.PIXI.Texture.WHITE);sprite.anchor.set(.5);sprite.tint=materialColor({material:'stone'});this.effectsLayer.addChild(sprite);this.debrisSprites.push(sprite);}
+      sprite.visible=true;sprite.alpha=d.alpha;sprite.width=d.size;sprite.height=d.size;sprite.position.set((d.x-camera.width/2)/camera.zoom+origin.x,(d.y-camera.height/2)/camera.zoom+origin.y);sprite.rotation=d.angle;
+    }
+    for(let i=debris.length;i<this.debrisSprites.length;i++)this.debrisSprites[i].visible=false;
     return true;
   }
 }

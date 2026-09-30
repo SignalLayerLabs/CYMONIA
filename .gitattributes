@@ -1,0 +1,2 @@
+# Preserve upstream shader strings in locally bundled third-party distributions.
+site/vendor/** -whitespace
