@@ -1,4 +1,5 @@
 import {worldDate} from './clock.js';
+import {deriveSettlements} from './living-world.js';
 
 function baseEntry(world,e,label,category='event'){
   return {eventId:e.id,worldMinute:e.worldMinute,date:worldDate(e.worldMinute),category,label,actorId:e.actorId,payload:e.payload,observerOnly:true};
@@ -70,6 +71,7 @@ export function classifyHistory(world){
     entries.push({eventId:`observer:conflict:${last.id}`,worldMinute:last.worldMinute,date:worldDate(last.worldMinute),category:'conflict',label:'Observer classification: organized or escalating conflict',confidence:Math.min(.95,.45+recentViolence.length*.08),observerOnly:true,causes:recentViolence.map(e=>e.id)});
   }
   entries.push(...culturalClassifications(world));
+  for(const settlement of deriveSettlements(world,world.clock.worldMinute))entries.push({eventId:settlement.id,worldMinute:settlement.sinceWorldMinute,date:worldDate(settlement.sinceWorldMinute),category:'society',label:'Observer classification: persistent settlement cluster',confidence:Math.min(.95,.48+settlement.buildings*.08+Math.min(.2,settlement.useMinutes/10000)),observerOnly:true,causes:[],payload:{structureIds:settlement.structureIds,population:settlement.population,useMinutes:settlement.useMinutes,traffic:settlement.traffic}});
   const withEras=assignEmergentEras(entries);
   return {entries:withEras.sort((a,b)=>b.worldMinute-a.worldMinute||String(b.eventId).localeCompare(String(a.eventId)))};
 }

@@ -122,6 +122,26 @@ Genesis starts without a human language. Citizens have primitive signals and can
 
 Matter is tracked through resource deposits, objects, transformations, construction and destruction. Objects retain provenance. Structures exist because their inputs and work existed.
 
+
+### A world that remembers how it is used
+
+The landscape now changes through ordinary life instead of waiting for scripted milestones:
+
+- repeated movement leaves **trails** that slowly become easier to travel;
+- the **river** changes width, depth and flow with rain and soil moisture;
+- construction materials must be **carried to and staged at the site**;
+- buildings appear through visible **site → foundation → frame → roof → enclosed → complete** phases;
+- structures remember **actual use and sleep/rest time**, without assuming ownership;
+- loose material can form observer-visible **stockpiles**;
+- heavy harvesting creates **ecological pressure** and slows local renewal;
+- darkness and rain reduce **perception range** instead of imposing a scripted bedtime;
+- repeated work builds **procedural skill**, while transformed artifacts can make physical work faster;
+- relationships accumulate from real care, exchange, conflict, communication and cooperation;
+- persistent clusters may be described by the Observer as **settlements**, but that label is descriptive and never creates a village in the kernel;
+- Citizens plan from bounded **spatial memory**, not from an omniscient map.
+
+The result is physical continuity: paths, construction, resource pressure and habitation are consequences of what Citizens repeatedly do.
+
 ### Emergent society
 
 CYMONIA does not hard-code a government, religion, corporation, bank, police force, court or property regime. The kernel provides generic social primitives; meaning has to emerge from Citizen behavior.
@@ -200,6 +220,7 @@ For the technical deep dive, read **[Architecture](docs/architecture/overview.md
 |---|---|
 | [`world/`](world/) | Canonical simulation kernel: physics, biology, knowledge, cognition, language and society |
 | [`world/affordances.js`](world/affordances.js) | Deterministic Local Brain candidate generation and scoring |
+| [`world/living-world.js`](world/living-world.js) | Bounded trails, habitation, ecology, tools, spatial memory and observer-only settlement evidence |
 | [`world/cognition-state.js`](world/cognition-state.js) | Bounded local learning, cooldowns and cognition debt |
 | [`world/cognition-queue.js`](world/cognition-queue.js) | Mergeable novelty queue and fair debt-aware AI scheduling |
 | [`world/strategy.js`](world/strategy.js) | Persistent AI strategy validation and lifecycle |
@@ -318,6 +339,7 @@ CYMONIA overlaps with agent-based modeling, artificial life, generative agents a
 - **[Physics model](docs/architecture/physics.md)**
 - **[Sovereign World design](docs/design/sovereign-world-v2.md)**
 - **[Self-evolving world design](docs/design/self-evolving-world.md)**
+- **[Living World / physical continuity](docs/design/living-world.md)**
 - **[Observer art](docs/observer/art.md)**
 - **[Optional Spine integration](docs/observer/spine.md)**
 - **[Deployment](docs/operations/deployment.md)**

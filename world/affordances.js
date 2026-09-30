@@ -5,6 +5,7 @@ import {MATERIAL_PROPERTIES} from './materials.js';
 import {hash32,stableId} from './rng.js';
 import {activeStrategy} from './strategy.js';
 import {terrainAt,nearestDryLandPoint,isWaterTerrainKind,isSleepUnsafeTerrainKind} from './terrain.js';
+import {nightPressure,rememberedCrowding} from './living-world.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -43,7 +44,7 @@ export function explorationTarget(world,citizen,at=world.clock.worldMinute){
   for(let cy=0;cy<10;cy++)for(let cx=0;cx<10;cx++){
     const target={x:5+cx*10,y:5+cy*10},key=`${cx}:${cy}`;
     const visits=Number(map[key]?.visits||0),distance=dist(citizen.position,target);
-    const crowd=(world.citizens||[]).filter(other=>other.alive&&other.id!==citizen.id&&dist(other.position,target)<=10).length;
+    const crowd=rememberedCrowding(citizen,target,at,10);
     const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&dist(deposit.position,target)<=12);
     const deterministic=(hash32(`${world.seed}|${citizen.id}|${cycle}|frontier|${key}`)%10000)/10000;
     const score=
@@ -88,11 +89,11 @@ function exploreCandidate(world,citizen,at){
   return {
     family:'explore',
     key:`explore:${Math.floor(target.x)}:${Math.floor(target.y)}`,
-    utility:Math.max(.03,.08+crowdPressure-opportunityPenalty),
+    utility:Math.max(.03,.08+crowdPressure-opportunityPenalty-nightPressure(world)*.06),
     knowledgeGap:frontierGap,
     novelty:visits===0?.84:.52,
     effort:Math.min(1,distance/70),
-    risk:.14,
+    risk:.14+nightPressure(world)*.18,
     proposal:proposal('explore',[],[
       {
         type:'MOVE',
@@ -172,7 +173,7 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
       };
       if(buildSiteConflict(world,site,footprintRadius)||buildTerrainConflict(world,site,footprintRadius)||isWaterTerrainKind(terrainAt(world,site.x,site.y).kind))continue;
 
-      const crowd=localCrowding(world,site,11);
+      const crowd=rememberedCrowding(citizen,site,at,11);
       const buildings=(world.buildings||[]).filter(b=>b.position&&dist(b.position,site)<=14).length;
       const projects=(world.projects||[]).filter(pr=>pr.status==='construction'&&pr.site&&dist(pr.site,site)<=14).length;
       const visited=Number(map[explorationCellKey(site)]?.visits||0)>0?1:0;
@@ -312,7 +313,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   }
 
   candidates.push(exploreCandidate(world,citizen,at));
-  candidates.push({family:'rest',key:'rest',utility:.04+clamp01(citizen.body.sleepPressure/100)*.35,novelty:0,effort:0,risk:0,proposal:proposal('rest',[],[{type:'REST',durationMinutes:20,purpose:'self_directed',concepts:[]}])});
+  candidates.push({family:'rest',key:'rest',utility:.04+clamp01(citizen.body.sleepPressure/100)*.35+nightPressure(world)*.1,novelty:0,effort:0,risk:0,proposal:proposal('rest',[],[{type:'REST',durationMinutes:20,purpose:'self_directed',concepts:[]}])});
   return candidates;
 }
 

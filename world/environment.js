@@ -1,4 +1,5 @@
 import {WORLD_MINUTES_PER_DAY,WORLD_MINUTES_PER_YEAR} from './constants.js';
+import {resourceRenewalFactor} from './living-world.js';
 
 function renewalReservoir(type){if(type==='water')return 'waterKg';if(type==='food'||type==='timber')return 'biomassKg';if(type==='clay')return 'mineralKg';return null;}
 export function advanceEnvironment(world,fromMinute,toMinute){
@@ -13,7 +14,7 @@ export function advanceEnvironment(world,fromMinute,toMinute){
   e.pollution=Math.max(0,Number(e.pollution||0)-delta/2_000_000);
   for(const d of world.resourceDeposits){
     if(!(d.renewPerDay>0))continue;
-    const reservoir=renewalReservoir(d.type),wanted=d.renewPerDay*(delta/WORLD_MINUTES_PER_DAY);
+    const reservoir=renewalReservoir(d.type),wanted=d.renewPerDay*(delta/WORLD_MINUTES_PER_DAY)*resourceRenewalFactor(world,d,toMinute);
     if(!reservoir)continue;
     const available=Math.max(0,Number(e.naturalReservoirs[reservoir]||0)),actual=Math.min(wanted,available);
     d.quantity+=actual;e.naturalReservoirs[reservoir]=available-actual;

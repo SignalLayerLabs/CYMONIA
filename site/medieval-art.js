@@ -42,7 +42,7 @@ export function sceneEntries(w,{decorations=true}={}){
   }
   for(const d of w.resourceDeposits||[])if(d.quantity>0){const frames={timber:0,food:8,stone:3,ore:10,clay:11,water:-1};add('resource',d.id,d.position,frames[d.type]??3,d.type==='timber'?85:d.type==='water'?30:52);}
   for(const o of w.objects||[])if(o.kind==='temporary_shelter'&&o.quantity>0&&o.condition!==0)add('shelter',o.id,o.position,4,54);
-  for(const p of w.projects||[])if(p.status==='construction')add('project',p.id,p.site,7,90,{progress:clamp(p.workDoneMinutes/Math.max(1,p.workRequiredMinutes),0,1)});
+  for(const p of w.projects||[])if(p.status==='construction'){const progress=clamp(p.workDoneMinutes/Math.max(1,p.workRequiredMinutes),0,1),phase=p.phase||(progress<.08?'site':progress<.25?'foundation':progress<.55?'frame':progress<.8?'roof':'enclosed'),size=phase==='site'?42:phase==='foundation'?55:phase==='frame'?70:phase==='roof'?82:90;add('project',p.id,p.site,7,size,{progress,phase});}
   for(const b of w.buildings||[])if(b.massKg>0&&b.condition>0)add('building',b.id,b.position,/hall|communal|large/i.test(b.designId||'')?6:5,108,{condition:b.condition});
   return entries.sort((a,b)=>(a.position.x+a.position.y)-(b.position.x+b.position.y));
 }

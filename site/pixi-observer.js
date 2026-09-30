@@ -1,4 +1,4 @@
-import {terrainAtPublic,terrainDecoration,terrainPalette} from './terrain-model.js';
+import {terrainAtPublic,terrainDecoration,terrainPalette,riverCenterXPublic} from './terrain-model.js';
 import {TransientMatterEffects} from './transient-physics.js';
 import {isoPoint,sceneEntries,staticSceneKey} from './medieval-art.js';
 import {citizenVisualPose} from './citizen-animation.js';
@@ -19,7 +19,7 @@ const CITIZEN_SLEEP_LIFT=-2;
 
 export class PixiObserverLayer{
   constructor(canvasFallback,art){
-    this.canvasFallback=canvasFallback;this.art=art;this.app=null;this.ready=false;this.failed=false;this.state=null;this.staticKey='';this.hits=[];this.citizenSprites=new Map();this.frames=[];this.groundSource=null;this.staticEntries=[];
+    this.canvasFallback=canvasFallback;this.art=art;this.app=null;this.ready=false;this.failed=false;this.state=null;this.staticKey='';this.hits=[];this.citizenSprites=new Map();this.frames=[];this.groundSource=null;this.staticEntries=[];this.livingKey='';
     // Logical object layers share a depth-sorted container, so trees can occlude people correctly.
     this.vegetationLayer=[];this.resourceLayer=[];this.structureLayer=[];this.citizenLayer=null;this.spineAdapter=null;this.ownedCitizenId=null;
     this.init();
@@ -32,8 +32,8 @@ export class PixiObserverLayer{
       this.app.canvas.id='gpuCanvas';this.app.canvas.className='gpu-world-canvas';this.app.canvas.setAttribute('aria-hidden','true');
       this.canvasFallback.parentElement?.insertBefore(this.app.canvas,this.canvasFallback);
       this.root=new PIXI.Container();this.app.stage.addChild(this.root);
-      this.terrainLayer=new PIXI.Container();this.waterLayer=new PIXI.Graphics();this.citizenLayer=new PIXI.Container();this.citizenLayer.sortableChildren=true;this.effectsLayer=new PIXI.Container();this.atmosphereLayer=new PIXI.Container();
-      this.root.addChild(this.terrainLayer,this.waterLayer,this.citizenLayer,this.effectsLayer);this.app.stage.addChild(this.atmosphereLayer);
+      this.terrainLayer=new PIXI.Container();this.trailLayer=new PIXI.Container();this.riverOverlayLayer=new PIXI.Container();this.waterLayer=new PIXI.Graphics();this.riverFlowLayer=new PIXI.Graphics();this.stockpileLayer=new PIXI.Container();this.citizenLayer=new PIXI.Container();this.citizenLayer.sortableChildren=true;this.effectsLayer=new PIXI.Container();this.atmosphereLayer=new PIXI.Container();
+      this.root.addChild(this.terrainLayer,this.trailLayer,this.riverOverlayLayer,this.waterLayer,this.riverFlowLayer,this.stockpileLayer,this.citizenLayer,this.effectsLayer);this.app.stage.addChild(this.atmosphereLayer);
       this.transient=new TransientMatterEffects(this.effectsLayer);
       await this.art.ready;
       if(!this.art.atlas)throw new Error('Art atlas unavailable');
@@ -74,6 +74,26 @@ export class PixiObserverLayer{
     }
     this.staticKey=this.staticSignature(this.state);
   }
+  livingSignature(state){return `${state?.livingWorld?.revision||0}|${state?.livingWorld?.trails?.length||0}|${state?.livingWorld?.stockpiles?.length||0}|${Number(state?.livingWorld?.river?.halfWidth||0).toFixed(2)}`;}
+  rebuildLiving(){
+    const PIXI=globalThis.PIXI,key=this.livingSignature(this.state);this.clearLayer(this.trailLayer);this.clearLayer(this.riverOverlayLayer);this.clearLayer(this.stockpileLayer);
+    for(const trail of this.state?.livingWorld?.trails||[]){
+      const t=terrainAtPublic(this.state,trail.x,trail.y),p=point(trail.x,trail.y,t.elevation),strength=clamp(Number(trail.strength)||0,0,1);
+      const g=new PIXI.Graphics();g.ellipse(p.x,p.y,3.5+strength*4,1.2+strength*1.8).fill({color:0x806746,alpha:.08+strength*.3});this.trailLayer.addChild(g);
+    }
+    const river=new PIXI.Graphics(),hydro=this.state?.livingWorld?.river||{halfWidth:1,flow:1};let started=false;
+    for(let y=0;y<=100;y+=1.5){const x=riverCenterXPublic(this.state,y),t=terrainAtPublic(this.state,x,y),p=point(x,y,t.elevation);if(!started){river.moveTo(p.x,p.y);started=true;}else river.lineTo(p.x,p.y);}
+    river.stroke({width:Math.max(8,10+Number(hydro.halfWidth||1)*5),color:0x4f98aa,alpha:.22});this.riverOverlayLayer.addChild(river);
+    for(const stock of this.state?.livingWorld?.stockpiles||[]){
+      const t=terrainAtPublic(this.state,stock.position.x,stock.position.y),p=point(stock.position.x,stock.position.y,t.elevation),g=new PIXI.Graphics(),size=clamp(Math.sqrt(Math.max(1,Number(stock.massKg)||1)),3,10);
+      g.rect(p.x-size,p.y-size*.55,size*2,size*.8).fill({color:0x8d7048,alpha:.72});g.rect(p.x-size*.65,p.y-size*.9,size*1.3,size*.55).fill({color:0xb08a55,alpha:.78});this.stockpileLayer.addChild(g);
+    }
+    this.livingKey=key;
+  }
+  animateRiver(minute){
+    if(!this.riverFlowLayer)return;this.riverFlowLayer.clear();const flow=Math.max(.2,Number(this.state?.livingWorld?.river?.flow)||1);
+    for(let i=0;i<14;i++){const y=(Number(minute)*flow*.08+i*7.7)%100,x=riverCenterXPublic(this.state,y),y2=Math.min(100,y+1.4),x2=riverCenterXPublic(this.state,y2),a=point(x,y,terrainAtPublic(this.state,x,y).elevation),b=point(x2,y2,terrainAtPublic(this.state,x2,y2).elevation);this.riverFlowLayer.moveTo(a.x,a.y).lineTo(b.x,b.y).stroke({width:1.1,color:0xd8eeeb,alpha:.28});}
+  }
   ensureCitizens(){
     const PIXI=globalThis.PIXI,alive=new Set();
     for(const c of this.state.citizens||[]){
@@ -99,7 +119,7 @@ export class PixiObserverLayer{
   ingestCanonicalEffects(events,camera){for(const e of events||[])if(e.type==='STRUCTURE_FRACTURED')this.transient?.ingest(e,(x,y)=>this.screenPoint(x,y,terrainAtPublic(this.state,x,y).elevation,camera));}
   render(state,camera,minute,{selected=null,follow=null}={}){
     if(!this.ready||!this.app)return false;this.state=state;
-    if(this.staticKey!==this.staticSignature(state))this.rebuildStatic();this.ensureCitizens();
+    if(this.staticKey!==this.staticSignature(state))this.rebuildStatic();if(this.livingKey!==this.livingSignature(state))this.rebuildLiving();this.animateRiver(minute);this.ensureCitizens();
     const origin=point(camera.x,camera.y);this.root.scale.set(camera.zoom);this.root.position.set(camera.width/2-origin.x*camera.zoom,camera.height/2-origin.y*camera.zoom);this.hits=[];
     const hits=[];
     for(const e of this.staticEntries){if(!e.id)continue;const t=terrainAtPublic(state,e.position.x,e.position.y),p=this.screenPoint(e.position.x,e.position.y,t.elevation,camera);hits.push({...this.art.hitRecord(e,p,camera.zoom),depth:point(e.position.x,e.position.y,t.elevation).y});}

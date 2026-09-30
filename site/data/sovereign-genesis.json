@@ -61,6 +61,13 @@
           "attachment": 0.48585944110527635,
           "confidence": 0.81038611815311
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -117,6 +124,13 @@
           "fear": 0,
           "attachment": 0.3292116139084101,
           "confidence": 0.5147400368470698
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -175,6 +189,13 @@
           "attachment": 0.21632256582379342,
           "confidence": 0.38758026449941096
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -231,6 +252,13 @@
           "fear": 0,
           "attachment": 0.31951229730620984,
           "confidence": 0.7758820560760795
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -289,6 +317,13 @@
           "attachment": 0.4892793888226152,
           "confidence": 0.7867052217945456
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -345,6 +380,13 @@
           "fear": 0,
           "attachment": 0.3290808199904859,
           "confidence": 0.8759787415154279
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -403,6 +445,13 @@
           "attachment": 0.45066237375140195,
           "confidence": 0.399904049327597
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -459,6 +508,13 @@
           "fear": 0,
           "attachment": 0.43353453651070595,
           "confidence": 0.75841486598365
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -517,6 +573,13 @@
           "attachment": 0.5240826992318035,
           "confidence": 0.7561079647857696
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -573,6 +636,13 @@
           "fear": 0,
           "attachment": 0.5988322811201214,
           "confidence": 0.7402768837753684
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -631,6 +701,13 @@
           "attachment": 0.43692212654277685,
           "confidence": 0.30274621658027173
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -687,6 +764,13 @@
           "fear": 0,
           "attachment": 0.3585396145470441,
           "confidence": 0.6987668316811323
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -745,6 +829,13 @@
           "attachment": 0.45030234791338447,
           "confidence": 0.7188490628264844
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -801,6 +892,13 @@
           "fear": 0,
           "attachment": 0.29590617595240476,
           "confidence": 0.7021626650355757
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -859,6 +957,13 @@
           "attachment": 0.2221758638508618,
           "confidence": 0.7826194322202354
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -915,6 +1020,13 @@
           "fear": 0,
           "attachment": 0.31942641567438845,
           "confidence": 0.48830935084260996
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -973,6 +1085,13 @@
           "attachment": 0.3202454688027501,
           "confidence": 0.526788879185915
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1029,6 +1148,13 @@
           "fear": 0,
           "attachment": 0.49876606008037927,
           "confidence": 0.712893291329965
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1087,6 +1213,13 @@
           "attachment": 0.5352385791949927,
           "confidence": 0.515744853252545
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1143,6 +1276,13 @@
           "fear": 0,
           "attachment": 0.5203961666673422,
           "confidence": 0.33496476835571226
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1201,6 +1341,13 @@
           "attachment": 0.2656173199415207,
           "confidence": 0.4268060760106891
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1257,6 +1404,13 @@
           "fear": 0,
           "attachment": 0.464655442442745,
           "confidence": 0.42840182525105774
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1315,6 +1469,13 @@
           "attachment": 0.49678962798789145,
           "confidence": 0.48558093630708754
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1371,6 +1532,13 @@
           "fear": 0,
           "attachment": 0.4630449949763715,
           "confidence": 0.6769379574805499
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1429,6 +1597,13 @@
           "attachment": 0.3666931204497814,
           "confidence": 0.8241294236853718
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1485,6 +1660,13 @@
           "fear": 0,
           "attachment": 0.2666288172826171,
           "confidence": 0.40396978044882415
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1543,6 +1725,13 @@
           "attachment": 0.5311197342351079,
           "confidence": 0.512620258005336
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1599,6 +1788,13 @@
           "fear": 0,
           "attachment": 0.24710912397131324,
           "confidence": 0.5974364989902824
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1657,6 +1853,13 @@
           "attachment": 0.5342258947901428,
           "confidence": 0.7947679237928241
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1713,6 +1916,13 @@
           "fear": 0,
           "attachment": 0.263182669505477,
           "confidence": 0.7366528842598199
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1771,6 +1981,13 @@
           "attachment": 0.40942392051219945,
           "confidence": 0.47106040483340617
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1827,6 +2044,13 @@
           "fear": 0,
           "attachment": 0.372188588231802,
           "confidence": 0.4667389975860715
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1885,6 +2109,13 @@
           "attachment": 0.4244751787744463,
           "confidence": 0.42910838183015587
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -1941,6 +2172,13 @@
           "fear": 0,
           "attachment": 0.3844947060570121,
           "confidence": 0.7233637447468937
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -1999,6 +2237,13 @@
           "attachment": 0.2180994554422796,
           "confidence": 0.5924921626690776
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2055,6 +2300,13 @@
           "fear": 0,
           "attachment": 0.40809770505875353,
           "confidence": 0.3722098918631673
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2113,6 +2365,13 @@
           "attachment": 0.5822406081482768,
           "confidence": 0.36851464631035924
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2169,6 +2428,13 @@
           "fear": 0,
           "attachment": 0.3427943644113839,
           "confidence": 0.8538395481649785
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2227,6 +2493,13 @@
           "attachment": 0.5643709273077548,
           "confidence": 0.7497114566154778
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2283,6 +2556,13 @@
           "fear": 0,
           "attachment": 0.4629958177916706,
           "confidence": 0.5755499015562235
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2341,6 +2621,13 @@
           "attachment": 0.3767985435202718,
           "confidence": 0.41716435574926436
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2397,6 +2684,13 @@
           "fear": 0,
           "attachment": 0.2267208168283105,
           "confidence": 0.7805087867192924
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2455,6 +2749,13 @@
           "attachment": 0.3465326148085296,
           "confidence": 0.6107591412495821
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2511,6 +2812,13 @@
           "fear": 0,
           "attachment": 0.42643881719559434,
           "confidence": 0.3266779725439846
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2569,6 +2877,13 @@
           "attachment": 0.26872576773166656,
           "confidence": 0.7734566202387214
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2625,6 +2940,13 @@
           "fear": 0,
           "attachment": 0.44419360086321835,
           "confidence": 0.7290050048846751
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2683,6 +3005,13 @@
           "attachment": 0.3674795222468674,
           "confidence": 0.64892791332677
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2739,6 +3068,13 @@
           "fear": 0,
           "attachment": 0.4537547851912678,
           "confidence": 0.7289975156541914
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2797,6 +3133,13 @@
           "attachment": 0.3577239905484021,
           "confidence": 0.4024909535888582
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2853,6 +3196,13 @@
           "fear": 0,
           "attachment": 0.570844584517181,
           "confidence": 0.3537392207421362
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -2911,6 +3261,13 @@
           "attachment": 0.27530269492417575,
           "confidence": 0.5137666299473495
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -2967,6 +3324,13 @@
           "fear": 0,
           "attachment": 0.5254676411859691,
           "confidence": 0.42010054565034805
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3025,6 +3389,13 @@
           "attachment": 0.2609350442886353,
           "confidence": 0.5581197044346482
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3081,6 +3452,13 @@
           "fear": 0,
           "attachment": 0.29429029682651164,
           "confidence": 0.715363705996424
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3139,6 +3517,13 @@
           "attachment": 0.46976266903802755,
           "confidence": 0.40540299997664986
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3195,6 +3580,13 @@
           "fear": 0,
           "attachment": 0.2923978266306222,
           "confidence": 0.7667725177947431
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3253,6 +3645,13 @@
           "attachment": 0.4755259136669338,
           "confidence": 0.8026375346817076
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3309,6 +3708,13 @@
           "fear": 0,
           "attachment": 0.41212627142667774,
           "confidence": 0.4259928829036653
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3367,6 +3773,13 @@
           "attachment": 0.3363688471727073,
           "confidence": 0.8111492648720742
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3423,6 +3836,13 @@
           "fear": 0,
           "attachment": 0.5160446082241834,
           "confidence": 0.8524486135225742
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3481,6 +3901,13 @@
           "attachment": 0.4322007828392089,
           "confidence": 0.5387559233698993
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3537,6 +3964,13 @@
           "fear": 0,
           "attachment": 0.42458121199160814,
           "confidence": 0.6739124294836074
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3595,6 +4029,13 @@
           "attachment": 0.46086226738989355,
           "confidence": 0.7477650969754904
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3651,6 +4092,13 @@
           "fear": 0,
           "attachment": 0.5940740242600442,
           "confidence": 0.6046876971144228
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3709,6 +4157,13 @@
           "attachment": 0.4644818346947432,
           "confidence": 0.7684965955093503
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3765,6 +4220,13 @@
           "fear": 0,
           "attachment": 0.2303522172383964,
           "confidence": 0.4570049756672233
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3823,6 +4285,13 @@
           "attachment": 0.2977673921734095,
           "confidence": 0.5928931953851133
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3879,6 +4348,13 @@
           "fear": 0,
           "attachment": 0.34977642185986046,
           "confidence": 0.7281490710563958
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -3937,6 +4413,13 @@
           "attachment": 0.3142332717776299,
           "confidence": 0.8998702288605271
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -3993,6 +4476,13 @@
           "fear": 0,
           "attachment": 0.45196428103372455,
           "confidence": 0.8921190559398382
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4051,6 +4541,13 @@
           "attachment": 0.5683240096084774,
           "confidence": 0.3206476354971528
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4107,6 +4604,13 @@
           "fear": 0,
           "attachment": 0.59702592715621,
           "confidence": 0.7574163728859276
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4165,6 +4669,13 @@
           "attachment": 0.3519147315993905,
           "confidence": 0.689273783750832
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4221,6 +4732,13 @@
           "fear": 0,
           "attachment": 0.26392851285636426,
           "confidence": 0.4607727520633489
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4279,6 +4797,13 @@
           "attachment": 0.3332781236618757,
           "confidence": 0.4952392660081386
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4335,6 +4860,13 @@
           "fear": 0,
           "attachment": 0.35530878454446796,
           "confidence": 0.6674133867491037
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4393,6 +4925,13 @@
           "attachment": 0.5339997049421072,
           "confidence": 0.4270502488128841
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4449,6 +4988,13 @@
           "fear": 0,
           "attachment": 0.35001495135948063,
           "confidence": 0.8302872166503221
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4507,6 +5053,13 @@
           "attachment": 0.31644710637629037,
           "confidence": 0.3257583748083562
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4563,6 +5116,13 @@
           "fear": 0,
           "attachment": 0.43337105587124825,
           "confidence": 0.45106954830698665
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4621,6 +5181,13 @@
           "attachment": 0.42372593004256487,
           "confidence": 0.6105236938688904
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4677,6 +5244,13 @@
           "fear": 0,
           "attachment": 0.48581009171903133,
           "confidence": 0.6373708393424748
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4735,6 +5309,13 @@
           "attachment": 0.3283731355331838,
           "confidence": 0.6702206794638186
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4791,6 +5372,13 @@
           "fear": 0,
           "attachment": 0.3783833420835436,
           "confidence": 0.42080721370875834
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4849,6 +5437,13 @@
           "attachment": 0.3538808955810964,
           "confidence": 0.422284250613302
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -4905,6 +5500,13 @@
           "fear": 0,
           "attachment": 0.3235491883940995,
           "confidence": 0.8038887368515133
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -4963,6 +5565,13 @@
           "attachment": 0.4714085574261844,
           "confidence": 0.3899333860259503
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5019,6 +5628,13 @@
           "fear": 0,
           "attachment": 0.5955016215331852,
           "confidence": 0.5627740500960499
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -5077,6 +5693,13 @@
           "attachment": 0.49282604828476906,
           "confidence": 0.7476981715299189
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5133,6 +5756,13 @@
           "fear": 0,
           "attachment": 0.22995097720995547,
           "confidence": 0.7477680327370763
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -5191,6 +5821,13 @@
           "attachment": 0.5522641783580184,
           "confidence": 0.4779717820230871
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5247,6 +5884,13 @@
           "fear": 0,
           "attachment": 0.21352183213457465,
           "confidence": 0.5154779667500407
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -5305,6 +5949,13 @@
           "attachment": 0.4929352584294975,
           "confidence": 0.6216825320385396
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5361,6 +6012,13 @@
           "fear": 0,
           "attachment": 0.28953066878020767,
           "confidence": 0.5060766952112317
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -5419,6 +6077,13 @@
           "attachment": 0.2635561843402684,
           "confidence": 0.7174987873993814
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5475,6 +6140,13 @@
           "fear": 0,
           "attachment": 0.37102659856900577,
           "confidence": 0.6793087533675134
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -5533,6 +6205,13 @@
           "attachment": 0.22232662895694377,
           "confidence": 0.3056308415718377
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5589,6 +6268,13 @@
           "fear": 0,
           "attachment": 0.20402932874858382,
           "confidence": 0.5915118413977325
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -5647,6 +6333,13 @@
           "attachment": 0.2170197288505733,
           "confidence": 0.7750889912713319
         },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
+        },
         "knowledge": [],
         "language": {
           "primitiveSignals": [
@@ -5703,6 +6396,13 @@
           "fear": 0,
           "attachment": 0.40095334528014065,
           "confidence": 0.8192914945073426
+        },
+        "skills": {},
+        "reputation": {
+          "knownPeers": 0,
+          "trust": 0,
+          "affection": 0,
+          "fear": 0
         },
         "knowledge": [],
         "language": {
@@ -6095,6 +6795,43 @@
     "organizations": [],
     "claims": [],
     "projects": [],
+    "livingWorld": {
+      "version": 1,
+      "revision": 0,
+      "trails": [],
+      "stockpiles": [
+        {
+          "id": "observer:stockpile:12:12",
+          "position": {
+            "x": 50,
+            "y": 50
+          },
+          "objectIds": [
+            "obj:endowment:food",
+            "obj:endowment:water-vessels",
+            "obj:endowment:timber",
+            "obj:endowment:stone"
+          ],
+          "materials": {
+            "food": 2400,
+            "fiber": 100,
+            "timber": 600,
+            "stone": 400
+          },
+          "massKg": 1640,
+          "count": 4,
+          "observerOnly": true
+        }
+      ],
+      "settlements": [],
+      "river": {
+        "halfWidth": 0.937,
+        "wetlandWidth": 2.3179999999999996,
+        "flow": 0.9080391568124361,
+        "depth": 0.667
+      },
+      "ecology": []
+    },
     "history": [
       {
         "eventId": "evt:e754a31f",
