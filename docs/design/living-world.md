@@ -30,6 +30,25 @@ Projects move through:
 
 The phase is derived from real accumulated work. Materials remain conserved and construction can be inspected before the final building exists.
 
+
+### New buildings require observed demand
+
+Finishing a structure is not evidence that another one should immediately be built.
+
+The Local Brain now evaluates a bounded construction-demand signal before a **new** project can become an affordance. The signal can rise because of:
+
+- isolation from known usable structures;
+- crowding relative to local capacity;
+- rain, cold or heat exposure;
+- sustained use of existing structures;
+- material/storage pressure.
+
+It falls when the Citizen knows about unused local structures, when nearby construction is already in progress, or when that Citizen has only recently helped complete another structure.
+
+This is not a housing quota. There is no canonical maximum building count, no one-house-per-person rule and no global omniscient saturation check. A distant structure the Citizen has never perceived is not used as evidence against a local need.
+
+Demand evidence is retained with a project so the Observer can explain why the project existed.
+
 ### Structures become places
 
 The world records how much a structure is actually used, including rest/sleep time and frequent users. This does **not** assign ownership.

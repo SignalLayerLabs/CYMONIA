@@ -3,7 +3,7 @@ import {knows,learn} from './epistemics.js';
 import {appendEvent} from './ledger.js';
 import {consumeObjectQuantity,MATERIAL_PROPERTIES,objectMass} from './materials.js';
 import {structureOccupancyAt,terrainAt} from './terrain.js';
-import {constructionPhase} from './living-world.js';
+import {constructionPhase,recordSpatialObservation} from './living-world.js';
 import {updateRelationship} from './society.js';
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -53,7 +53,8 @@ export function beginConstruction(world,citizen,designId,site,objectIds,at=world
     workRequiredMinutes:Math.ceil(d.workMinutes*foundationFactor),workDoneMinutes:0,status:'construction',
     createdWorldMinute:at,footprintRadius,phase:'site',
     contributorIds:[citizen.id],contributionMinutesByCitizenId:{},
-    whySummary:metadata.whySummary||null,whyConceptIds:[...(metadata.whyConceptIds||d.concepts||[])].slice(0,12)
+    whySummary:metadata.whySummary||null,whyConceptIds:[...(metadata.whyConceptIds||d.concepts||[])].slice(0,12),
+    demandEvidence:metadata.demandEvidence&&typeof metadata.demandEvidence==='object'?{...metadata.demandEvidence}:null
   };
   world.projects.push(p);
   for(const o of objects){
@@ -62,10 +63,10 @@ export function beginConstruction(world,citizen,designId,site,objectIds,at=world
     o.holderId=null;
     citizen.possessions=(citizen.possessions||[]).filter(id=>id!==o.id);
   }
-  appendEvent(world,'CONSTRUCTION_STARTED',citizen.id,{projectId:p.id,designId,site:p.site,terrainKind:p.terrainKind,foundationFactor:p.foundationFactor,workRequiredMinutes:p.workRequiredMinutes,stagedMaterialObjectIds:p.stagedMaterialObjectIds,phase:p.phase},[],at);
+  appendEvent(world,'CONSTRUCTION_STARTED',citizen.id,{projectId:p.id,designId,site:p.site,terrainKind:p.terrainKind,foundationFactor:p.foundationFactor,workRequiredMinutes:p.workRequiredMinutes,stagedMaterialObjectIds:p.stagedMaterialObjectIds,phase:p.phase,demandEvidence:p.demandEvidence},[],at);
   return p;
 }
-export function beginEmpiricalConstruction(world,citizen,spec,at=world.clock.worldMinute){const design=registerEmpiricalDesign(world,citizen,{concepts:spec.concepts,inputObjectIds:spec.inputObjectIds,workMinutes:spec.workMinutes,form:spec.form},at);return beginConstruction(world,citizen,design.id,spec.site,spec.inputObjectIds,at,{whySummary:spec.whySummary||null,whyConceptIds:spec.reasonConceptIds||spec.concepts||[]});}
+export function beginEmpiricalConstruction(world,citizen,spec,at=world.clock.worldMinute){const design=registerEmpiricalDesign(world,citizen,{concepts:spec.concepts,inputObjectIds:spec.inputObjectIds,workMinutes:spec.workMinutes,form:spec.form},at);return beginConstruction(world,citizen,design.id,spec.site,spec.inputObjectIds,at,{whySummary:spec.whySummary||null,whyConceptIds:spec.reasonConceptIds||spec.concepts||[],demandEvidence:spec.demandEvidence||null});}
 function protectionFromMaterials(incorporated){let mass=0,thermal=0,water=0;for(const [material,quantity] of Object.entries(incorporated)){const q=Math.max(0,Number(quantity)||0),p=MATERIAL_PROPERTIES[material]||MATERIAL_PROPERTIES.composite;mass+=q;thermal+=q*Number(p.thermalResistance||.25);water+=q*Number(p.waterResistance||.35);}if(mass<=0)return{thermal:.2,precipitation:.25};return{thermal:clamp(thermal/mass,.08,.95),precipitation:clamp(water/mass,.08,.98)};}
 export function applyConstructionWork(world,citizen,projectId,minutes,at=world.clock.worldMinute){
   const p=world.projects.find(x=>x.id===projectId);if(!p||p.status!=='construction')throw new Error('project_not_active');
@@ -101,10 +102,17 @@ export function applyConstructionWork(world,citizen,projectId,minutes,at=world.c
     id:stableId('building',p.id),kind:'structure',designId:d.id,position:{...p.site},
     footprintRadius:Math.max(2.25,Number(p.footprintRadius)||designFootprintRadius(d)),condition:1,
     massKg:incorporatedMassKg,materials:incorporated,protection,createdWorldMinute:at,occupants:[],accessAgreements:[],
-    provenance:{projectId:p.id,designId:d.id,initiatorId:p.initiatorId,completedByCitizenId:citizen.id,contributorIds:[...p.contributorIds],contributionMinutesByCitizenId:{...p.contributionMinutesByCitizenId},whySummary:p.whySummary||null,whyConceptIds:[...(p.whyConceptIds||[])],terrainKind:p.terrainKind}
+    provenance:{projectId:p.id,designId:d.id,initiatorId:p.initiatorId,completedByCitizenId:citizen.id,contributorIds:[...p.contributorIds],contributionMinutesByCitizenId:{...p.contributionMinutesByCitizenId},whySummary:p.whySummary||null,whyConceptIds:[...(p.whyConceptIds||[])],terrainKind:p.terrainKind,demandEvidence:p.demandEvidence||null}
   };
   world.buildings.push(b);
-  appendEvent(world,'BUILDING_COMPLETED',citizen.id,{projectId:p.id,buildingId:b.id,designId:d.id,massKg:incorporatedMassKg,protection,contributors:b.provenance.contributorIds},[],at);
+  for(const id of new Set([p.initiatorId,citizen.id,...(p.contributorIds||[])])){
+    const person=world.citizens.find(x=>x.id===id);
+    if(!person)continue;
+    person.knownEntityIds??=[person.id];
+    if(!person.knownEntityIds.includes(b.id))person.knownEntityIds.push(b.id);
+    recordSpatialObservation(person,b.id,b.position,at,'structure');
+  }
+  appendEvent(world,'BUILDING_COMPLETED',citizen.id,{projectId:p.id,buildingId:b.id,designId:d.id,massKg:incorporatedMassKg,protection,contributors:b.provenance.contributorIds,demandEvidence:b.provenance.demandEvidence},[],at);
   return p;
 }
 function observableProperties(material,object=null){const p=object?.properties||MATERIAL_PROPERTIES[material]||{};return Object.fromEntries(Object.entries(p).filter(([,v])=>typeof v==='number'||typeof v==='boolean'));}

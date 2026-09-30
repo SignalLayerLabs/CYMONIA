@@ -5,7 +5,7 @@ import {MATERIAL_PROPERTIES} from './materials.js';
 import {hash32,stableId} from './rng.js';
 import {activeStrategy} from './strategy.js';
 import {terrainAt,nearestDryLandPoint,isWaterTerrainKind,isSleepUnsafeTerrainKind} from './terrain.js';
-import {nightPressure,rememberedCrowding} from './living-world.js';
+import {constructionDemand,nightPressure,rememberedCrowding} from './living-world.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -276,15 +276,16 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
     const conceptsForBuild=[...new Set(testedHeld.flatMap(object=>knowledgeForEntity(citizen,object.id).map(entry=>entry.concept)))].slice(0,12);
     const site=proposeBuildSite(world,citizen,at);
     if(site){
-      candidates.push({
+      const demand=constructionDemand(world,citizen,site,at);
+      if(demand.shouldBuild)candidates.push({
         family:'build',
         key:`build:new:${Math.floor(site.x)}:${Math.floor(site.y)}`,
-        utility:.30,
+        utility:.08+demand.score*.58,
         inventoryFit:1,
-        knowledgeGap:.2,
-        novelty:.78,
+        knowledgeGap:.08+demand.score*.18,
+        novelty:.18+demand.score*.32,
         effort:.34,
-        risk:.18,
+        risk:.16,
         proposal:proposal('build',conceptsForBuild,[
           ...(dist(citizen.position,site)>1.2?[{
             type:'MOVE',
@@ -303,8 +304,9 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
               site,
               workMinutes:240,
               form:'structure',
-              reasonSummary:'shelter_and_structure',
-              reasonConceptIds:conceptsForBuild
+              reasonSummary:`observed_${demand.reason}_need`,
+              reasonConceptIds:conceptsForBuild,
+              demandEvidence:demand.evidence
             }
           }
         ])

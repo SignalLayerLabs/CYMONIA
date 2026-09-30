@@ -130,6 +130,8 @@ The landscape now changes through ordinary life instead of waiting for scripted 
 - repeated movement leaves **trails** that slowly become easier to travel;
 - the **river** changes width, depth and flow with rain and soil moisture;
 - construction materials must be **carried to and staged at the site**;
+- **new construction is demand-driven**: unused known structures, active projects and very recent building work suppress more building, while isolation, crowding, exposure and storage pressure can justify it;
+- there is **no global building cap and no one-house-per-person rule** — Citizens act from their own bounded evidence;
 - buildings appear through visible **site → foundation → frame → roof → enclosed → complete** phases;
 - structures remember **actual use and sleep/rest time**, without assuming ownership;
 - loose material can form observer-visible **stockpiles**;

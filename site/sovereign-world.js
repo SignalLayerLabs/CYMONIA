@@ -93,6 +93,11 @@ function renderInspector(){const w=state.world;if(!w)return;const c=w.citizens.f
       project?.whySummary||
       null;
 
+    const demandEvidence=
+      provenance.demandEvidence||
+      project?.demandEvidence||
+      null;
+
     const whyConceptIds=[
       ...new Set(
         (
@@ -159,6 +164,15 @@ function renderInspector(){const w=state.world;if(!w)return;const c=w.citizens.f
             ? `<p>${whyConceptIds.map(id=>`<span class="tag">${esc(id)}</span>`).join('')}</p>`
             : `<p>This structure predates explicit purpose provenance or no purpose concept was retained.</p>`
         }
+        ${demandEvidence?`
+          <p>
+            <span class="tag">demand ${Math.round(Number(demandEvidence.score||0)*100)}%</span>
+            <span class="tag">known structures ${Number(demandEvidence.knownStructures||0)}</span>
+            <span class="tag">local structures ${Number(demandEvidence.localStructures||0)}</span>
+            <span class="tag">local population evidence ${Number(demandEvidence.localPopulation||0)}</span>
+            <span class="tag">vacancy ${Math.round(Number(demandEvidence.vacancyRatio||0)*100)}%</span>
+          </p>
+        `:''}
       </div>
 
       <div class="inspector-section">
