@@ -45,7 +45,9 @@ export function estimateSnapshotRowWrites({chunkCount,sealDue=false,sealPruneRow
 
 export function selectNewestSnapshot(candidates){
   const valid=(candidates||[]).filter(c=>c?.world&&c.world.version===2&&Array.isArray(c.world.citizens)&&Array.isArray(c.world.ledger)&&Number.isFinite(Number(c.world.clock?.worldMinute)));
-  valid.sort((a,b)=>Number(b.world.clock.worldMinute)-Number(a.world.clock.worldMinute)||Number(b.updatedAt||0)-Number(a.updatedAt||0));
+  valid.sort((a,b)=>Number(b.world.clock.worldMinute)-Number(a.world.clock.worldMinute)
+    ||Number(String(b.source||'').startsWith('manifest:'))-Number(String(a.source||'').startsWith('manifest:'))
+    ||Number(b.updatedAt||0)-Number(a.updatedAt||0));
   return valid[0]||null;
 }
 

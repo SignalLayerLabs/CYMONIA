@@ -129,3 +129,40 @@ test('short websocket loss keeps canonical observer LIVE while reconnecting in b
   assert.notEqual(modes.at(-1),CONNECTION.DEGRADED);
   assert.ok(s.pending>0);
 });
+
+function calendarConnection(){
+  const s=scheduler(),worlds=[],errors=[];
+  let minute=525590,resolvePoll,stream;
+  const snapshot=n=>({version:2,worldId:'persistent-world',clock:{worldMinute:n,realEpochMs:0}});
+  const connection=new ObserverConnection({
+    fetchState:()=>minute===null?new Promise(resolve=>{resolvePoll=resolve;}):Promise.resolve(snapshot(minute)),
+    createSocket:callbacks=>{stream=callbacks;return {readyState:1,close(){}};},
+    onWorld:w=>worlds.push(w),onError:e=>errors.push(e),
+    setTimeoutFn:s.set.bind(s),clearTimeoutFn:s.clear.bind(s),
+  });
+  return {connection,worlds,errors,snapshot,setMinute:n=>{minute=n;},stream:()=>stream,finishPoll:n=>resolvePoll(snapshot(n))};
+}
+
+test('a delayed REST response cannot undo a streamed year rollover',async()=>{
+  const h=calendarConnection();await h.connection.start();
+  h.setMinute(null);
+  const poll=h.connection.refreshNow({poll:true});
+  h.stream().onWorld(h.snapshot(525610));
+  h.finishPoll(525590);await poll;
+  assert.equal(h.connection.lastCanonical.clock.worldMinute,525610);
+  assert.deepEqual(h.worlds.map(w=>w.clock.worldMinute),[525590,525610]);
+  h.connection.stop();
+});
+
+test('stale WebSocket snapshots and a different world cannot reset the calendar',async()=>{
+  const h=calendarConnection();await h.connection.start();
+  h.stream().onWorld(h.snapshot(525610));
+  h.stream().onWorld(h.snapshot(0));
+  h.stream().onWorld({...h.snapshot(0),worldId:'unexpected-genesis'});
+  assert.equal(h.connection.lastCanonical.worldId,'persistent-world');
+  assert.equal(h.connection.lastCanonical.clock.worldMinute,525610);
+  h.stream().onWorld(h.snapshot(525670));
+  assert.equal(h.connection.lastCanonical.clock.worldMinute,525670);
+  assert.equal(h.connection.mode,CONNECTION.LIVE);
+  h.connection.stop();
+});

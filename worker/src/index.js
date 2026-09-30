@@ -126,6 +126,8 @@ export class SovereignWorld {
     this.env=env;
     this.sql=ctx.storage.sql;
     this.world=null;
+    this.committedWorld=null;
+    this.mutationChain=Promise.resolve();
     this.persistSequence=0;
     this.persistChain=Promise.resolve();
     this.lastPersistedGeneration=null;
@@ -146,7 +148,6 @@ export class SovereignWorld {
       if(!this.world){
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
         ensureRuntime(this.world);
-        this.establishClockGuardBaseline();
         await this.persist({forceSeal:true});
       }else{
         ensureRuntime(this.world);
@@ -154,6 +155,7 @@ export class SovereignWorld {
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
+      this.committedWorld=structuredClone(this.world);
       try{
         const status=await ctx.storage.get(HEARTBEAT_STATUS_KEY);
         if(status&&typeof status==='object')Object.assign(ensureRuntime(this.world),tickDiagnostics(status));
@@ -236,6 +238,11 @@ export class SovereignWorld {
     this.clockHighWaterMark=guard?Number(guard.highest_world_minute):null;
     const manifest=this.sqlRows('SELECT generation,chunk_count,world_minute,ledger_head,updated_at FROM world_state_manifest WHERE id=1 LIMIT 1')[0]||null;
     const slotRows=this.sqlRows('SELECT generation,chunk_count,world_minute,ledger_head,updated_at FROM world_snapshot_slots');
+    const seal=this.sqlRows('SELECT MAX(world_minute) AS world_minute FROM world_seals')[0];
+    // Pre-guard databases still contain durable evidence of their age. Never
+    // turn damaged/missing snapshot data into a new Genesis or an older year.
+    const highWaterMark=Math.max(0,...[guard?.highest_world_minute,manifest?.world_minute,seal?.world_minute,...slotRows.map(r=>r.world_minute)]
+      .filter(v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))).map(Number));
     const metadata=new Map();
     for(const row of slotRows)if(row.generation==='slot-a'||row.generation==='slot-b')metadata.set(row.generation,{...row,source:`slot:${row.generation}`});
     if(manifest)metadata.set(manifest.generation,{...manifest,source:`manifest:${manifest.generation}`});
@@ -251,6 +258,8 @@ export class SovereignWorld {
         if(parts.length!==count)continue;
         const world=JSON.parse(await decodeSnapshot(joinSnapshot(parts)));
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
+        if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
+        if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
         candidates.push({world,generation:meta.generation,updatedAt:Number(meta.updated_at||0),source:meta.source});
       }catch(error){console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));}
     }
@@ -266,10 +275,14 @@ export class SovereignWorld {
       }catch(error){console.error('CYMONIA_LEGACY_SNAPSHOT_REJECTED',String(error?.message||error).slice(0,240));}
     }
     const selected=selectNewestSnapshot(candidates);
-    if(!selected){if(guard)throw new Error('sovereign_world_snapshot_unavailable_below_clock_guard');return null;}
+    if(!selected){
+      const chunks=this.sqlRows('SELECT id FROM world_state_chunks_v2 LIMIT 1').length||this.sqlRows('SELECT seq FROM world_state_chunks LIMIT 1').length;
+      if(guard||manifest||slotRows.length||legacy||seal?.world_minute!=null||chunks)throw new Error('sovereign_world_snapshot_unavailable_below_clock_guard');
+      return null;
+    }
     const minute=Number(selected.world.clock.worldMinute);
-    if(guard&&minute<Number(guard.highest_world_minute)){this.clockRegressionDetected=true;throw new Error(`sovereign_world_clock_regression:${minute}<${Number(guard.highest_world_minute)}`);}
-    assertMonotonicSnapshot(selected.world,{highWaterMark:guard?.highest_world_minute??null,worldId:guard?.world_id||null});
+    if(minute<highWaterMark){this.clockRegressionDetected=true;throw new Error(`sovereign_world_clock_regression:${minute}<${highWaterMark}`);}
+    assertMonotonicSnapshot(selected.world,{highWaterMark,worldId:guard?.world_id||null});
     this.loadedSnapshotMinute=minute;this.snapshotRecoverySource=selected.source;
     if(selected.generation==='slot-a'||selected.generation==='slot-b')this.lastPersistedGeneration=selected.generation;
     compactOperationalState(selected.world);return selected.world;
@@ -306,10 +319,33 @@ export class SovereignWorld {
     return current;
   }
   persist(options={}){
-    const pending=this.persistChain.then(()=>this.persistSnapshot(options));
+    const pending=this.persistChain.then(async()=>{
+      const result=await this.persistSnapshot(options);
+      if(!result.persisted)throw new Error(`sovereign_persistence_deferred:${result.reason}`);
+      return result;
+    });
     this.persistChain=pending.catch(()=>{});
     return pending;
   }
+  mutateWorld(callback){
+    // Compression and Workers AI yield the event loop. Serialize ALL writers,
+    // while readers continue to observe the last fully committed snapshot.
+    const pending=(this.mutationChain||Promise.resolve()).then(async()=>{
+      try{return await callback();}
+      catch(error){
+        if(this.committedWorld){
+          const neuronBudget=this.world.runtime?.neuronBudget;
+          this.world=structuredClone(this.committedWorld);
+          // External inference already consumed this budget even if saving failed.
+          if(neuronBudget)this.world.runtime.neuronBudget=neuronBudget;
+        }
+        throw error;
+      }
+    });
+    this.mutationChain=pending.catch(()=>{});
+    return pending;
+  }
+  readableWorld(){return this.committedWorld||this.world;}
   readPersistenceBudget(day=utcDay(),limit=SAFE_ROW_WRITE_BUDGET){
     const rows=[...this.sql.exec('SELECT day,rows_written FROM persistence_budget WHERE id=1 LIMIT 1')];
     const used=rows.length&&rows[0].day===day?Number(rows[0].rows_written||0):0;
@@ -337,12 +373,12 @@ export class SovereignWorld {
     compactOperationalState(this.world);
     compactLedger(this.world,HOT_LEDGER_EVENTS);
     const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
+    const worldMinute=this.world.clock.worldMinute,ledgerHead=this.world.ledgerHead,worldId=this.world.worldId;
     const serialized=JSON.stringify(this.world);
     const encoded=await encodeSnapshot(serialized);
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
     const parts=splitSnapshot(encoded);
     const slotBase=generation==='slot-b'?1_000_000:0;
-    const worldMinute=this.world.clock.worldMinute,ledgerHead=this.world.ledgerHead;
     const sealCount=due?Number([...this.sql.exec('SELECT COUNT(*) AS count FROM world_seals')][0]?.count||0):0;
     const sealPruneRows=due&&sealCount>=4096?1:0;
     const rowWrites=estimateSnapshotRowWrites({chunkCount:parts.length,sealDue:due,sealPruneRows});
@@ -373,7 +409,7 @@ export class SovereignWorld {
           highest_world_minute=CASE WHEN excluded.highest_world_minute>world_clock_guard.highest_world_minute THEN excluded.highest_world_minute ELSE world_clock_guard.highest_world_minute END,
           ledger_head=CASE WHEN excluded.highest_world_minute>=world_clock_guard.highest_world_minute THEN excluded.ledger_head ELSE world_clock_guard.ledger_head END,
           updated_at=excluded.updated_at`,
-        this.world.worldId,worldMinute,ledgerHead,now);
+        worldId,worldMinute,ledgerHead,now);
       if(due){
         this.sql.exec('INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',worldMinute,ledgerHead,stateSha256,now);
         if(sealPruneRows)this.sql.exec('DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)');
@@ -383,6 +419,8 @@ export class SovereignWorld {
         day,reservation.budget.rowsWritten,now);
     });
     if(due)runtime.lastSealWorldMinute=worldMinute;
+    this.committedWorld=JSON.parse(serialized);
+    if(due)this.committedWorld.runtime.lastSealWorldMinute=worldMinute;
     this.lastPersistedGeneration=generation;
     this.lastPersistedWorldMinute=worldMinute;
     this.clockHighWaterMark=Math.max(Number(this.clockHighWaterMark??worldMinute),worldMinute);
@@ -392,50 +430,54 @@ export class SovereignWorld {
     return {persisted:true,generation,rowWrites,rowsWritten:reservation.budget.rowsWritten};
   }
   async tick(){
-    const progress=advanceWorldBounded(this.world,Date.now());
+    return this.mutateWorld(async()=>{
+      if(Date.now()<this.persistenceDeferredUntilRealMs)return;
+      const progress=advanceWorldBounded(this.world,Date.now());
 
-    const lastPersisted=Number(
-      this.lastPersistedWorldMinute ?? this.world.clock.worldMinute
-    );
+      const lastPersisted=Number(
+        this.lastPersistedWorldMinute ?? this.world.clock.worldMinute
+      );
 
-    const checkpointDue=
-      this.world.clock.worldMinute-lastPersisted >=
-      PERSIST_INTERVAL_WORLD_MINUTES;
+      const checkpointDue=
+        this.world.clock.worldMinute-lastPersisted >=
+        PERSIST_INTERVAL_WORLD_MINUTES;
 
-    if(progress.recovered){
-      // Recovery rebases realEpochMs so downtime is not counted as lived
-      // world time. Persist that boundary immediately; otherwise Durable
-      // Object hibernation can discard it and reload the pre-recovery state.
-      await this.persist({forceSeal:true});
-    }else if(checkpointDue){
-      await this.persist();
-    }
+      if(progress.recovered){
+        // Recovery rebases realEpochMs so downtime is not counted as lived
+        // world time. Persist that boundary immediately; otherwise Durable
+        // Object hibernation can discard it and reload the pre-recovery state.
+        await this.persist({forceSeal:true});
+      }else if(checkpointDue){
+        await this.persist();
+      }
 
-    this.broadcast({
-      type:'world_delta',
-      state:publicWorld(this.world,Date.now())
+      this.broadcast({
+        type:'world_delta',
+        state:publicWorld(this.readableWorld(),Date.now())
+      });
+
+      if(!progress.recovered&&await this.processCognition(1)){
+        await this.persist();
+      }
     });
-
-    if(!progress.recovered&&await this.processCognition(1)){
-      await this.persist();
-    }
   }
   async alarm(alarmInfo){
     const startedAt=Date.now();
     const nextAlarm=startedAt+ALARM_MS;
     // Commit the successor before tick can throw or exhaust its CPU budget.
     await this.ctx.storage.setAlarm(nextAlarm);
-    const runtime=ensureRuntime(this.world);
+    let runtime=ensureRuntime(this.world);
     runtime.nextAlarmRealMs=nextAlarm;
 
     try{
       await this.tick();
-
+      runtime=ensureRuntime(this.world);
       runtime.lastTickRealMs=Date.now();
       runtime.lastTickWorldMinute=this.world.clock.worldMinute;
       runtime.lastTickError=null;
       runtime.lastAlarmRetryCount=Number(alarmInfo?.retryCount||0);
     }catch(error){
+      runtime=ensureRuntime(this.world);
       runtime.lastTickRealMs=Date.now();
       runtime.lastTickWorldMinute=this.world?.clock?.worldMinute??null;
       runtime.lastTickError=String(error?.stack||error?.message||error).slice(0,1000);
@@ -453,6 +495,7 @@ export class SovereignWorld {
       // A single malformed Citizen or transient runtime error must never
       // permanently stop the Sovereign World heartbeat.
     }
+    runtime.nextAlarmRealMs=nextAlarm;
     try{
       // A world snapshot may have been written before the tick outcome was known.
       await this.ctx.storage.put(HEARTBEAT_STATUS_KEY,tickDiagnostics(runtime));
@@ -527,7 +570,7 @@ export class SovereignWorld {
     const session={id:crypto.randomUUID(),connectedAt:Date.now()};
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment?.(session);
-    server.send(JSON.stringify({type:'world_snapshot',state:publicWorld(this.world,Date.now())}));
+    server.send(JSON.stringify({type:'world_snapshot',state:publicWorld(this.readableWorld(),Date.now())}));
     return new Response(null,{status:101,webSocket:client});
   }
   webSocketMessage(ws,message){
@@ -555,6 +598,7 @@ export class SovereignWorld {
   async fetch(request){
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     const scheduledAlarmRealMs=await this.ensureAlarm();
+    const world=this.readableWorld();
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/health'){
       const runtime=ensureRuntime(this.world),budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
@@ -593,43 +637,47 @@ export class SovereignWorld {
           nextAlarmRealMs:runtime.nextAlarmRealMs??null,
           ...tickDiagnostics(runtime),
         },
-        operational_state:{actions:this.world.actions.length,plans:this.world.citizens.reduce((n,c)=>n+c.plans.length,0),experiments:this.world.experiments.length},
-        world_id:this.world.worldId,
-        world_minute:this.world.clock.worldMinute,
-        lag_world_minutes:Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute),
+        operational_state:{actions:world.actions.length,plans:world.citizens.reduce((n,c)=>n+c.plans.length,0),experiments:world.experiments.length},
+        world_id:world.worldId,
+        world_minute:world.clock.worldMinute,
+        lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute),
         clock_high_water_mark:this.clockHighWaterMark,
         loaded_snapshot_minute:this.loadedSnapshotMinute,
         clock_regression_detected:this.clockRegressionDetected,
         snapshot_recovery_source:this.snapshotRecoverySource,
-        ledger_head:this.world.ledgerHead,
+        ledger_head:world.ledgerHead,
         persisted_generation:this.lastPersistedGeneration,
         persistence:'durable-object-sqlite-gzip-slotted'
       });
     }
-    if(request.method==='GET'&&(path==='/'||path==='/state'))return json({ok:true,world:publicWorld(this.world,Date.now())});
-    if(request.method==='GET'&&path==='/history')return json({ok:true,history:getHistory(this.world)});
+    if(request.method==='GET'&&(path==='/'||path==='/state'))return json({ok:true,world:publicWorld(world,Date.now())});
+    if(request.method==='GET'&&path==='/history')return json({ok:true,history:getHistory(world)});
     if(request.method==='GET'&&path.startsWith('/why/')){
-      const id=decodeURIComponent(path.slice(5)),why=getWhy(this.world,id);
+      const id=decodeURIComponent(path.slice(5)),why=getWhy(world,id);
       return why?json({ok:true,why}):json({ok:false,error:'event_not_found'},404);
     }
     if(request.method==='POST'&&path==='/avatar'){
       const body=await request.json();
       if(!body?.actor?.id)return json({ok:false,error:'actor_required'},400);
-      const externalId=`github:${body.actor.github_id||body.actor.id}`;
-      const existing=this.world.citizens.find(c=>c.externalId===externalId);
-      const c=existing||createHumanAvatar(this.world,{externalId,displayName:body.actor.display_name||body.actor.github_login||null},this.world.clock.worldMinute);
-      if(!existing){
-        await this.persist({forceSeal:true});
-        this.broadcast({type:'world_delta',state:publicWorld(this.world,Date.now())});
-      }
-      return json({ok:true,citizenId:c.id,created:!existing});
+      return this.mutateWorld(async()=>{
+        const externalId=`github:${body.actor.github_id||body.actor.id}`;
+        const existing=this.world.citizens.find(c=>c.externalId===externalId);
+        const c=existing||createHumanAvatar(this.world,{externalId,displayName:body.actor.display_name||body.actor.github_login||null},this.world.clock.worldMinute);
+        if(!existing){
+          await this.persist({forceSeal:true});
+          this.broadcast({type:'world_delta',state:publicWorld(this.readableWorld(),Date.now())});
+        }
+        return json({ok:true,citizenId:c.id,created:!existing});
+      }).catch(()=>json({ok:false,error:'world_write_unavailable'},503));
     }
     if(request.method==='POST'&&path==='/intent'){
       const body=await request.json();
       if(!body?.citizenId||!String(body.intent||'').trim())return json({ok:false,error:'intent_required'},400);
-      const result=submitHumanIntent(this.world,body.citizenId,body.intent,this.world.clock.worldMinute);
-      await this.persist({forceSeal:true});
-      return json({ok:true,...result});
+      return this.mutateWorld(async()=>{
+        const result=submitHumanIntent(this.world,body.citizenId,body.intent,this.world.clock.worldMinute);
+        await this.persist({forceSeal:true});
+        return json({ok:true,...result});
+      }).catch(()=>json({ok:false,error:'world_write_unavailable'},503));
     }
     return json({ok:false,error:'not_found'},404);
   }
