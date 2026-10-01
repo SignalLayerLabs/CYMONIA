@@ -51,6 +51,41 @@ jobs:
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-state-sprites.mjs
           CYMONIA_URL=http://127.0.0.1:8765 node tests/browser-graphics2.mjs
 
+  heartbeat-diagnostics:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/fix/cymonia-25-production-heartbeat'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save wrangler@4
+      - name: Read bounded alarm diagnostics without exposing HTTP headers
+        run: |
+          TAIL_STATUS=0
+          timeout 100s npx wrangler tail cymonia-sovereign-world --config wrangler.world.toml --format json >/tmp/heartbeat-tail.json 2>/tmp/heartbeat-tail-errors.log || TAIL_STATUS=$?
+          echo "Tail exit status: $TAIL_STATUS (124 is the bounded observation timeout)"
+          python3 <<'PY'
+          import json
+          from pathlib import Path
+          text=Path('/tmp/heartbeat-tail.json').read_text()[:8_000_000]
+          decoder=json.JSONDecoder();cursor=0;count=0
+          while cursor<len(text):
+              start=text.find('{',cursor)
+              if start<0:break
+              try:entry,cursor=decoder.raw_decode(text,start)
+              except ValueError:cursor=start+1;continue
+              event=entry.get('event') or {}
+              if not isinstance(event,dict) or 'request' in event:continue
+              count+=1
+              print(json.dumps({'outcome':entry.get('outcome'),'cpuTime':entry.get('cpuTime'),'wallTime':entry.get('wallTime'),'scheduledTime':event.get('scheduledTime'),'exceptions':entry.get('exceptions',[]),'logs':[line for line in entry.get('logs',[]) if any(str(m).startswith('CYMONIA_') for m in line.get('message',[]))]}))
+          print(f'Non-HTTP runtime events: {count}')
+          PY
+
   deploy-world:
     name: Deploy Sovereign World Worker
     needs: [sovereign-test, browser-smoke]
