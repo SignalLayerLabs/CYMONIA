@@ -20,7 +20,7 @@ import {
 import {
   SAFE_ROW_WRITE_BUDGET,
   EMERGENCY_ROW_WRITE_BUDGET,
-  encodeWorldSnapshot,
+  encodeWorldSnapshotParts,
   decodeSnapshot,
   snapshotJsonStream,
   estimateSnapshotRowWrites,
@@ -50,6 +50,10 @@ const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const MAX_CATCHUP_WORLD_MINUTES=360;
 const HOT_LEDGER_EVENTS=4096;
+const CAUSAL_LEDGER_EVENTS=512;
+const CAUSAL_RECEIPTS=64;
+const CAUSAL_OBJECTS=256;
+const CAUSAL_PROCEDURES=256;
 const HEARTBEAT_STATUS_KEY='heartbeat-status-v1';
 
 function json(data,status=200,headers={}){
@@ -100,14 +104,14 @@ function committedStats(world,clock=world.clock,ledgerHead=world.ledgerHead){
 }
 function committedCausalReader(world){
   return structuredClone({
-    ledger:(world.ledger||[]).slice(-HOT_LEDGER_EVENTS),
-    physicalReceipts:(world.physicalReceipts||[]).slice(-128),
-    objects:(world.objects||[]).map(object=>({
+    ledger:(world.ledger||[]).slice(-CAUSAL_LEDGER_EVENTS),
+    physicalReceipts:(world.physicalReceipts||[]).slice(-CAUSAL_RECEIPTS),
+    objects:(world.objects||[]).slice(-CAUSAL_OBJECTS).map(object=>({
       id:object.id,
       lastPhysicalEventId:object.lastPhysicalEventId||null,
       provenance:object.provenance||null,
     })),
-    procedures:(world.procedures||[]).map(procedure=>({
+    procedures:(world.procedures||[]).slice(-CAUSAL_PROCEDURES).map(procedure=>({
       id:procedure.id,
       evidenceEventId:procedure.evidenceEventId||null,
     })),
@@ -163,6 +167,7 @@ export class SovereignWorld {
     // Rollback reloads the durable committed generation from SQLite on demand.
     this.committedSnapshot=null;
     this.committedPublicSnapshot=null;
+    this.committedPublicWorldMinute=null;
     this.committedStats=null;
     this.committedHistory={entries:[]};
     this.committedCausalWorld={ledger:[],physicalReceipts:[],objects:[],procedures:[]};
@@ -195,11 +200,9 @@ export class SovereignWorld {
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
-      if(!this.committedPublicSnapshot){
-        const publicState=publicWorld(this.world);
-        this.committedPublicSnapshot=(await encodeWorldSnapshot(publicState)).encoded;
-        this.committedHistory={entries:[...(publicState.history||[])]};
-      }
+      // Wake only the canonical graph and bounded diagnostics. Building the
+      // Observer projection here doubles the hottest allocation immediately
+      // after snapshot decode and can reset a large Durable Object.
       this.committedStats=committedStats(this.world);
       this.committedCausalWorld=committedCausalReader(this.world);
       try{
@@ -480,48 +483,42 @@ export class SovereignWorld {
     const used=rows.length&&rows[0].day===day?Number(rows[0].rows_written||0):0;
     return createWriteBudget(day,used,limit);
   }
-  async persistSnapshot({forceSeal=false}={}){
-    const runtime=ensureRuntime(this.world);
-    const now=Date.now(),day=utcDay(now);
-    if(!forceSeal&&now<this.persistenceDeferredUntilRealMs){
-      return {persisted:false,reason:'write_budget_backoff'};
-    }
-    const limit=forceSeal?EMERGENCY_ROW_WRITE_BUDGET:SAFE_ROW_WRITE_BUDGET;
-    const currentBudget=this.readPersistenceBudget(day,limit);
-    if(!forceSeal&&currentBudget.rowsWritten>=currentBudget.limit){
-      this.persistenceDeferred++;
-      this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
-      return {persisted:false,reason:'write_budget_exhausted'};
-    }
-    const clockGuard=[...this.sql.exec('SELECT world_id,highest_world_minute FROM world_clock_guard WHERE id=1 LIMIT 1')][0]||null;
-    if(clockGuard){
-      const minute=Number(this.world.clock.worldMinute);
-      if(clockGuard.world_id!==this.world.worldId)throw new Error('sovereign_world_identity_regression');
-      if(minute<Number(clockGuard.highest_world_minute)){this.clockRegressionDetected=true;throw new Error(`sovereign_world_clock_regression:${minute}<${Number(clockGuard.highest_world_minute)}`);}
-    }
-    compactOperationalState(this.world);
-    compactLedger(this.world,HOT_LEDGER_EVENTS);
-    const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
-    const worldMinute=this.world.clock.worldMinute,ledgerHead=this.world.ledgerHead,worldId=this.world.worldId;
-    const snapshotClock={...this.world.clock};
-    const {encoded,stateSha256}=await encodeWorldSnapshot(this.world,{sealDue:due,clock:snapshotClock,ledgerHead});
+  async writeCanonicalSnapshot({
+    forceSeal,
+    due,
+    now,
+    day,
+    currentBudget,
+    worldMinute,
+    ledgerHead,
+    worldId,
+    snapshotClock,
+  }){
+    // This activation owns every large private-checkpoint temporary. When it
+    // returns, gzip/base64 parts are unreachable before Observer projection
+    // work starts.
+    const {parts,stateSha256}=await encodeWorldSnapshotParts(this.world,{
+      sealDue:due,
+      clock:snapshotClock,
+      ledgerHead,
+      maxCodeUnits:SNAPSHOT_CHUNK_CODE_UNITS,
+    });
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
-    const parts=splitSnapshot(encoded);
     const slotBase=generation==='slot-b'?1_000_000:0;
-    const sealCount=due?Number([...this.sql.exec('SELECT COUNT(*) AS count FROM world_seals')][0]?.count||0):0;
+    const sealCount=due
+      ?Number([...this.sql.exec('SELECT COUNT(*) AS count FROM world_seals')][0]?.count||0)
+      :0;
     const sealPruneRows=due&&sealCount>=4096?1:0;
-    const rowWrites=estimateSnapshotRowWrites({chunkCount:parts.length,sealDue:due,sealPruneRows});
+    const rowWrites=estimateSnapshotRowWrites({
+      chunkCount:parts.length,
+      sealDue:due,
+      sealPruneRows,
+    });
     const reservation=reserveWriteBudget(currentBudget,rowWrites);
     if(!reservation.allowed){
-      this.persistenceDeferred++;
-      if(!forceSeal)this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
       return {persisted:false,reason:'write_budget_exhausted',rowWrites};
     }
-    let publicState=publicWorld({...this.world,clock:snapshotClock,ledgerHead});
-    const publicSnapshot=(await encodeWorldSnapshot(publicState)).encoded;
-    const committedHistory={entries:[...(publicState.history||[])]};
-    // Release the materialized projection before constructing any other reader.
-    publicState=null;
+
     this.ctx.storage.transactionSync(()=>{
       for(let seq=0;seq<parts.length;seq++)this.sql.exec(
         'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
@@ -544,29 +541,142 @@ export class SovereignWorld {
           updated_at=excluded.updated_at`,
         worldId,worldMinute,ledgerHead,now);
       if(due){
-        this.sql.exec('INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',worldMinute,ledgerHead,stateSha256,now);
-        if(sealPruneRows)this.sql.exec('DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)');
+        this.sql.exec(
+          'INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',
+          worldMinute,ledgerHead,stateSha256,now
+        );
+        if(sealPruneRows)this.sql.exec(
+          'DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)'
+        );
       }
       this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
         ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
         day,reservation.budget.rowsWritten,now);
     });
+
+    return {
+      persisted:true,
+      generation,
+      rowWrites,
+      rowsWritten:reservation.budget.rowsWritten,
+    };
+  }
+
+  async refreshPublicSnapshot({clock=this.world.clock,ledgerHead=this.world.ledgerHead}={}){
+    const minute=Number(clock.worldMinute);
+    let publicState=publicWorld({
+      ...this.world,
+      clock:{...clock},
+      ledgerHead,
+    });
+    const committedHistory={entries:[...(publicState.history||[])]};
+    const encoded=await encodeWorldSnapshotParts(publicState,{
+      clock:publicState.clock,
+      ledgerHead:publicState.ledgerHead,
+      maxCodeUnits:SNAPSHOT_CHUNK_CODE_UNITS,
+    });
+    // Drop the materialized projection before joining its much smaller,
+    // compressed representation.
+    publicState=null;
+    const snapshot=joinSnapshot(encoded.parts);
+    this.committedPublicSnapshot=snapshot;
+    this.committedPublicWorldMinute=minute;
+    this.committedHistory=committedHistory;
+    return snapshot;
+  }
+
+  async persistSnapshot({forceSeal=false}={}){
+    const runtime=ensureRuntime(this.world);
+    const now=Date.now(),day=utcDay(now);
+    if(!forceSeal&&now<this.persistenceDeferredUntilRealMs){
+      return {persisted:false,reason:'write_budget_backoff'};
+    }
+
+    const limit=forceSeal?EMERGENCY_ROW_WRITE_BUDGET:SAFE_ROW_WRITE_BUDGET;
+    const currentBudget=this.readPersistenceBudget(day,limit);
+    if(!forceSeal&&currentBudget.rowsWritten>=currentBudget.limit){
+      this.persistenceDeferred++;
+      this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
+      return {persisted:false,reason:'write_budget_exhausted'};
+    }
+
+    const clockGuard=[...this.sql.exec(
+      'SELECT world_id,highest_world_minute FROM world_clock_guard WHERE id=1 LIMIT 1'
+    )][0]||null;
+    if(clockGuard){
+      const minute=Number(this.world.clock.worldMinute);
+      if(clockGuard.world_id!==this.world.worldId){
+        throw new Error('sovereign_world_identity_regression');
+      }
+      if(minute<Number(clockGuard.highest_world_minute)){
+        this.clockRegressionDetected=true;
+        throw new Error(
+          `sovereign_world_clock_regression:${minute}<${Number(clockGuard.highest_world_minute)}`
+        );
+      }
+    }
+
+    compactOperationalState(this.world);
+    compactLedger(this.world,HOT_LEDGER_EVENTS);
+
+    const due=forceSeal||
+      this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
+    const worldMinute=this.world.clock.worldMinute;
+    const ledgerHead=this.world.ledgerHead;
+    const worldId=this.world.worldId;
+    const snapshotClock={...this.world.clock};
+
+    const canonical=await this.writeCanonicalSnapshot({
+      forceSeal,
+      due,
+      now,
+      day,
+      currentBudget,
+      worldMinute,
+      ledgerHead,
+      worldId,
+      snapshotClock,
+    });
+
+    if(!canonical.persisted){
+      this.persistenceDeferred++;
+      if(!forceSeal)this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
+      return canonical;
+    }
+
     if(due)runtime.lastSealWorldMinute=worldMinute;
-    // SQLite is the rollback checkpoint. Keep only bounded in-memory readers;
-    // never duplicate the complete canonical civilization in this isolate.
+
+    // The durable manifest is authoritative from this point onward. Nothing
+    // related to Observer projection is allowed to invalidate this commit.
     this.committedWorld=null;
     this.committedSnapshot=null;
-    this.committedPublicSnapshot=publicSnapshot;
     this.committedStats=committedStats(this.world,snapshotClock,ledgerHead);
-    this.committedHistory=committedHistory;
     this.committedCausalWorld=committedCausalReader(this.world);
-    this.lastPersistedGeneration=generation;
+    this.lastPersistedGeneration=canonical.generation;
     this.lastPersistedWorldMinute=worldMinute;
-    this.clockHighWaterMark=Math.max(Number(this.clockHighWaterMark??worldMinute),worldMinute);
-    this.loadedSnapshotMinute=Math.max(Number(this.loadedSnapshotMinute??worldMinute),worldMinute);
-    this.snapshotRecoverySource=`persist:${generation}`;
+    this.clockHighWaterMark=Math.max(
+      Number(this.clockHighWaterMark??worldMinute),
+      worldMinute
+    );
+    this.loadedSnapshotMinute=Math.max(
+      Number(this.loadedSnapshotMinute??worldMinute),
+      worldMinute
+    );
+    this.snapshotRecoverySource=`persist:${canonical.generation}`;
     this.persistenceDeferredUntilRealMs=0;
-    return {persisted:true,generation,rowWrites,rowsWritten:reservation.budget.rowsWritten};
+
+    try{
+      // Private gzip/base64 buffers belonged to writeCanonicalSnapshot() and
+      // are now out of scope. Refresh public state only after canonical commit.
+      await this.refreshPublicSnapshot({clock:snapshotClock,ledgerHead});
+    }catch(error){
+      console.error(
+        'CYMONIA_PUBLIC_SNAPSHOT_REFRESH_FAILED',
+        String(error?.message||error).slice(0,300)
+      );
+    }
+
+    return canonical;
   }
   async tick(){
     return this.mutateWorld(async()=>{
@@ -823,7 +933,7 @@ export class SovereignWorld {
           plans:operational.plans,
           experiments:operational.experiments
         },
-        memory_model:'single-canonical-bounded-public',
+        memory_model:'single-canonical-streamed-checkpoint-lazy-public-v2',
         world_id:world.worldId,
         world_minute:world.clock.worldMinute,
         lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute),
@@ -837,8 +947,52 @@ export class SovereignWorld {
       });
     }
     if(request.method==='GET'&&(path==='/'||path==='/state')){
-      if(this.committedPublicSnapshot)return new Response(snapshotJsonStream(this.committedPublicSnapshot,{prefix:'{"ok":true,"world":',suffix:'}'}),{headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
-      return json({ok:true,world:publicWorld(this.world,Date.now())});
+      const persistedMinute=Number(this.lastPersistedWorldMinute);
+      const publicStale=
+        !this.committedPublicSnapshot||
+        Number(this.committedPublicWorldMinute)!==persistedMinute;
+
+      if(publicStale){
+        // Never project an in-flight/uncommitted graph. If this is the first
+        // state read after wake, wait for any current writer and only project
+        // when the in-memory graph still equals the durable generation.
+        await (this.mutationChain||Promise.resolve()).catch(()=>{});
+        if(
+          this.world&&
+          Number(this.world.clock?.worldMinute)===persistedMinute
+        ){
+          try{
+            await this.refreshPublicSnapshot({
+              clock:{...this.world.clock},
+              ledgerHead:this.world.ledgerHead,
+            });
+          }catch(error){
+            console.error(
+              'CYMONIA_PUBLIC_SNAPSHOT_LAZY_FAILED',
+              String(error?.message||error).slice(0,300)
+            );
+          }
+        }
+      }
+
+      if(this.committedPublicSnapshot){
+        return new Response(
+          snapshotJsonStream(this.committedPublicSnapshot,{
+            prefix:'{"ok":true,"world":',
+            suffix:'}'
+          }),
+          {headers:{
+            'content-type':'application/json; charset=utf-8',
+            'cache-control':'no-store'
+          }}
+        );
+      }
+
+      return json({
+        ok:false,
+        error:'public_snapshot_unavailable',
+        world_minute:this.committedStats?.clock?.worldMinute??null,
+      },503);
     }
     if(request.method==='GET'&&path==='/history')return json({ok:true,history:this.committedHistory||{entries:[]}});
     if(request.method==='GET'&&path.startsWith('/why/')){

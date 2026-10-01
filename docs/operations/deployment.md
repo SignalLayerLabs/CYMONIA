@@ -63,6 +63,10 @@ Alarm recovery is deliberately non-postponing. A missing alarm is scheduled norm
 
 Production reads repair only a missing Durable Object alarm. Existing alarms, including overdue alarms, are never rewritten by `/health` or `/state`; Cloudflare remains responsible for delivering them. CI uses quiet 75-second sampling windows instead of two-second polling loops so verification cannot starve the scheduler it is testing. See [alarm delivery starvation](alarm-delivery-starvation.md).
 
+## Canonical memory path V2
+
+Canonical checkpoints now stream gzip output into bounded encoded SQLite parts, so the write path does not create a whole compressed checkpoint buffer and then a second complete base64 string before splitting it. Canonical commit finishes before the Observer projection is refreshed. A public-projection failure cannot roll back an already committed world checkpoint, and waking `/health` does not build the Observer world. See [Memory Path V2](memory-path-v2.md).
+
 ## Durable Object memory-pressure model
 
 The production Durable Object retains one full canonical object graph only. Public Observer state is a bounded projection, rollback reloads the durable committed generation from SQLite on demand, and health/history/WHY use bounded committed readers. This prevents civilization growth from multiplying isolate memory through full in-memory clones. See [memory-pressure recovery](memory-pressure-recovery.md).

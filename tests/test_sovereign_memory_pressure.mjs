@@ -67,7 +67,10 @@ test('Durable Object retains one full canonical graph and keeps public/diagnosti
   assert.ok(instance.committedPublicSnapshot);
   assert.ok(instance.committedStats);
   assert.equal(instance.committedStats.citizens,undefined);
-  assert.ok(instance.committedCausalWorld.ledger.length<=4096);
+  assert.ok(instance.committedCausalWorld.ledger.length<=512);
+  assert.ok(instance.committedCausalWorld.physicalReceipts.length<=64);
+  assert.ok(instance.committedCausalWorld.objects.length<=256);
+  assert.ok(instance.committedCausalWorld.procedures.length<=256);
 
   const canonicalCount=instance.world.citizens[0].knowledge.length;
   assert.equal(canonicalCount,1200);

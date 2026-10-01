@@ -44,7 +44,7 @@ test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint 
   assert.match(worker,/storage\.sql/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_state/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_seals/);
-  assert.match(worker,/encodeWorldSnapshot\(this\.world/);
+  assert.match(worker,/encodeWorldSnapshotParts\(this\.world/);
   assert.match(persistence,/SHA-256/);
   assert.match(worker,/state_sha256/);
   assert.match(worker,/world_state_chunks/);
@@ -166,12 +166,15 @@ test('health exposes physical emergence diagnostics',()=>{
   assert.match(health,/active_actions/);
 });
 
-test('production memory model keeps one full canonical graph',()=>{
-  assert.match(worker,/memory_model:'single-canonical-bounded-public'/);
+test('production memory model keeps one canonical graph and separates private checkpoint buffers from public projection',()=>{
+  assert.match(worker,/memory_model:'single-canonical-streamed-checkpoint-lazy-public-v2'/);
   assert.match(worker,/loadCommittedWorldFromStorage/);
   assert.match(worker,/this\.committedWorld=null/);
   assert.match(worker,/this\.committedSnapshot=null/);
   assert.doesNotMatch(worker,/committedReader\(/);
   assert.match(worker,/committedStats/);
   assert.match(worker,/committedCausalReader/);
+  assert.match(worker,/async writeCanonicalSnapshot/);
+  assert.match(worker,/async refreshPublicSnapshot/);
+  assert.match(worker,/CYMONIA_PUBLIC_SNAPSHOT_REFRESH_FAILED/);
 });

@@ -55,6 +55,121 @@ function* worldJsonRecords(world){
   yield '}';
 }
 
+
+function appendEncodedText(parts,state,text,maxCodeUnits){
+  let offset=0;
+  while(offset<text.length){
+    if(state.value.length>=maxCodeUnits){
+      parts.push(state.value);
+      state.value='';
+    }
+    const room=maxCodeUnits-state.value.length;
+    const take=Math.min(room,text.length-offset);
+    state.value+=text.slice(offset,offset+take);
+    offset+=take;
+  }
+}
+
+function appendBase64Bytes(parts,state,bytes,maxCodeUnits){
+  // 32766 is divisible by 3, so every non-final block is independently
+  // padding-free and can be concatenated into one canonical base64 stream.
+  const step=32766;
+  for(let offset=0;offset<bytes.length;offset+=step){
+    const end=Math.min(bytes.length,offset+step);
+    const view=bytes.subarray(offset,end);
+    let binary='';
+    for(let i=0;i<view.length;i+=0x2000){
+      binary+=String.fromCharCode(...view.subarray(i,Math.min(view.length,i+0x2000)));
+    }
+    appendEncodedText(parts,state,btoa(binary),maxCodeUnits);
+  }
+}
+
+export async function encodeWorldSnapshotParts(world,{
+  sealDue=false,
+  clock=world.clock,
+  ledgerHead=world.ledgerHead,
+  maxCodeUnits=256*1024,
+}={}){
+  const limit=Math.max(1024,Math.floor(Number(maxCodeUnits)||256*1024));
+  const snapshot={...world,clock:{...clock},ledgerHead};
+  if(world.runtime){
+    snapshot.runtime={...world.runtime};
+    if(world.runtime.neuronBudget)snapshot.runtime.neuronBudget={...world.runtime.neuronBudget};
+  }
+
+  let input=recordByteStream(worldJsonRecords(snapshot));
+  const digest=sealDue&&typeof crypto.DigestStream==='function'
+    ?new crypto.DigestStream('SHA-256')
+    :null;
+  const digestPromise=digest?.digest;
+  digestPromise?.catch(()=>{});
+  const writer=digest?.getWriter();
+  writer?.closed.catch(()=>{});
+  const fallback=[];
+
+  if(sealDue)input=input.pipeThrough(new TransformStream({
+    async transform(chunk,controller){
+      if(writer)await writer.write(chunk);
+      else fallback.push(chunk);
+      controller.enqueue(chunk);
+    },
+    async flush(){if(writer)await writer.close();}
+  }));
+
+  const parts=[];
+  const state={value:`${SNAPSHOT_ENCODING}:`};
+  const reader=input.pipeThrough(new CompressionStream('gzip')).getReader();
+  let carry=new Uint8Array(0);
+
+  try{
+    while(true){
+      const item=await reader.read();
+      if(item.done)break;
+      const chunk=item.value instanceof Uint8Array
+        ?item.value
+        :new Uint8Array(item.value);
+      let bytes;
+      if(carry.length){
+        bytes=new Uint8Array(carry.length+chunk.length);
+        bytes.set(carry,0);
+        bytes.set(chunk,carry.length);
+      }else bytes=chunk;
+
+      const aligned=bytes.length-(bytes.length%3);
+      if(aligned)appendBase64Bytes(parts,state,bytes.subarray(0,aligned),limit);
+      carry=aligned<bytes.length?bytes.slice(aligned):new Uint8Array(0);
+    }
+    if(carry.length)appendBase64Bytes(parts,state,carry,limit);
+  }catch(error){
+    await reader.cancel(error).catch(()=>{});
+    if(writer)await writer.abort(error).catch(()=>{});
+    throw error;
+  }finally{
+    try{reader.releaseLock();}catch{}
+    writer?.releaseLock();
+  }
+
+  if(state.value||!parts.length)parts.push(state.value);
+
+  let stateSha256=null;
+  if(sealDue){
+    let hash;
+    if(digest)hash=await digestPromise;
+    else{
+      const bytes=new Uint8Array(fallback.reduce((sum,chunk)=>sum+chunk.byteLength,0));
+      let offset=0;
+      for(const chunk of fallback){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+      hash=await crypto.subtle.digest('SHA-256',bytes);
+    }
+    stateSha256=[...new Uint8Array(hash)]
+      .map(b=>b.toString(16).padStart(2,'0'))
+      .join('');
+  }
+
+  return {parts,stateSha256};
+}
+
 export async function encodeWorldSnapshot(world,{sealDue=false,clock=world.clock,ledgerHead=world.ledgerHead}={}){
   // Writers are serialized by SovereignWorld. Capture clock and runtime
   // scalars before yielding; stream large arrays one entity at a time.
