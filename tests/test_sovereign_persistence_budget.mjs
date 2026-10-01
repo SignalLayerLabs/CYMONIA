@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import * as persistence from '../worker/src/persistence.js';
 import {
   FREE_TIER_ROW_WRITE_BUDGET,
   ACCOUNT_RESERVE_ROW_WRITE_BUDGET,
@@ -21,6 +23,40 @@ test('gzip snapshot codec round-trips unicode JSON and compresses repetitive sta
   assert.match(encoded,/^gzip-base64-v1:/);
   assert.equal(await decodeSnapshot(encoded),source);
   assert.ok(encoded.length<source.length*0.35,{source:source.length,encoded:encoded.length});
+});
+
+test('snapshot compression never allocates a whole-world UTF-8 buffer',async t=>{
+  const source=JSON.stringify({memory:'x'.repeat(65535)+'🌍'+'y'.repeat(300000)});
+  const sizes=[];
+  const encode=TextEncoder.prototype.encode;
+  t.mock.method(TextEncoder.prototype,'encode',function(value){
+    sizes.push(value.length);
+    return encode.call(this,value);
+  });
+  const encoded=await encodeSnapshot(source);
+  assert.equal(await decodeSnapshot(encoded),source);
+  assert.ok(sizes.length>1);
+  assert.ok(Math.max(...sizes)<=65536,`unbounded encoding: ${Math.max(...sizes)}`);
+});
+
+test('Cloudflare seals stream the exact JSON bytes into SHA-256 in bounded chunks',async t=>{
+  const sizes=[];
+  class DigestStream extends WritableStream {
+    constructor(){
+      const hash=createHash('sha256');
+      let resolve;
+      const digest=new Promise(r=>{resolve=r;});
+      super({write(chunk){sizes.push(chunk.byteLength);hash.update(chunk);},close(){resolve(hash.digest());}});
+      this.digest=digest;
+    }
+  }
+  const descriptor=Object.getOwnPropertyDescriptor(crypto,'DigestStream');
+  Object.defineProperty(crypto,'DigestStream',{configurable:true,value:DigestStream});
+  t.after(()=>{if(descriptor)Object.defineProperty(crypto,'DigestStream',descriptor);else delete crypto.DigestStream;});
+  const source='x'.repeat(65535)+'🌍'+'z'.repeat(300000);
+  assert.equal(await persistence.sha256Snapshot(source),createHash('sha256').update(source).digest('hex'));
+  assert.ok(sizes.length>1);
+  assert.ok(Math.max(...sizes)<=3*65536);
 });
 
 test('snapshot write estimate counts only rows actually mutated',()=>{
