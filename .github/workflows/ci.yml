@@ -144,41 +144,22 @@ jobs:
           console.log({from:a.world_minute,to:b.world_minute,persisted_generation:c.persisted_generation});
           NODE
 
-      - name: Verify production WebSocket stability
+      - name: Verify production Observer polling continuity
         run: |
+          rm -f /tmp/cymonia-observer-state-a.json /tmp/cymonia-observer-state-b.json
+          curl --max-time 20 -fsS -o /tmp/cymonia-observer-state-a.json https://cymonia.pages.dev/api/v2/state
+          sleep 10
+          curl --max-time 20 -fsS -o /tmp/cymonia-observer-state-b.json https://cymonia.pages.dev/api/v2/state
           node <<'NODE'
-          const ws=new WebSocket('wss://cymonia-sovereign-world.signallayerlabs.workers.dev/stream');
-          let done=false,signal=false,lastMinute=null,advances=0;
-          const deadline=setTimeout(()=>finish(1,'production websocket heartbeat observation timed out'),210_000);
-          const ping=setInterval(()=>{if(ws.readyState===1)ws.send('ping');},15_000);
-          function finish(code,message){
-            if(done)return;
-            done=true;
-            clearTimeout(deadline);
-            clearInterval(ping);
-            if(code===0)console.log(message);
-            else console.error(message);
-            try{ws.close(1000,'ci-complete');}catch{}
-            setTimeout(()=>process.exit(code),100);
-          }
-          ws.addEventListener('message',event=>{
-            try{
-              const message=JSON.parse(String(event.data));
-              if(message.state)throw new Error('websocket_regressed_to_full_state_payload');
-              const minute=message.type==='world_signal'?Number(message.worldMinute):NaN;
-              if(message.type==='world_signal'&&message.version===2&&Number.isFinite(minute)){
-                signal=true;
-                if(lastMinute===null)lastMinute=minute;
-              }
-              if(signal&&Number.isFinite(minute)&&minute>lastMinute){
-                lastMinute=minute;advances++;
-                console.log({worldMinute:minute,advances});
-                if(advances>=2)finish(0,'PASS: production websocket delivered two compact canonical heartbeat signals');
-              }
-            }catch{}
-          });
-          ws.addEventListener('error',()=>finish(1,'production websocket emitted an error'));
-          ws.addEventListener('close',event=>{
-            if(!done)finish(1,`production websocket closed early: code=${event.code} reason=${event.reason||''}`);
-          });
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('/tmp/cymonia-observer-state-a.json'));
+          const b=JSON.parse(fs.readFileSync('/tmp/cymonia-observer-state-b.json'));
+          if(!a.ok||!b.ok)throw new Error('observer canonical state unavailable');
+          if(a.world?.version!==2||b.world?.version!==2)throw new Error('observer state version mismatch');
+          if(!a.world?.worldId||a.world.worldId!==b.world?.worldId)throw new Error('observer world identity changed');
+          const am=Number(a.world?.clock?.worldMinute),bm=Number(b.world?.clock?.worldMinute);
+          if(!Number.isSafeInteger(am)||!Number.isSafeInteger(bm))throw new Error('observer world minute invalid');
+          if(bm<am)throw new Error(`observer clock regressed ${am} -> ${bm}`);
+          if(!Array.isArray(b.world?.citizens)||!b.world.citizens.some(c=>c.alive&&c.currentAction))throw new Error('observer canonical citizens unavailable');
+          console.log(`PASS: production Observer polling is canonical and monotonic (${am} -> ${bm})`);
           NODE

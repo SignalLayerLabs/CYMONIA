@@ -48,13 +48,11 @@ The canonical world uses a one-minute Durable Object alarm cadence. Each alarm c
 
 Snapshot persistence uses a 40,000-row soft daily budget and a 60,000-row emergency ceiling, both below the 100,000 free-tier account ceiling. The remaining capacity is intentional headroom for alarms, SQLite index effects, migrations, and other account-level Durable Object writes.
 
-Observer streaming uses the Durable Objects WebSocket Hibernation API. Active sockets are enumerated from `ctx.getWebSockets()` and carry serialized connection metadata so they remain usable after object eviction. A WebSocket-only outage does not mark the canonical world degraded while REST polling continues to return valid state; the stream reconnects independently with exponential backoff.
+Production Observer transport is canonical REST polling every 10 seconds through `/api/v2/state`. The endpoint streams the compressed committed public snapshot, and `ObserverConnection` preserves world identity, rejects clock regression, retries transient outages, and keeps rendering the last canonical state while degraded.
 
-Cloudflare observability emits `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, and `CYMONIA_WS_SEND_FAILED` events for stream diagnostics without persisting additional rows.
+WebSocket support is quarantined from production after repeated `1006` abnormal closures were reproduced both through Pages and through the direct Sovereign Worker endpoint while canonical REST health continued to advance and persist successfully. The server-side WebSocket implementation remains available for isolated diagnostics, but deployment correctness no longer depends on it. See [Realtime transport quarantine](direct-websocket-topology.md).
 
-The WebSocket is a bounded invalidation channel rather than a second full-state transport. It carries compact canonical `world_signal` messages. The Observer refreshes the full state through `/api/v2/state`, whose response is streamed from the compressed committed public snapshot. This prevents WebSocket connection stability and Durable Object memory from scaling with the total Citizen knowledge graph. See [WebSocket heartbeat recovery](websocket-heartbeat-recovery.md).
-
-For production WebSocket upgrades, the Observer connects directly to the public Sovereign Worker endpoint rather than proxying the upgraded connection through Pages Functions and `WORLD_SERVICE`. REST/authenticated traffic remains on Pages. See [Direct WebSocket topology](direct-websocket-topology.md).
+Cloudflare observability may still emit `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, and `CYMONIA_WS_SEND_FAILED` events during explicit WebSocket diagnostics without persisting additional rows.
 
 
 

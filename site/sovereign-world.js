@@ -323,7 +323,6 @@ function locateMyAvatar({follow=false,inspect=false}={}){
   toast(follow?'Following your Citizen':'Located your Citizen');return true;
 }
 function renderAll(){renderTop();renderActivity();renderInspector();renderMyAvatar();if(!$('societyHistory').hidden)renderHistory();}
-function createSocket({onWorld,onSignal,onOpen,onClose,onError}){const ws=new WebSocket('wss://cymonia-sovereign-world.signallayerlabs.workers.dev/stream');ws.onopen=onOpen;ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.state)onWorld(m.state);else if(m.type==='world_signal')onSignal?.(m);}catch(error){onError(error);}};ws.onclose=onClose;ws.onerror=e=>onError(e);return ws;}
 function toast(text){const d=document.createElement('div');d.className='toast';d.textContent=text;$('toastLayer').append(d);setTimeout(()=>d.remove(),3200);}
 async function sendIntent(){const intent=$('humanIntent').value.trim();if(!intent)return;const feedback=$('agentFeedback');feedback.textContent='Sending direction through the epistemic boundary…';try{const d=await getJSON('/api/v2/intent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent})});feedback.textContent=d.ok?'Direction queued. Your avatar still decides and can fail.':'Direction rejected.';toast('Avatar direction queued');}catch(e){feedback.textContent=e.message==='401'?'Sign in with GitHub first.':`Unavailable: ${e.message}`;}}
 function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.():$('game').requestFullscreen?.();}
@@ -360,7 +359,7 @@ async function boot(){
 
       return replay;
     },
-    createSocket,
+    createSocket:null,
     onWorld:acceptWorld,
     onMode:setConnectionMode,
     onError:()=>{},

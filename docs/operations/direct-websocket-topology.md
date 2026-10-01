@@ -1,15 +1,15 @@
-# Direct WebSocket topology
+# Realtime transport quarantine
 
-The canonical REST path remains:
+The WebSocket transport is currently not part of the production Observer path.
 
-Observer -> Pages `/api/v2/*` -> `WORLD_SERVICE` -> Sovereign Worker -> canonical Durable Object.
+Production evidence on 2026-10-01 showed repeated abnormal WebSocket closure (`1006`) both through the Pages Function proxy and when connecting directly to the public Sovereign Worker. During the same runs, canonical REST health proved that the Durable Object continued to advance and persist its world successfully.
 
-The real-time WebSocket path is intentionally direct:
+Until the platform-level WebSocket behavior is separately diagnosed, the production Observer uses its existing canonical REST polling path:
 
-Observer -> `wss://cymonia-sovereign-world.signallayerlabs.workers.dev/stream` -> Sovereign Worker -> canonical Durable Object.
+Observer -> Pages `/api/v2/state` -> `WORLD_SERVICE` -> Sovereign Worker -> canonical Durable Object.
 
-This removes the Pages Function + service-binding proxy from the long-lived upgraded connection. The Pages route remains useful for REST, authentication and normal API calls, but it is no longer in the WebSocket data path.
+The Observer polls every 10 seconds and retains monotonic-world validation and retry/degraded handling. Rendering continues to interpolate canonical movement between committed snapshots.
 
-The WebSocket carries only compact `world_signal` invalidations. Full canonical state is still retrieved through `/api/v2/state`.
+The server-side WebSocket code may remain available for isolated future diagnostics, but production correctness and deployment are not dependent on it.
 
-This topology does not reset, fork or duplicate the world. Both transports reach the same `SovereignWorld` Durable Object namespace in the deployed Worker.
+This is a transport quarantine only. It does not reset, fork, mutate, or duplicate the canonical world.
