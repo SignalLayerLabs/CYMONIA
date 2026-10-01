@@ -147,7 +147,7 @@ jobs:
       - name: Verify production WebSocket stability
         run: |
           node <<'NODE'
-          const ws=new WebSocket('wss://cymonia.pages.dev/api/v2/stream');
+          const ws=new WebSocket('wss://cymonia-sovereign-world.signallayerlabs.workers.dev/stream');
           let done=false,signal=false,lastMinute=null,advances=0;
           const deadline=setTimeout(()=>finish(1,'production websocket heartbeat observation timed out'),210_000);
           const ping=setInterval(()=>{if(ws.readyState===1)ws.send('ping');},15_000);
