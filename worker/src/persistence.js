@@ -261,6 +261,12 @@ export async function decodeSnapshot(encoded){
   return new Response(decompressed).text();
 }
 
+export function snapshotGzipSize(encoded){
+  if(!String(encoded).startsWith(`${SNAPSHOT_ENCODING}:`))return null;
+  const tail=base64ToBytes(String(encoded).slice(-12));
+  return tail.byteLength>=4?new DataView(tail.buffer).getUint32(tail.byteLength-4,true):null;
+}
+
 export async function decodeWorldSnapshot(encoded){
   // Parse root arrays one entity at a time. A cold wake must never retain the
   // full private JSON string alongside the hydrated canonical object graph.

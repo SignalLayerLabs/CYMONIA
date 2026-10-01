@@ -22,6 +22,7 @@ import {
   EMERGENCY_ROW_WRITE_BUDGET,
   encodeWorldSnapshotParts,
   decodeWorldSnapshot,
+  snapshotGzipSize,
   snapshotJsonStream,
   estimateSnapshotRowWrites,
   createWriteBudget,
@@ -188,8 +189,11 @@ export class SovereignWorld {
     }
     // A constructor also runs before an alarm wakeup; repair alarms from fetch.
     ctx.blockConcurrencyWhile(async()=>{
+      const wakeStartedAt=Date.now();
+      console.log('CYMONIA_WAKE_BEGIN');
       this.initializeSQLite();
       this.world=await this.loadWorld();
+      console.log('CYMONIA_WAKE_DECODED',JSON.stringify({elapsedMs:Date.now()-wakeStartedAt,worldMinute:this.world?.clock?.worldMinute??null}));
       if(!this.world){
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
         ensureRuntime(this.world);
@@ -327,6 +331,7 @@ export class SovereignWorld {
           :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',meta.generation,count)].map(r=>r.state_part);
         if(parts.length!==count)continue;
         const encoded=joinSnapshot(parts);
+        console.log('CYMONIA_SNAPSHOT_LOAD',JSON.stringify({generation:meta.generation,compressedCodeUnits:encoded.length,uncompressedBytes:snapshotGzipSize(encoded)}));
         const world=await decodeWorldSnapshot(encoded);
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
         if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
@@ -497,12 +502,15 @@ export class SovereignWorld {
     // This activation owns every large private-checkpoint temporary. When it
     // returns, gzip/base64 parts are unreachable before Observer projection
     // work starts.
+    const encodingStartedAt=Date.now();
+    console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute}));
     const {parts,stateSha256}=await encodeWorldSnapshotParts(this.world,{
       sealDue:due,
       clock:snapshotClock,
       ledgerHead,
       maxCodeUnits:SNAPSHOT_CHUNK_CODE_UNITS,
     });
+    console.log('CYMONIA_CHECKPOINT_ENCODED',JSON.stringify({worldMinute,elapsedMs:Date.now()-encodingStartedAt,parts:parts.length}));
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
     const slotBase=generation==='slot-b'?1_000_000:0;
     const sealCount=due
@@ -681,7 +689,10 @@ export class SovereignWorld {
   async tick(){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
+      const advancementStartedAt=Date.now();
+      console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
       const progress=advanceWorldBounded(this.world,Date.now());
+      console.log('CYMONIA_ADVANCE_READY',JSON.stringify({worldMinute:this.world.clock.worldMinute,elapsedMs:Date.now()-advancementStartedAt}));
 
       const lastPersisted=Number(
         this.lastPersistedWorldMinute ?? this.world.clock.worldMinute
