@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const worker=fs.readFileSync(new URL('../worker/src/index.js',import.meta.url),'utf8');
 const governor=fs.readFileSync(new URL('../worker/src/neuron-governor.js',import.meta.url),'utf8');
+const persistence=fs.readFileSync(new URL('../worker/src/persistence.js',import.meta.url),'utf8');
 const cfg=fs.readFileSync(new URL('../wrangler.world.toml',import.meta.url),'utf8');
 
 test('Durable Object runtime declares single writer, alarms, websocket and AI binding',()=>{
@@ -43,7 +44,8 @@ test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint 
   assert.match(worker,/storage\.sql/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_state/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_seals/);
-  assert.match(worker,/SHA-256/);
+  assert.match(worker,/sha256Snapshot\(serialized\)/);
+  assert.match(persistence,/SHA-256/);
   assert.match(worker,/state_sha256/);
   assert.match(worker,/world_state_chunks/);
   assert.match(worker,/world_state_manifest/);
@@ -137,7 +139,8 @@ function askAIBlock(){
 
 
 test('monotonic clock guard prevents loading older snapshots and exposes recovery state',()=>{
-  assert.match(worker,/world_clock_guard/);assert.match(worker,/world_snapshot_slots/);assert.match(worker,/selectNewestSnapshot/);
+  assert.match(worker,/world_clock_guard/);assert.match(worker,/world_snapshot_slots/);
+  assert.match(worker,/assertMonotonicSnapshot\(world,\{highWaterMark/);
   assert.match(worker,/sovereign_world_clock_regression/);assert.match(worker,/clock_high_water_mark/);assert.match(worker,/loaded_snapshot_minute/);
   assert.match(worker,/clock_regression_detected/);assert.match(worker,/snapshot_recovery_source/);
 });
