@@ -68,6 +68,11 @@ test('Cloudflare seals stream the exact JSON bytes into SHA-256 in bounded chunk
   t.after(()=>{if(descriptor)Object.defineProperty(crypto,'DigestStream',descriptor);else delete crypto.DigestStream;});
   const source='x'.repeat(65535)+'🌍'+'z'.repeat(300000);
   assert.equal(await persistence.sha256Snapshot(source),createHash('sha256').update(source).digest('hex'));
+  const world={clock:{worldMinute:42},citizens:[{memories:[source]}],ledger:[],runtime:{phase:'test'}};
+  const expected=JSON.stringify(world);
+  const result=await persistence.encodeWorldSnapshot(world,{sealDue:true});
+  assert.equal(await decodeSnapshot(result.encoded),expected);
+  assert.equal(result.stateSha256,createHash('sha256').update(expected).digest('hex'));
   assert.ok(sizes.length>1);
   assert.ok(Math.max(...sizes)<=3*65536);
 });
