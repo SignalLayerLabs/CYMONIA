@@ -140,12 +140,14 @@ jobs:
         run: |
           node <<'NODE'
           const ws=new WebSocket('wss://cymonia.pages.dev/api/v2/stream');
-          let done=false,snapshot=false;
-          const deadline=setTimeout(()=>finish(1,'production websocket timed out'),10_000);
+          let done=false,snapshot=false,lastMinute=null,advances=0;
+          const deadline=setTimeout(()=>finish(1,'production websocket heartbeat observation timed out'),210_000);
+          const ping=setInterval(()=>{if(ws.readyState===1)ws.send('ping');},15_000);
           function finish(code,message){
             if(done)return;
             done=true;
             clearTimeout(deadline);
+            clearInterval(ping);
             if(code===0)console.log(message);
             else console.error(message);
             try{ws.close(1000,'ci-complete');}catch{}
@@ -154,17 +156,20 @@ jobs:
           ws.addEventListener('message',event=>{
             try{
               const message=JSON.parse(String(event.data));
-              if(message.type==='world_snapshot'&&message.state?.version===2)snapshot=true;
+              const minute=message.state?.clock?.worldMinute;
+              if(message.type==='world_snapshot'&&message.state?.version===2&&Number.isFinite(minute)){
+                snapshot=true;
+                if(lastMinute===null)lastMinute=minute;
+              }
+              if(snapshot&&Number.isFinite(minute)&&minute>lastMinute){
+                lastMinute=minute;advances++;
+                console.log({worldMinute:minute,advances});
+                if(advances>=2)finish(0,'PASS: production websocket delivered two subsequent canonical heartbeats');
+              }
             }catch{}
           });
           ws.addEventListener('error',()=>finish(1,'production websocket emitted an error'));
           ws.addEventListener('close',event=>{
             if(!done)finish(1,`production websocket closed early: code=${event.code} reason=${event.reason||''}`);
-          });
-          ws.addEventListener('open',()=>{
-            setTimeout(()=>{
-              if(!snapshot)return finish(1,'production websocket did not deliver canonical snapshot');
-              finish(0,'PASS: production websocket remained open for 5s and delivered canonical snapshot');
-            },5_000);
           });
           NODE

@@ -80,6 +80,20 @@ test('alarm stores its successor before running the world tick',async t=>{
   assert.equal(instance.world.runtime.lastTickError,null);
 });
 
+test('alarm confirms its buffered successor on disk before beginning synchronous simulation',async t=>{
+  const {instance}=runtime(t);
+  let release,started=false,confirmed=false;
+  const gate=new Promise(resolve=>{release=resolve;});
+  instance.ctx.storage.sync=async()=>{await gate;confirmed=true;};
+  instance.tick=async()=>{started=true;assert.equal(confirmed,true);};
+  const pending=instance.alarm();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(started,false,'simulation must wait for the durable alarm confirmation');
+  release();
+  await pending;
+  assert.equal(started,true);
+});
+
 test('a heartbeat with no observers does not allocate a public world broadcast',async t=>{
   const {instance}=runtime(t);
   let broadcasts=0;

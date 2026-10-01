@@ -12,6 +12,7 @@ test('CI deploys and verifies the Sovereign World only',()=>{
   assert.match(read('CHECK.sh'),/node --test tests\/test_sovereign_\*\.mjs/);
   assert.match(ci,/build_sovereign_genesis\.mjs/);
   assert.match(ci,/browser-sovereign\.mjs/);
+  assert.match(ci,/advances>=2/);
   assert.match(ci,/wrangler deploy --config wrangler\.world\.toml/);
   assert.match(ci,/wrangler pages deploy site/);
   assert.match(pages,/build_sovereign_genesis\.mjs/);
