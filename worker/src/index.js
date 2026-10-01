@@ -133,6 +133,7 @@ export class SovereignWorld {
     this.world=null;
     this.committedWorld=null;
     this.committedSnapshot=null;
+    this.pendingRecoveryNeuronBudget=null;
     this.mutationChain=Promise.resolve();
     this.persistSequence=0;
     this.persistChain=Promise.resolve();
@@ -362,7 +363,7 @@ export class SovereignWorld {
     // Compression and Workers AI yield the event loop. Serialize ALL writers,
     // while readers continue to observe the last fully committed snapshot.
     const pending=(this.mutationChain||Promise.resolve()).then(async()=>{
-      if(this.world===this.committedWorld&&this.committedSnapshot)await this.restoreCommittedWorld(this.world.runtime?.neuronBudget);
+      if(this.world===this.committedWorld&&this.committedSnapshot)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget||this.world.runtime?.neuronBudget);
       try{return await callback();}
       catch(error){
         if(this.committedSnapshot){
@@ -378,13 +379,15 @@ export class SovereignWorld {
   async restoreCommittedWorld(neuronBudget){
     // Release the failed private world before decoding its checkpoint. Readers
     // continue to see the immutable committed view while writers stay queued.
+    if(neuronBudget)this.pendingRecoveryNeuronBudget=neuronBudget;
     this.world=this.committedWorld;
     const restored=JSON.parse(await decodeSnapshot(this.committedSnapshot));
     ensureRuntime(restored).lastSealWorldMinute=this.committedWorld.runtime.lastSealWorldMinute;
     compactOperationalState(restored);
     // External inference already consumed this budget even if saving failed.
-    if(neuronBudget)restored.runtime.neuronBudget=neuronBudget;
+    if(this.pendingRecoveryNeuronBudget)restored.runtime.neuronBudget=this.pendingRecoveryNeuronBudget;
     this.world=restored;
+    this.pendingRecoveryNeuronBudget=null;
   }
   readableWorld(){return this.committedWorld||this.world;}
   readPersistenceBudget(day=utcDay(),limit=SAFE_ROW_WRITE_BUDGET){

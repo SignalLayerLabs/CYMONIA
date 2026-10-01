@@ -65,7 +65,12 @@ export async function encodeWorldSnapshot(world,{sealDue=false,clock=world.clock
   }
   let input=recordByteStream(worldJsonRecords(snapshot));
   const digest=sealDue&&typeof crypto.DigestStream==='function'?new crypto.DigestStream('SHA-256'):null;
+  const digestPromise=digest?.digest;
+  // Compression can fail before we await the digest. Observe its rejection
+  // immediately while retaining the original promise for error propagation.
+  digestPromise?.catch(()=>{});
   const writer=digest?.getWriter();
+  writer?.closed.catch(()=>{});
   const fallback=[];
   if(sealDue)input=input.pipeThrough(new TransformStream({
     async transform(chunk,controller){
@@ -75,11 +80,17 @@ export async function encodeWorldSnapshot(world,{sealDue=false,clock=world.clock
   }));
   // Hash inline rather than teeing: a faster hash consumer must not buffer
   // the entire JSON while the gzip consumer applies backpressure.
-  const compressed=new Uint8Array(await new Response(input.pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  let compressed;
+  try{
+    compressed=new Uint8Array(await new Response(input.pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  }catch(error){
+    if(writer)await writer.abort(error).catch(()=>{});
+    throw error;
+  }finally{writer?.releaseLock();}
   let stateSha256=null;
   if(sealDue){
     let hash;
-    if(digest)hash=await digest.digest;
+    if(digest)hash=await digestPromise;
     else{
       // Node test runtimes lack the Cloudflare streaming digest extension.
       const bytes=new Uint8Array(fallback.reduce((sum,chunk)=>sum+chunk.byteLength,0));
@@ -95,8 +106,10 @@ export async function sha256Snapshot(serialized){
   let digest;
   if(typeof crypto.DigestStream==='function'){
     const stream=new crypto.DigestStream('SHA-256');
+    const digestPromise=stream.digest;
+    digestPromise.catch(()=>{});
     await snapshotByteStream(serialized).pipeTo(stream);
-    digest=await stream.digest;
+    digest=await digestPromise;
   }else{
     // Node's unit-test Web Crypto has no Cloudflare DigestStream extension.
     digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(serialized));

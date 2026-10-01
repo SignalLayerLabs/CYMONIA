@@ -35,6 +35,27 @@ test('failed writes recover private memory from the compressed committed snapsho
   assert.equal(instance.world.citizens[0].memories[0].content.evidence,'committed');
 });
 
+test('a retry after decoder failure preserves neurons already consumed by inference',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.citizens[0].memories=[{id:'private-memory'}];
+  await instance.persist({forceSeal:true});
+  const NativeDecompression=globalThis.DecompressionStream;
+  let fail=true;
+  t.mock.method(globalThis,'DecompressionStream',function(...args){
+    if(fail){fail=false;throw new Error('injected decoder outage');}
+    return new NativeDecompression(...args);
+  });
+  await assert.rejects(instance.mutateWorld(async()=>{
+    instance.world.runtime.neuronBudget.usedNeurons=77;
+    throw new Error('injected failed write');
+  }),/injected decoder outage/);
+  await instance.mutateWorld(async()=>{
+    assert.equal(instance.world.runtime.neuronBudget.usedNeurons,77);
+    assert.equal(instance.world.citizens[0].memories[0].id,'private-memory');
+  });
+});
+
 test('wake loads only the newest valid snapshot instead of retaining both full worlds',async t=>{
   const storage=sqliteStorage();
   t.after(()=>storage.db.close());

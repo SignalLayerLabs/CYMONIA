@@ -77,6 +77,23 @@ test('Cloudflare seals stream the exact JSON bytes into SHA-256 in bounded chunk
   assert.ok(Math.max(...sizes)<=3*65536);
 });
 
+test('a native digest failure rejects the checkpoint without an unhandled rejection',async t=>{
+  class FailingDigestStream extends WritableStream {
+    constructor(){
+      let reject;
+      const digest=new Promise((_,r)=>{reject=r;});
+      super({write(){const error=new Error('injected digest failure');reject(error);throw error;}});
+      this.digest=digest;
+    }
+  }
+  const descriptor=Object.getOwnPropertyDescriptor(crypto,'DigestStream');
+  Object.defineProperty(crypto,'DigestStream',{configurable:true,value:FailingDigestStream});
+  t.after(()=>{if(descriptor)Object.defineProperty(crypto,'DigestStream',descriptor);else delete crypto.DigestStream;});
+  await assert.rejects(persistence.encodeWorldSnapshot({clock:{worldMinute:1},citizens:[]},{sealDue:true}),/injected digest failure/);
+  await assert.rejects(persistence.sha256Snapshot('canonical checkpoint'),/injected digest failure/);
+  await new Promise(resolve=>setImmediate(resolve));
+});
+
 test('snapshot write estimate counts only rows actually mutated',()=>{
   assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:false}),8); // chunks + manifest + slot metadata + clock guard + budget
   assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true}),9);  // plus seal row
