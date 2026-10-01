@@ -22,6 +22,7 @@ import {
   EMERGENCY_ROW_WRITE_BUDGET,
   encodeWorldSnapshot,
   decodeSnapshot,
+  snapshotJsonStream,
   estimateSnapshotRowWrites,
   createWriteBudget,
   reserveWriteBudget,
@@ -77,11 +78,11 @@ function tickDiagnostics(runtime){
   };
 }
 function committedReader(world,clock=world.clock,ledgerHead=world.ledgerHead){
-  // Observer routes need public knowledge and causal evidence, but never the
-  // private episodic memories or heard-language traces of every Citizen.
-  // Keep those once in the canonical world and in its compressed checkpoint.
+  // Health/history/WHY need compact operational and causal evidence. Public
+  // knowledge is served from compressed JSON instead of another object graph;
+  // private memory remains in the canonical world and its durable checkpoint.
   const citizens=world.citizens.map(citizen=>{
-    const {memories,...reader}=citizen;
+    const {memories,knowledge,...reader}=citizen;
     const {heard,grammarPatterns,...language}=citizen.language;
     return {...reader,language};
   });
@@ -133,6 +134,7 @@ export class SovereignWorld {
     this.world=null;
     this.committedWorld=null;
     this.committedSnapshot=null;
+    this.committedPublicSnapshot=null;
     this.pendingRecoveryNeuronBudget=null;
     this.mutationChain=Promise.resolve();
     this.persistSequence=0;
@@ -162,6 +164,7 @@ export class SovereignWorld {
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
+      if(!this.committedPublicSnapshot)this.committedPublicSnapshot=(await encodeWorldSnapshot(publicWorld(this.world))).encoded;
       if(!this.committedWorld)this.committedWorld=committedReader(this.world);
       try{
         const status=await ctx.storage.get(HEARTBEAT_STATUS_KEY);
@@ -432,6 +435,7 @@ export class SovereignWorld {
       if(!forceSeal)this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
       return {persisted:false,reason:'write_budget_exhausted',rowWrites};
     }
+    const publicSnapshot=(await encodeWorldSnapshot(publicWorld({...this.world,clock:snapshotClock,ledgerHead}))).encoded;
     this.ctx.storage.transactionSync(()=>{
       for(let seq=0;seq<parts.length;seq++)this.sql.exec(
         'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
@@ -467,6 +471,7 @@ export class SovereignWorld {
     // Writers are serialized, so its public evidence is the committed state.
     this.committedWorld=null;
     this.committedSnapshot=encoded;
+    this.committedPublicSnapshot=publicSnapshot;
     this.committedWorld=committedReader(this.world,snapshotClock,ledgerHead);
     if(due)this.committedWorld.runtime.lastSealWorldMinute=worldMinute;
     this.lastPersistedGeneration=generation;
@@ -507,10 +512,7 @@ export class SovereignWorld {
 
       // Publish the final state of this heartbeat, including a strategy
       // accepted by cognition during the same tick.
-      if(this.ctx.getWebSockets().length)this.broadcast({
-        type:'world_delta',
-        state:publicWorld(this.readableWorld(),Date.now())
-      });
+      if(this.ctx.getWebSockets().length)await this.broadcastWorld('world_delta');
     });
   }
   async alarm(alarmInfo){
@@ -609,7 +611,7 @@ export class SovereignWorld {
     try{return ws.deserializeAttachment?.()||null;}catch{return null;}
   }
   broadcast(message){
-    const text=JSON.stringify(message);
+    const text=typeof message==='string'?message:JSON.stringify(message);
     for(const ws of this.ctx.getWebSockets()){
       try{ws.send(text);}
       catch(error){
@@ -620,12 +622,21 @@ export class SovereignWorld {
       }
     }
   }
-  webSocket(){
+  async publicStateJson(){
+    return this.committedPublicSnapshot?decodeSnapshot(this.committedPublicSnapshot):JSON.stringify(publicWorld(this.readableWorld(),Date.now()));
+  }
+  async broadcastWorld(type){
+    if(!this.ctx.getWebSockets().length)return;
+    const state=await this.publicStateJson();
+    this.broadcast(`{"type":${JSON.stringify(type)},"state":${state}}`);
+  }
+  async webSocket(){
+    const state=await this.publicStateJson();
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];
     const session={id:crypto.randomUUID(),connectedAt:Date.now()};
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment?.(session);
-    server.send(JSON.stringify({type:'world_snapshot',state:publicWorld(this.readableWorld(),Date.now())}));
+    server.send(`{"type":"world_snapshot","state":${state}}`);
     return new Response(null,{status:101,webSocket:client});
   }
   webSocketMessage(ws,message){
@@ -728,7 +739,10 @@ export class SovereignWorld {
         persistence:'durable-object-sqlite-gzip-slotted'
       });
     }
-    if(request.method==='GET'&&(path==='/'||path==='/state'))return json({ok:true,world:publicWorld(world,Date.now())});
+    if(request.method==='GET'&&(path==='/'||path==='/state')){
+      if(this.committedPublicSnapshot)return new Response(snapshotJsonStream(this.committedPublicSnapshot,{prefix:'{"ok":true,"world":',suffix:'}'}),{headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+      return json({ok:true,world:publicWorld(world,Date.now())});
+    }
     if(request.method==='GET'&&path==='/history')return json({ok:true,history:getHistory(world)});
     if(request.method==='GET'&&path.startsWith('/why/')){
       const id=decodeURIComponent(path.slice(5)),why=getWhy(world,id);
@@ -743,7 +757,7 @@ export class SovereignWorld {
         const c=existing||createHumanAvatar(this.world,{externalId,displayName:body.actor.display_name||body.actor.github_login||null},this.world.clock.worldMinute);
         if(!existing){
           await this.persist({forceSeal:true});
-          if(this.ctx.getWebSockets().length)this.broadcast({type:'world_delta',state:publicWorld(this.readableWorld(),Date.now())});
+          if(this.ctx.getWebSockets().length)await this.broadcastWorld('world_delta');
         }
         return json({ok:true,citizenId:c.id,created:!existing});
       }).catch(()=>json({ok:false,error:'world_write_unavailable'},503));

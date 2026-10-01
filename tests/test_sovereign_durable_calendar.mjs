@@ -9,17 +9,22 @@ const YEAR=525600;
 
 test('committed readers retain public evidence without duplicating private Citizen memory',async t=>{
   const storage=sqliteStorage();t.after(()=>storage.db.close());
-  const {instance}=await wake(storage);
+  const {instance,messages}=await wake(storage);
   const citizen=instance.world.citizens[0];
+  citizen.knowledge=[{concept:'public-evidence',confidence:.9,active:true,provenance:[{kind:'observation',eventId:'proof'}]}];
   citizen.memories=[{id:'private-memory',content:{evidence:'retain me'},confidence:.9}];
   citizen.language.heard={privateSignal:[{source:'private-evidence'}]};
   await instance.persist({forceSeal:true});
-  assert.deepEqual(publicWorld(instance.readableWorld()),publicWorld(instance.world));
+  assert.deepEqual((await (await instance.fetch(new Request('https://example.com/world/state'))).json()).world,publicWorld(instance.world));
+  assert.equal(instance.committedWorld.citizens[0].knowledge,undefined);
   assert.equal(instance.committedWorld.citizens[0].memories,undefined);
   assert.equal(instance.committedWorld.citizens[0].language.heard,undefined);
   const {instance:restarted}=await wake(storage);
   assert.deepEqual(restarted.world.citizens[0].memories,citizen.memories);
   assert.deepEqual(restarted.world.citizens[0].language.heard,citizen.language.heard);
+  assert.deepEqual((await (await restarted.fetch(new Request('https://example.com/world/state'))).json()).world,publicWorld(restarted.world));
+  await instance.broadcastWorld('world_delta');
+  assert.deepEqual(messages.at(-1),{type:'world_delta',state:publicWorld(instance.world)});
 });
 
 test('failed writes recover private memory from the compressed committed snapshot',async t=>{
