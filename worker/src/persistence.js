@@ -133,6 +133,28 @@ export async function decodeSnapshot(encoded){
   return new Response(decompressed).text();
 }
 
+export function snapshotJsonStream(encoded,{prefix='',suffix=''}={}){
+  const source=String(encoded),marker=`${SNAPSHOT_ENCODING}:`;
+  const body=source.startsWith(marker)
+    ?new Response(base64ToBytes(source.slice(marker.length))).body.pipeThrough(new DecompressionStream('gzip'))
+    :snapshotByteStream(source);
+  const reader=body.getReader(),encoder=new TextEncoder();
+  let started=false,ended=false;
+  return new ReadableStream({
+    async pull(controller){
+      try{
+        if(!started){started=true;if(prefix){controller.enqueue(encoder.encode(prefix));return;}}
+        const item=await reader.read();
+        if(!item.done){controller.enqueue(item.value);return;}
+        ended=true;reader.releaseLock();
+        if(suffix)controller.enqueue(encoder.encode(suffix));
+        controller.close();
+      }catch(error){ended=true;reader.releaseLock();controller.error(error);}
+    },
+    cancel(reason){if(!ended){ended=true;return reader.cancel(reason).finally(()=>reader.releaseLock());}}
+  });
+}
+
 export function estimateSnapshotRowWrites({chunkCount,sealDue=false,sealPruneRows=0}){
   const chunks=Math.max(0,Math.floor(Number(chunkCount)||0));
   const pruned=Math.max(0,Math.floor(Number(sealPruneRows)||0));

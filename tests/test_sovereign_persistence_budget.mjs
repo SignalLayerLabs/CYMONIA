@@ -94,6 +94,23 @@ test('a native digest failure rejects the checkpoint without an unhandled reject
   await new Promise(resolve=>setImmediate(resolve));
 });
 
+test('public snapshot responses stream the same Unicode JSON envelope without materializing its text',async t=>{
+  const world={version:2,clock:{worldMinute:42},citizens:[{knowledge:'🌍'.repeat(120000)}],ledgerHead:'sealed'};
+  const {encoded}=await persistence.encodeWorldSnapshot(world);
+  t.mock.method(Response.prototype,'text',()=>{throw new Error('whole response text allocated');});
+  const response=new Response(persistence.snapshotJsonStream(encoded,{prefix:'{"ok":true,"world":',suffix:'}'}));
+  assert.deepEqual(await response.json(),{ok:true,world});
+});
+
+test('public snapshot streaming propagates corrupt gzip errors and permits reader cancellation',async()=>{
+  const bad=new Response(persistence.snapshotJsonStream('gzip-base64-v1:'+btoa('corrupt')));
+  await assert.rejects(bad.json());
+  const {encoded}=await persistence.encodeWorldSnapshot({clock:{worldMinute:1},citizens:[]});
+  const reader=persistence.snapshotJsonStream(encoded,{prefix:'{"world":',suffix:'}'}).getReader();
+  await reader.read();
+  await reader.cancel('client disconnected');
+});
+
 test('snapshot write estimate counts only rows actually mutated',()=>{
   assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:false}),8); // chunks + manifest + slot metadata + clock guard + budget
   assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true}),9);  // plus seal row
