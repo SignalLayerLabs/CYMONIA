@@ -31,8 +31,21 @@ export function ensureLivingWorld(world){
   return state;
 }
 function pruneRecord(record,limit,score){
-  const entries=Object.entries(record);
-  if(entries.length<=limit)return;
+  const keys=Object.keys(record);
+  if(keys.length<=limit)return;
+  if(keys.length===limit+1){
+    // Spatial observations usually overflow by one. A linear minimum avoids
+    // allocating and sorting every entry for each visible object. The last
+    // minimum wins ties, matching the stable descending sort below.
+    let minimum=Infinity,discard=null;
+    for(const key of keys){
+      const value=score(record[key]);
+      if(!Number.isFinite(value)){discard=null;break;}
+      if(value<=minimum){minimum=value;discard=key;}
+    }
+    if(discard!==null){delete record[discard];return;}
+  }
+  const entries=keys.map(key=>[key,record[key]]);
   entries.sort((a,b)=>score(b[1])-score(a[1]));
   for(const [key] of entries.slice(limit))delete record[key];
 }

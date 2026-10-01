@@ -12,6 +12,7 @@ import {
   publicLivingWorld,
   recordHarvest,
   recordPractice,
+  recordSpatialObservation,
   recordStructureUse,
   recordTravel,
   rememberedCrowding,
@@ -39,6 +40,26 @@ test('movement leaves bounded trails that make repeated travel physically easier
 test('spatial crowd knowledge does not become omniscient',()=>{
   const world=createSovereignGenesis({seed:7,realEpochMs:0}),citizen=world.citizens[0];
   assert.equal(rememberedCrowding(citizen,{x:80,y:80},100,10),0);
+});
+
+test('spatial memory retains the earliest observations on ties without repeatedly sorting the full record',()=>{
+  let reads=0;
+  const entities=Object.fromEntries(Array.from({length:64},(_,i)=>[`entity:${i}`,{get worldMinute(){reads++;return 10;},position:{x:i,y:0},kind:'object'}]));
+  const citizen={spatialMemory:{entities}};
+  assert.equal(recordSpatialObservation(citizen,'new',{x:5,y:5},10,'object'),undefined);
+  assert.ok(reads<=64,`each prior timestamp should be read once, observed ${reads}`);
+  assert.deepEqual(Object.keys(entities),Array.from({length:64},(_,i)=>`entity:${i}`));
+  recordSpatialObservation(citizen,'new',{x:5,y:5},11,'object');
+  assert.equal(entities['entity:63'],undefined);
+  assert.equal(entities.new.worldMinute,11);
+});
+
+test('oversized spatial memory from a legacy snapshot retains its highest timestamps and stable ties',()=>{
+  const entries=Array.from({length:80},(_,i)=>[`entity:${i}`,{worldMinute:i%7,position:{x:i,y:0},kind:'object'}]);
+  const citizen={spatialMemory:{entities:Object.fromEntries(entries)}};
+  recordSpatialObservation(citizen,'new',{x:5,y:5},12,'object');
+  const expected=[...entries,['new',{worldMinute:12}]].sort((a,b)=>b[1].worldMinute-a[1].worldMinute).slice(0,64).map(([id])=>id);
+  assert.deepEqual(Object.keys(citizen.spatialMemory.entities).sort(),expected.sort());
 });
 
 test('resource pressure reduces renewal without making it negative',()=>{

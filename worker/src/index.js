@@ -518,6 +518,9 @@ export class SovereignWorld {
     const nextAlarm=startedAt+ALARM_MS;
     // Commit the successor before tick can throw or exhaust its CPU budget.
     await this.ctx.storage.setAlarm(nextAlarm);
+    // setAlarm can resolve while its write is still buffered. Flush it before
+    // synchronous simulation can keep storage completion events waiting.
+    await this.ctx.storage.sync?.();
     let runtime=ensureRuntime(this.world);
     runtime.nextAlarmRealMs=nextAlarm;
 
