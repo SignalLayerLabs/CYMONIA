@@ -3,8 +3,58 @@ import assert from 'node:assert/strict';
 import {sqliteStorage,wake,readWorld} from './helpers/sovereign-sqlite.mjs';
 import {worldDate} from '../world/clock.js';
 import {decodeSnapshot} from '../worker/src/persistence.js';
+import {publicWorld} from '../world/index.js';
 
 const YEAR=525600;
+
+test('committed readers retain public evidence without duplicating private Citizen memory',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  const citizen=instance.world.citizens[0];
+  citizen.memories=[{id:'private-memory',content:{evidence:'retain me'},confidence:.9}];
+  citizen.language.heard={privateSignal:[{source:'private-evidence'}]};
+  await instance.persist({forceSeal:true});
+  assert.deepEqual(publicWorld(instance.readableWorld()),publicWorld(instance.world));
+  assert.equal(instance.committedWorld.citizens[0].memories,undefined);
+  assert.equal(instance.committedWorld.citizens[0].language.heard,undefined);
+  const {instance:restarted}=await wake(storage);
+  assert.deepEqual(restarted.world.citizens[0].memories,citizen.memories);
+  assert.deepEqual(restarted.world.citizens[0].language.heard,citizen.language.heard);
+});
+
+test('failed writes recover private memory from the compressed committed snapshot',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.citizens[0].memories=[{id:'private-memory',content:{evidence:'committed'}}];
+  await instance.persist({forceSeal:true});
+  storage.transactionSync=()=>{throw new Error('injected failure');};
+  await assert.rejects(instance.mutateWorld(async()=>{
+    instance.world.citizens[0].memories[0].content.evidence='uncommitted';
+    await instance.persist({forceSeal:true});
+  }),/injected failure/);
+  assert.equal(instance.world.citizens[0].memories[0].content.evidence,'committed');
+});
+
+test('a retry after decoder failure preserves neurons already consumed by inference',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.citizens[0].memories=[{id:'private-memory'}];
+  await instance.persist({forceSeal:true});
+  const NativeDecompression=globalThis.DecompressionStream;
+  let fail=true;
+  t.mock.method(globalThis,'DecompressionStream',function(...args){
+    if(fail){fail=false;throw new Error('injected decoder outage');}
+    return new NativeDecompression(...args);
+  });
+  await assert.rejects(instance.mutateWorld(async()=>{
+    instance.world.runtime.neuronBudget.usedNeurons=77;
+    throw new Error('injected failed write');
+  }),/injected decoder outage/);
+  await instance.mutateWorld(async()=>{
+    assert.equal(instance.world.runtime.neuronBudget.usedNeurons,77);
+    assert.equal(instance.world.citizens[0].memories[0].id,'private-memory');
+  });
+});
 
 test('wake loads only the newest valid snapshot instead of retaining both full worlds',async t=>{
   const storage=sqliteStorage();
@@ -132,7 +182,7 @@ test('snapshot metadata is captured from the same state as its encoded payload',
   const {storage,instance}=await nearYearBoundary(t);
   instance.world.clock.worldMinute=YEAR+30;
   const saving=instance.persist();
-  // persistSnapshot has serialized the state before its gzip await.
+  // persistSnapshot captures its clock before the streaming gzip await.
   await Promise.resolve();
   instance.world.clock.worldMinute=YEAR+90;
   await saving;
@@ -142,6 +192,7 @@ test('snapshot metadata is captured from the same state as its encoded payload',
   const saved=JSON.parse(await decodeSnapshot(parts.map(r=>r.state_part).join('')));
   assert.equal(meta.world_minute,saved.clock.worldMinute);
   assert.equal(instance.lastPersistedWorldMinute,saved.clock.worldMinute);
+  assert.equal(instance.readableWorld().clock.worldMinute,saved.clock.worldMinute);
 });
 
 test('legacy recovery cannot restart Genesis when existing snapshots are corrupt',async t=>{

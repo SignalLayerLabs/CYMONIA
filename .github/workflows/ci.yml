@@ -15,15 +15,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Sovereign World unit and invariant tests
-        run: node --test tests/test_sovereign_*.mjs
       - name: Rebuild deterministic Sovereign Genesis replay
         run: |
           node scripts/build_sovereign_genesis.mjs
           cp site/data/sovereign-genesis.json /tmp/sovereign-genesis-a.json
           node scripts/build_sovereign_genesis.mjs
           cmp /tmp/sovereign-genesis-a.json site/data/sovereign-genesis.json
-      - name: Static game-shell and package verification
+      - name: Sovereign unit, runtime and package verification
         run: bash CHECK.sh . --skip-browser
 
   browser-smoke:

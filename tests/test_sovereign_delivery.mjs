@@ -8,7 +8,8 @@ const exists=p=>fs.existsSync(new URL(`../${p}`,import.meta.url));
 test('CI deploys and verifies the Sovereign World only',()=>{
   const ci=read('.github/workflows/ci.yml');
   const pages=read('.github/workflows/pages.yml');
-  assert.match(ci,/node --test tests\/test_sovereign_\*\.mjs/);
+  assert.match(ci,/bash CHECK\.sh \. --skip-browser/);
+  assert.match(read('CHECK.sh'),/node --test tests\/test_sovereign_\*\.mjs/);
   assert.match(ci,/build_sovereign_genesis\.mjs/);
   assert.match(ci,/browser-sovereign\.mjs/);
   assert.match(ci,/wrangler deploy --config wrangler\.world\.toml/);

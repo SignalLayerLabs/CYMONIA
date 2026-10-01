@@ -39,6 +39,19 @@ test('snapshot compression never allocates a whole-world UTF-8 buffer',async t=>
   assert.ok(Math.max(...sizes)<=65536,`unbounded encoding: ${Math.max(...sizes)}`);
 });
 
+test('world checkpoints stream JSON records and retain the exact canonical SHA-256 seal',async t=>{
+  const world={version:2,clock:{worldMinute:128566},citizens:Array.from({length:4},(_,i)=>({id:i,memories:'🌍'.repeat(40000)})),ledger:[],optional:undefined};
+  const expected=JSON.stringify(world);
+  const stringify=JSON.stringify;
+  t.mock.method(JSON,'stringify',function(value,...args){
+    assert.notEqual(value,world,'whole-world JSON must not be allocated');
+    return stringify(value,...args);
+  });
+  const result=await persistence.encodeWorldSnapshot(world,{sealDue:true});
+  assert.equal(await decodeSnapshot(result.encoded),expected);
+  assert.equal(result.stateSha256,createHash('sha256').update(expected).digest('hex'));
+});
+
 test('Cloudflare seals stream the exact JSON bytes into SHA-256 in bounded chunks',async t=>{
   const sizes=[];
   class DigestStream extends WritableStream {
@@ -55,8 +68,30 @@ test('Cloudflare seals stream the exact JSON bytes into SHA-256 in bounded chunk
   t.after(()=>{if(descriptor)Object.defineProperty(crypto,'DigestStream',descriptor);else delete crypto.DigestStream;});
   const source='x'.repeat(65535)+'🌍'+'z'.repeat(300000);
   assert.equal(await persistence.sha256Snapshot(source),createHash('sha256').update(source).digest('hex'));
+  const world={clock:{worldMinute:42},citizens:[{memories:[source]}],ledger:[],runtime:{phase:'test'}};
+  const expected=JSON.stringify(world);
+  const result=await persistence.encodeWorldSnapshot(world,{sealDue:true});
+  assert.equal(await decodeSnapshot(result.encoded),expected);
+  assert.equal(result.stateSha256,createHash('sha256').update(expected).digest('hex'));
   assert.ok(sizes.length>1);
   assert.ok(Math.max(...sizes)<=3*65536);
+});
+
+test('a native digest failure rejects the checkpoint without an unhandled rejection',async t=>{
+  class FailingDigestStream extends WritableStream {
+    constructor(){
+      let reject;
+      const digest=new Promise((_,r)=>{reject=r;});
+      super({write(){const error=new Error('injected digest failure');reject(error);throw error;}});
+      this.digest=digest;
+    }
+  }
+  const descriptor=Object.getOwnPropertyDescriptor(crypto,'DigestStream');
+  Object.defineProperty(crypto,'DigestStream',{configurable:true,value:FailingDigestStream});
+  t.after(()=>{if(descriptor)Object.defineProperty(crypto,'DigestStream',descriptor);else delete crypto.DigestStream;});
+  await assert.rejects(persistence.encodeWorldSnapshot({clock:{worldMinute:1},citizens:[]},{sealDue:true}),/injected digest failure/);
+  await assert.rejects(persistence.sha256Snapshot('canonical checkpoint'),/injected digest failure/);
+  await new Promise(resolve=>setImmediate(resolve));
 });
 
 test('snapshot write estimate counts only rows actually mutated',()=>{
