@@ -5,6 +5,7 @@ import {
   encodeWorldSnapshotParts,
   decodeSnapshot,
   decodeWorldSnapshot,
+  snapshotGzipSize,
 } from '../worker/src/persistence.js';
 import {sqliteStorage,wake} from './helpers/sovereign-sqlite.mjs';
 
@@ -166,4 +167,11 @@ test('streamed canonical decoder rejects incomplete and malformed state',async()
   for(const source of ['{"citizens":[{}]','{"clock":{},"citizens":[1,,2]}','{"clock":{}} trailing','{"citizens":[]\u00a0}']){
     await assert.rejects(decodeWorldSnapshot(source),/JSON|snapshot/);
   }
+});
+
+
+test('checkpoint diagnostics read the gzip footer without inflating private state',async()=>{
+  const world={clock:{worldMinute:42},citizens:[{memory:'🌍'.repeat(12000)}]};
+  const {parts}=await encodeWorldSnapshotParts(world);
+  assert.equal(snapshotGzipSize(parts.join('')),new TextEncoder().encode(JSON.stringify(world)).byteLength);
 });
