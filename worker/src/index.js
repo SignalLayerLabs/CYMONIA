@@ -21,7 +21,7 @@ import {
   SAFE_ROW_WRITE_BUDGET,
   EMERGENCY_ROW_WRITE_BUDGET,
   encodeWorldSnapshotParts,
-  decodeSnapshot,
+  decodeWorldSnapshot,
   snapshotJsonStream,
   estimateSnapshotRowWrites,
   createWriteBudget,
@@ -327,7 +327,7 @@ export class SovereignWorld {
           :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',meta.generation,count)].map(r=>r.state_part);
         if(parts.length!==count)continue;
         const encoded=joinSnapshot(parts);
-        const world=JSON.parse(await decodeSnapshot(encoded));
+        const world=await decodeWorldSnapshot(encoded);
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
         if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
@@ -369,7 +369,7 @@ export class SovereignWorld {
       base,base+count
     )].map(row=>row.state_part);
     if(parts.length!==count)throw new Error('sovereign_committed_snapshot_incomplete');
-    const restored=JSON.parse(await decodeSnapshot(joinSnapshot(parts)));
+    const restored=await decodeWorldSnapshot(joinSnapshot(parts));
     assertMonotonicSnapshot(restored,{
       highWaterMark:this.clockHighWaterMark,
       worldId:this.committedStats?.worldId||null

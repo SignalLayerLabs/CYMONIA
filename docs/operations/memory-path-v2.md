@@ -47,3 +47,14 @@ procedures and Citizen knowledge are not deleted or truncated by this change.
 
 This patch does not reset world state, alter the world clock, remove Citizen
 knowledge, change emergence rules, or change Durable Object identity.
+
+## Bounded canonical records
+
+The codec now streams nested Citizen fields as well as root arrays. Knowledge,
+memories and provenance are never serialized as one Citizen-sized JSON string.
+Small records are coalesced into at most 64 KiB text batches before UTF-8 encoding.
+
+Cold wake and rollback parse the decompressed root arrays one entity at a time.
+They no longer allocate the entire private world JSON string before hydrating
+the canonical graph. Existing gzip/base64 SQLite slots, field ordering and
+SHA-256 seals retain their original format.
