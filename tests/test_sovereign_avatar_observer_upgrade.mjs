@@ -99,7 +99,11 @@ test('public HUMAN_LINKED state remains privacy-minimal',()=>{
 
   assert.match(
     engine,
-    /c\.kind==='HUMAN_LINKED'\?\{count:c\.knowledge\.filter/
+    /function publicKnowledgeView\(citizen\)/
+  );
+  assert.match(
+    engine,
+    /if\(citizen\.kind==='HUMAN_LINKED'\)return \{count\};/
   );
 
   const start=engine.indexOf('export function publicWorld');

@@ -16,9 +16,10 @@ test('committed readers retain public evidence without duplicating private Citiz
   citizen.language.heard={privateSignal:[{source:'private-evidence'}]};
   await instance.persist({forceSeal:true});
   assert.deepEqual((await (await instance.fetch(new Request('https://example.com/world/state'))).json()).world,publicWorld(instance.world));
-  assert.equal(instance.committedWorld.citizens[0].knowledge,undefined);
-  assert.equal(instance.committedWorld.citizens[0].memories,undefined);
-  assert.equal(instance.committedWorld.citizens[0].language.heard,undefined);
+  assert.equal(instance.committedWorld,null);
+  assert.equal(instance.committedSnapshot,null);
+  assert.equal(instance.committedStats.worldId,instance.world.worldId);
+  assert.equal(instance.committedStats.citizens,undefined);
   const {instance:restarted}=await wake(storage);
   assert.deepEqual(restarted.world.citizens[0].memories,citizen.memories);
   assert.deepEqual(restarted.world.citizens[0].language.heard,citizen.language.heard);
@@ -61,7 +62,7 @@ test('a retry after decoder failure preserves neurons already consumed by infere
   await assert.rejects(instance.mutateWorld(async()=>{
     instance.world.runtime.neuronBudget.usedNeurons=77;
     throw new Error('injected failed write');
-  }),/injected decoder outage/);
+  }),/injected failed write/);
   await instance.mutateWorld(async()=>{
     assert.equal(instance.world.runtime.neuronBudget.usedNeurons,77);
     assert.equal(instance.world.citizens[0].memories[0].id,'private-memory');

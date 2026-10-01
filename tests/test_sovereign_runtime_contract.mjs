@@ -165,3 +165,13 @@ test('health exposes physical emergence diagnostics',()=>{
   assert.match(health,/construction_projects/);
   assert.match(health,/active_actions/);
 });
+
+test('production memory model keeps one full canonical graph',()=>{
+  assert.match(worker,/memory_model:'single-canonical-bounded-public'/);
+  assert.match(worker,/loadCommittedWorldFromStorage/);
+  assert.match(worker,/this\.committedWorld=null/);
+  assert.match(worker,/this\.committedSnapshot=null/);
+  assert.doesNotMatch(worker,/committedReader\(/);
+  assert.match(worker,/committedStats/);
+  assert.match(worker,/committedCausalReader/);
+});

@@ -59,6 +59,10 @@ Cloudflare observability may still emit `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, 
 Alarm recovery is deliberately non-postponing. A missing alarm is scheduled normally. A recently due alarm is left untouched so Cloudflare can deliver it. If an alarm is abnormally stale, HTTP traffic may pull it to a near-immediate recovery time, but repeated `/health` polling must never move that recovery farther into the future. See [heartbeat recovery](heartbeat-recovery.md).
 
 
+## Durable Object memory-pressure model
+
+The production Durable Object retains one full canonical object graph only. Public Observer state is a bounded projection, rollback reloads the durable committed generation from SQLite on demand, and health/history/WHY use bounded committed readers. This prevents civilization growth from multiplying isolate memory through full in-memory clones. See [memory-pressure recovery](memory-pressure-recovery.md).
+
 ## Workers AI neuron governor
 
 The Worker uses `@cf/zai-org/glm-4.7-flash` unless `BRAIN_MODEL` is overridden. AI produces a
