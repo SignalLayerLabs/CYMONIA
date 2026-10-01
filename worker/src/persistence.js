@@ -20,19 +20,75 @@ function base64ToBytes(value){
   return bytes;
 }
 
-function snapshotByteStream(serialized){
-  const source=String(serialized);
+function recordByteStream(records){
   const encoder=new TextEncoder();
-  let offset=0;
-  // Keep the full JSON text, but never allocate a second, whole-world byte
-  // buffer alongside the live world and its committed reader snapshot.
+  let source='',offset=0;
   return new ReadableStream({pull(controller){
-    if(offset>=source.length){controller.close();return;}
+    while(offset>=source.length){
+      const record=records.next();
+      if(record.done){controller.close();return;}
+      source=record.value;offset=0;
+    }
     let end=Math.min(source.length,offset+65536);
     if(end<source.length&&source.charCodeAt(end-1)>=0xD800&&source.charCodeAt(end-1)<=0xDBFF)end--;
     controller.enqueue(encoder.encode(source.slice(offset,end)));
     offset=end;
   }});
+}
+function snapshotByteStream(serialized){return recordByteStream([String(serialized)][Symbol.iterator]());}
+
+function* worldJsonRecords(world){
+  yield '{';let first=true;
+  for(const [key,value] of Object.entries(world)){
+    if(value===undefined||typeof value==='function'||typeof value==='symbol')continue;
+    if(!first)yield ',';first=false;
+    yield `${JSON.stringify(key)}:`;
+    if(Array.isArray(value)){
+      yield '[';
+      for(let i=0;i<value.length;i++){
+        if(i)yield ',';
+        yield JSON.stringify(value[i])??'null';
+      }
+      yield ']';
+    }else yield JSON.stringify(value);
+  }
+  yield '}';
+}
+
+export async function encodeWorldSnapshot(world,{sealDue=false,clock=world.clock,ledgerHead=world.ledgerHead}={}){
+  // Writers are serialized by SovereignWorld. Capture clock and runtime
+  // scalars before yielding; stream large arrays one entity at a time.
+  const snapshot={...world,clock:{...clock},ledgerHead};
+  if(world.runtime){
+    snapshot.runtime={...world.runtime};
+    if(world.runtime.neuronBudget)snapshot.runtime.neuronBudget={...world.runtime.neuronBudget};
+  }
+  let input=recordByteStream(worldJsonRecords(snapshot));
+  const digest=sealDue&&typeof crypto.DigestStream==='function'?new crypto.DigestStream('SHA-256'):null;
+  const writer=digest?.getWriter();
+  const fallback=[];
+  if(sealDue)input=input.pipeThrough(new TransformStream({
+    async transform(chunk,controller){
+      if(writer)await writer.write(chunk);else fallback.push(chunk);
+      controller.enqueue(chunk);
+    },async flush(){if(writer)await writer.close();}
+  }));
+  // Hash inline rather than teeing: a faster hash consumer must not buffer
+  // the entire JSON while the gzip consumer applies backpressure.
+  const compressed=new Uint8Array(await new Response(input.pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  let stateSha256=null;
+  if(sealDue){
+    let hash;
+    if(digest)hash=await digest.digest;
+    else{
+      // Node test runtimes lack the Cloudflare streaming digest extension.
+      const bytes=new Uint8Array(fallback.reduce((sum,chunk)=>sum+chunk.byteLength,0));
+      let offset=0;for(const chunk of fallback){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+      hash=await crypto.subtle.digest('SHA-256',bytes);
+    }
+    stateSha256=[...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  return {encoded:`${SNAPSHOT_ENCODING}:${bytesToBase64(compressed)}`,stateSha256};
 }
 
 export async function sha256Snapshot(serialized){

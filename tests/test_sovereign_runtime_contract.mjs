@@ -44,7 +44,7 @@ test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint 
   assert.match(worker,/storage\.sql/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_state/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_seals/);
-  assert.match(worker,/sha256Snapshot\(serialized\)/);
+  assert.match(worker,/encodeWorldSnapshot\(this\.world/);
   assert.match(persistence,/SHA-256/);
   assert.match(worker,/state_sha256/);
   assert.match(worker,/world_state_chunks/);

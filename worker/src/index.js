@@ -20,9 +20,8 @@ import {
 import {
   SAFE_ROW_WRITE_BUDGET,
   EMERGENCY_ROW_WRITE_BUDGET,
-  encodeSnapshot,
+  encodeWorldSnapshot,
   decodeSnapshot,
-  sha256Snapshot,
   estimateSnapshotRowWrites,
   createWriteBudget,
   reserveWriteBudget,
@@ -77,6 +76,17 @@ function tickDiagnostics(runtime){
     lastAlarmRetryCount:runtime.lastAlarmRetryCount??null,
   };
 }
+function committedReader(world,clock=world.clock,ledgerHead=world.ledgerHead){
+  // Observer routes need public knowledge and causal evidence, but never the
+  // private episodic memories or heard-language traces of every Citizen.
+  // Keep those once in the canonical world and in its compressed checkpoint.
+  const citizens=world.citizens.map(citizen=>{
+    const {memories,...reader}=citizen;
+    const {heard,grammarPatterns,...language}=citizen.language;
+    return {...reader,language};
+  });
+  return structuredClone({...world,citizens,clock,ledgerHead});
+}
 async function askAI(env,context){
   if(!env.AI?.run)throw new Error('ai_unavailable');
   const out=await env.AI.run(env.BRAIN_MODEL||MODEL,{messages:[{role:'system',content:AI_SYSTEM_PROMPT},{role:'user',content:JSON.stringify(context)}],max_completion_tokens:MAX_COMPLETION_TOKENS,temperature:.45});
@@ -122,6 +132,7 @@ export class SovereignWorld {
     this.sql=ctx.storage.sql;
     this.world=null;
     this.committedWorld=null;
+    this.committedSnapshot=null;
     this.mutationChain=Promise.resolve();
     this.persistSequence=0;
     this.persistChain=Promise.resolve();
@@ -150,7 +161,7 @@ export class SovereignWorld {
         if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
-      if(!this.committedWorld)this.committedWorld=structuredClone(this.world);
+      if(!this.committedWorld)this.committedWorld=committedReader(this.world);
       try{
         const status=await ctx.storage.get(HEARTBEAT_STATUS_KEY);
         if(status&&typeof status==='object')Object.assign(ensureRuntime(this.world),tickDiagnostics(status));
@@ -272,12 +283,14 @@ export class SovereignWorld {
           ?[...this.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',base,base+count)].map(r=>r.state_part)
           :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',meta.generation,count)].map(r=>r.state_part);
         if(parts.length!==count)continue;
-        const world=JSON.parse(await decodeSnapshot(joinSnapshot(parts)));
+        const encoded=joinSnapshot(parts);
+        const world=JSON.parse(await decodeSnapshot(encoded));
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
         if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
         assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
         selected={world,generation:meta.generation,source:meta.source};
+        this.committedSnapshot=encoded;
         break;
       }catch(error){console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));}
     }
@@ -349,19 +362,29 @@ export class SovereignWorld {
     // Compression and Workers AI yield the event loop. Serialize ALL writers,
     // while readers continue to observe the last fully committed snapshot.
     const pending=(this.mutationChain||Promise.resolve()).then(async()=>{
+      if(this.world===this.committedWorld&&this.committedSnapshot)await this.restoreCommittedWorld(this.world.runtime?.neuronBudget);
       try{return await callback();}
       catch(error){
-        if(this.committedWorld){
+        if(this.committedSnapshot){
           const neuronBudget=this.world.runtime?.neuronBudget;
-          this.world=structuredClone(this.committedWorld);
-          // External inference already consumed this budget even if saving failed.
-          if(neuronBudget)this.world.runtime.neuronBudget=neuronBudget;
+          await this.restoreCommittedWorld(neuronBudget);
         }
         throw error;
       }
     });
     this.mutationChain=pending.catch(()=>{});
     return pending;
+  }
+  async restoreCommittedWorld(neuronBudget){
+    // Release the failed private world before decoding its checkpoint. Readers
+    // continue to see the immutable committed view while writers stay queued.
+    this.world=this.committedWorld;
+    const restored=JSON.parse(await decodeSnapshot(this.committedSnapshot));
+    ensureRuntime(restored).lastSealWorldMinute=this.committedWorld.runtime.lastSealWorldMinute;
+    compactOperationalState(restored);
+    // External inference already consumed this budget even if saving failed.
+    if(neuronBudget)restored.runtime.neuronBudget=neuronBudget;
+    this.world=restored;
   }
   readableWorld(){return this.committedWorld||this.world;}
   readPersistenceBudget(day=utcDay(),limit=SAFE_ROW_WRITE_BUDGET){
@@ -392,8 +415,8 @@ export class SovereignWorld {
     compactLedger(this.world,HOT_LEDGER_EVENTS);
     const due=forceSeal||this.world.clock.worldMinute-runtime.lastSealWorldMinute>=CHECKPOINT_WORLD_MINUTES;
     const worldMinute=this.world.clock.worldMinute,ledgerHead=this.world.ledgerHead,worldId=this.world.worldId;
-    const serialized=JSON.stringify(this.world);
-    const encoded=await encodeSnapshot(serialized);
+    const snapshotClock={...this.world.clock};
+    const {encoded,stateSha256}=await encodeWorldSnapshot(this.world,{sealDue:due,clock:snapshotClock,ledgerHead});
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
     const parts=splitSnapshot(encoded);
     const slotBase=generation==='slot-b'?1_000_000:0;
@@ -406,7 +429,6 @@ export class SovereignWorld {
       if(!forceSeal)this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
       return {persisted:false,reason:'write_budget_exhausted',rowWrites};
     }
-    const stateSha256=due?await sha256Snapshot(serialized):null;
     this.ctx.storage.transactionSync(()=>{
       for(let seq=0;seq<parts.length;seq++)this.sql.exec(
         'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
@@ -437,11 +459,12 @@ export class SovereignWorld {
         day,reservation.budget.rowsWritten,now);
     });
     if(due)runtime.lastSealWorldMinute=worldMinute;
-    // The transaction has committed and this synchronous replacement cannot
-    // interleave with a reader. Release the old copy before allocating its
-    // successor so three full worlds are never live at the same time.
+    // SQL and the compressed rollback checkpoint now agree. Release the
+    // prior reader before building the next small, immutable reader.
+    // Writers are serialized, so its public evidence is the committed state.
     this.committedWorld=null;
-    this.committedWorld=JSON.parse(serialized);
+    this.committedSnapshot=encoded;
+    this.committedWorld=committedReader(this.world,snapshotClock,ledgerHead);
     if(due)this.committedWorld.runtime.lastSealWorldMinute=worldMinute;
     this.lastPersistedGeneration=generation;
     this.lastPersistedWorldMinute=worldMinute;

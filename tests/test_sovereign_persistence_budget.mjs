@@ -39,6 +39,19 @@ test('snapshot compression never allocates a whole-world UTF-8 buffer',async t=>
   assert.ok(Math.max(...sizes)<=65536,`unbounded encoding: ${Math.max(...sizes)}`);
 });
 
+test('world checkpoints stream JSON records and retain the exact canonical SHA-256 seal',async t=>{
+  const world={version:2,clock:{worldMinute:128566},citizens:Array.from({length:4},(_,i)=>({id:i,memories:'🌍'.repeat(40000)})),ledger:[],optional:undefined};
+  const expected=JSON.stringify(world);
+  const stringify=JSON.stringify;
+  t.mock.method(JSON,'stringify',function(value,...args){
+    assert.notEqual(value,world,'whole-world JSON must not be allocated');
+    return stringify(value,...args);
+  });
+  const result=await persistence.encodeWorldSnapshot(world,{sealDue:true});
+  assert.equal(await decodeSnapshot(result.encoded),expected);
+  assert.equal(result.stateSha256,createHash('sha256').update(expected).digest('hex'));
+});
+
 test('Cloudflare seals stream the exact JSON bytes into SHA-256 in bounded chunks',async t=>{
   const sizes=[];
   class DigestStream extends WritableStream {
