@@ -166,3 +166,22 @@ test('stale WebSocket snapshots and a different world cannot reset the calendar'
   assert.equal(h.connection.mode,CONNECTION.LIVE);
   h.connection.stop();
 });
+
+test('compact world signal invalidates through REST instead of carrying the whole world over websocket',async()=>{
+  let callbacks,fetches=0;
+  const worlds=[
+    {version:2,worldId:'live',clock:{worldMinute:10,realEpochMs:0}},
+    {version:2,worldId:'live',clock:{worldMinute:11,realEpochMs:0}}
+  ];
+  const connection=new ObserverConnection({
+    fetchState:async()=>worlds[Math.min(fetches++,worlds.length-1)],
+    createSocket:handlers=>{callbacks=handlers;return{readyState:1,close(){}};},
+    setTimeoutFn:()=>1,clearTimeoutFn:()=>{},
+  });
+  await connection.start();
+  assert.equal(connection.lastCanonical.clock.worldMinute,10);
+  callbacks.onSignal({type:'world_signal',worldMinute:11});
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(connection.lastCanonical.clock.worldMinute,11);
+  assert.ok(fetches>=2);
+});

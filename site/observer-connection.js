@@ -64,6 +64,12 @@ export class ObserverConnection{
           catch(error){this.onError(error,'socket_state');this.setMode(CONNECTION.DEGRADED);this.scheduleRetry();return;}
           this.resetBackoff();if(openedAt&&this.nowFn()-openedAt>=30_000)this.resetSocketBackoff();this.onWorld(world,{canonical:true,stream:true});this.setMode(CONNECTION.LIVE);
         },
+        onSignal:(signal)=>{
+          if(this.stopped)return;
+          const minute=Number(signal?.worldMinute);
+          if(Number.isSafeInteger(minute)&&this.lastCanonical&&minute<this.lastCanonical.clock.worldMinute)return;
+          void this.refreshNow({poll:true});
+        },
         onOpen:()=>{openedAt=this.nowFn();this.setMode(CONNECTION.LIVE);},
         onClose:()=>{if(this.socket===socket)this.socket=null;if(this.stopped)return;if(openedAt&&this.nowFn()-openedAt>=30_000)this.resetSocketBackoff();if(!this.lastCanonical)this.setMode(CONNECTION.RECONNECTING);this.scheduleSocketReconnect();},
         onError:(error)=>{this.onError(error,'socket');}

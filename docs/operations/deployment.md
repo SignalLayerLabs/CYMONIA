@@ -52,6 +52,9 @@ Observer streaming uses the Durable Objects WebSocket Hibernation API. Active so
 
 Cloudflare observability emits `CYMONIA_WS_CLOSE`, `CYMONIA_WS_ERROR`, and `CYMONIA_WS_SEND_FAILED` events for stream diagnostics without persisting additional rows.
 
+The WebSocket is a bounded invalidation channel rather than a second full-state transport. It carries compact canonical `world_signal` messages. The Observer refreshes the full state through `/api/v2/state`, whose response is streamed from the compressed committed public snapshot. This prevents WebSocket connection stability and Durable Object memory from scaling with the total Citizen knowledge graph. See [WebSocket heartbeat recovery](websocket-heartbeat-recovery.md).
+
+
 Alarm recovery is deliberately non-postponing. A missing alarm is scheduled normally. A recently due alarm is left untouched so Cloudflare can deliver it. If an alarm is abnormally stale, HTTP traffic may pull it to a near-immediate recovery time, but repeated `/health` polling must never move that recovery farther into the future. See [heartbeat recovery](heartbeat-recovery.md).
 
 

@@ -512,7 +512,7 @@ export class SovereignWorld {
 
       // Publish the final state of this heartbeat, including a strategy
       // accepted by cognition during the same tick.
-      if(this.ctx.getWebSockets().length)await this.broadcastWorld('world_delta');
+      if(this.ctx.getWebSockets().length)this.broadcastWorldSignal('world_signal');
     });
   }
   async alarm(alarmInfo){
@@ -622,21 +622,27 @@ export class SovereignWorld {
       }
     }
   }
-  async publicStateJson(){
-    return this.committedPublicSnapshot?decodeSnapshot(this.committedPublicSnapshot):JSON.stringify(publicWorld(this.readableWorld(),Date.now()));
+  worldSignal(type='world_signal'){
+    const world=this.readableWorld();
+    return {
+      type,
+      version:2,
+      worldId:world.worldId,
+      worldMinute:world.clock.worldMinute,
+      ledgerHead:world.ledgerHead,
+      persistedGeneration:this.lastPersistedGeneration??null
+    };
   }
-  async broadcastWorld(type){
+  broadcastWorldSignal(type='world_signal'){
     if(!this.ctx.getWebSockets().length)return;
-    const state=await this.publicStateJson();
-    this.broadcast(`{"type":${JSON.stringify(type)},"state":${state}}`);
+    this.broadcast(this.worldSignal(type));
   }
-  async webSocket(){
-    const state=await this.publicStateJson();
+  webSocket(){
     const pair=new WebSocketPair(),client=pair[0],server=pair[1];
     const session={id:crypto.randomUUID(),connectedAt:Date.now()};
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment?.(session);
-    server.send(`{"type":"world_snapshot","state":${state}}`);
+    server.send(JSON.stringify(this.worldSignal('world_signal')));
     return new Response(null,{status:101,webSocket:client});
   }
   webSocketMessage(ws,message){
@@ -757,7 +763,7 @@ export class SovereignWorld {
         const c=existing||createHumanAvatar(this.world,{externalId,displayName:body.actor.display_name||body.actor.github_login||null},this.world.clock.worldMinute);
         if(!existing){
           await this.persist({forceSeal:true});
-          if(this.ctx.getWebSockets().length)await this.broadcastWorld('world_delta');
+          if(this.ctx.getWebSockets().length)this.broadcastWorldSignal('world_signal');
         }
         return json({ok:true,citizenId:c.id,created:!existing});
       }).catch(()=>json({ok:false,error:'world_write_unavailable'},503));

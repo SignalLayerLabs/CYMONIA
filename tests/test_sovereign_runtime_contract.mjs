@@ -151,7 +151,7 @@ test('heartbeat broadcasts after cognition processing',()=>{
   const end=worker.indexOf('async alarm(',start);
   const tick=worker.slice(start,end);
   const cognition=tick.indexOf('processCognition(1)');
-  const broadcast=tick.indexOf("broadcastWorld('world_delta')");
+  const broadcast=tick.indexOf("broadcastWorldSignal('world_signal')");
   assert.ok(cognition>=0);
   assert.ok(broadcast>cognition);
 });

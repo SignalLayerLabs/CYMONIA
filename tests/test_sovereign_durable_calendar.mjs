@@ -23,8 +23,15 @@ test('committed readers retain public evidence without duplicating private Citiz
   assert.deepEqual(restarted.world.citizens[0].memories,citizen.memories);
   assert.deepEqual(restarted.world.citizens[0].language.heard,citizen.language.heard);
   assert.deepEqual((await (await restarted.fetch(new Request('https://example.com/world/state'))).json()).world,publicWorld(restarted.world));
-  await instance.broadcastWorld('world_delta');
-  assert.deepEqual(messages.at(-1),{type:'world_delta',state:publicWorld(instance.world)});
+  instance.broadcastWorldSignal('world_signal');
+  assert.deepEqual(messages.at(-1),{
+    type:'world_signal',
+    version:2,
+    worldId:instance.world.worldId,
+    worldMinute:instance.readableWorld().clock.worldMinute,
+    ledgerHead:instance.readableWorld().ledgerHead,
+    persistedGeneration:instance.lastPersistedGeneration
+  });
 });
 
 test('failed writes recover private memory from the compressed committed snapshot',async t=>{

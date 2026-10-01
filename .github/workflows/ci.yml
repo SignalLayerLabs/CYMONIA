@@ -73,6 +73,14 @@ jobs:
         run: npm install --no-save wrangler@4
       - name: Deploy canonical Durable Object world
         run: npx wrangler deploy --config wrangler.world.toml
+      - name: Wake canonical heartbeat after deploy
+        run: |
+          for i in $(seq 1 20); do
+            curl --max-time 15 -fsS https://cymonia.pages.dev/api/v2/health -o /tmp/cymonia-post-worker-health.json 2>/dev/null || true
+            node -e "const fs=require('fs');try{const h=JSON.parse(fs.readFileSync('/tmp/cymonia-post-worker-health.json'));process.exit(h.ok&&h.service==='cymonia-sovereign-world'&&Number.isFinite(h.world_minute)?0:1)}catch{process.exit(1)}" && break
+            sleep 2
+          done
+          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/cymonia-post-worker-health.json'));if(!h.ok)process.exit(1);console.log({world_minute:h.world_minute,heartbeat:h.heartbeat,lag_world_minutes:h.lag_world_minutes})"
 
   deploy-pages:
     name: Deploy Observer Pages
@@ -140,7 +148,7 @@ jobs:
         run: |
           node <<'NODE'
           const ws=new WebSocket('wss://cymonia.pages.dev/api/v2/stream');
-          let done=false,snapshot=false,lastMinute=null,advances=0;
+          let done=false,signal=false,lastMinute=null,advances=0;
           const deadline=setTimeout(()=>finish(1,'production websocket heartbeat observation timed out'),210_000);
           const ping=setInterval(()=>{if(ws.readyState===1)ws.send('ping');},15_000);
           function finish(code,message){
@@ -156,15 +164,16 @@ jobs:
           ws.addEventListener('message',event=>{
             try{
               const message=JSON.parse(String(event.data));
-              const minute=message.state?.clock?.worldMinute;
-              if(message.type==='world_snapshot'&&message.state?.version===2&&Number.isFinite(minute)){
-                snapshot=true;
+              if(message.state)throw new Error('websocket_regressed_to_full_state_payload');
+              const minute=message.type==='world_signal'?Number(message.worldMinute):NaN;
+              if(message.type==='world_signal'&&message.version===2&&Number.isFinite(minute)){
+                signal=true;
                 if(lastMinute===null)lastMinute=minute;
               }
-              if(snapshot&&Number.isFinite(minute)&&minute>lastMinute){
+              if(signal&&Number.isFinite(minute)&&minute>lastMinute){
                 lastMinute=minute;advances++;
                 console.log({worldMinute:minute,advances});
-                if(advances>=2)finish(0,'PASS: production websocket delivered two subsequent canonical heartbeats');
+                if(advances>=2)finish(0,'PASS: production websocket delivered two compact canonical heartbeat signals');
               }
             }catch{}
           });
