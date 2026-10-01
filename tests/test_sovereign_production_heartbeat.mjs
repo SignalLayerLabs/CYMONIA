@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {SovereignWorld} from '../worker/src/index.js';
 import {createSovereignGenesis} from '../world/index.js';
 
@@ -71,4 +73,18 @@ test('a recent due alarm remains untouched while Cloudflare is expected to deliv
   });
   assert.equal(await instance.ensureAlarm(),30_000);
   assert.equal(writes,0);
+});
+
+
+test('production CI recognizes a durable checkpoint after slots cycle back to the same name',()=>{
+  const workflow=readFileSync(new URL('../.github/workflows/ci.yml',import.meta.url),'utf8');
+  const block=[...workflow.matchAll(/node <<'NODE'\n([\s\S]*?)\n          NODE/g)].find(match=>match[1].includes('health-c.json'))[1];
+  const health=minute=>({ok:true,service:'cymonia-sovereign-world',world_id:'canonical',world_minute:minute,clock_high_water_mark:minute,persisted_generation:'slot-a',heartbeat:{lastTickError:null,tick_stalled:false}});
+  const states={a:health(100),b:health(160),c:health(220)};
+  const verify=()=>runInNewContext(block,{require:()=>({readFileSync:path=>JSON.stringify(states[path.match(/health-([abc])/)[1]])}),console:{log(){}}});
+  assert.doesNotThrow(verify);
+  states.c.clock_high_water_mark=100;
+  assert.throws(verify,/canonical snapshot was not persisted/);
+  states.c.clock_high_water_mark=220;states.c.heartbeat.tick_stalled=true;
+  assert.throws(verify,/heartbeat remains unhealthy/);
 });

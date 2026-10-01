@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {
   encodeWorldSnapshotParts,
   decodeSnapshot,
+  decodeWorldSnapshot,
 } from '../worker/src/persistence.js';
 import {sqliteStorage,wake} from './helpers/sovereign-sqlite.mjs';
 
@@ -130,4 +131,39 @@ test('retained causal diagnostics are bounded independently of canonical object 
   // Canonical truth is not truncated by the diagnostic reader.
   assert.equal(instance.world.objects.length,2000);
   assert.equal(instance.world.procedures.length,1200);
+});
+
+
+test('nested Citizen checkpoint fields are serialized in bounded records',async t=>{
+  const memories=Array.from({length:5000},(_,i)=>({id:i,note:'evidence 🌍'.repeat(10)}));
+  const citizen={id:'large-citizen',knowledge:[],memories,language:{heard:{},lexicon:{}}};
+  const world={version:2,worldId:'bounded',clock:{worldMinute:42},citizens:[citizen],ledger:[],ledgerHead:'head'};
+  const expected=JSON.stringify(world);
+  const stringify=JSON.stringify;
+  t.mock.method(JSON,'stringify',function(value,...args){
+    assert.notEqual(value,citizen,'whole Citizen JSON allocated');
+    assert.notEqual(value,memories,'whole private memory array allocated');
+    return stringify(value,...args);
+  });
+  const {parts}=await encodeWorldSnapshotParts(world);
+  assert.equal(await decodeSnapshot(parts.join('')),expected);
+});
+
+test('canonical wake parses streamed records without a whole-world JSON string',async t=>{
+  const world={version:2,worldId:'🜁',clock:{worldMinute:42},citizens:Array.from({length:8},(_,i)=>({id:i,memories:[{note:'🌍\\"[,{}]:'.repeat(10000)}]})),ledger:[],ledgerHead:'head',runtime:{value:null,finite:1}};
+  const expected=JSON.stringify(world);
+  const {parts}=await encodeWorldSnapshotParts(world);
+  const parse=JSON.parse;
+  t.mock.method(Response.prototype,'text',()=>{throw new Error('whole-world text decoded');});
+  t.mock.method(JSON,'parse',function(text,...args){
+    assert.ok(text.length<expected.length/2,'whole-world JSON parsed');
+    return parse(text,...args);
+  });
+  assert.deepEqual(await decodeWorldSnapshot(parts.join('')),world);
+});
+
+test('streamed canonical decoder rejects incomplete and malformed state',async()=>{
+  for(const source of ['{"citizens":[{}]','{"clock":{},"citizens":[1,,2]}','{"clock":{}} trailing','{"citizens":[]\u00a0}']){
+    await assert.rejects(decodeWorldSnapshot(source),/JSON|snapshot/);
+  }
 });

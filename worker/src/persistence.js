@@ -24,35 +24,48 @@ function recordByteStream(records){
   const encoder=new TextEncoder();
   let source='',offset=0;
   return new ReadableStream({pull(controller){
-    while(offset>=source.length){
-      const record=records.next();
-      if(record.done){controller.close();return;}
-      source=record.value;offset=0;
+    const pieces=[];let length=0,done=false;
+    while(length<65536){
+      if(offset>=source.length){
+        const record=records.next();
+        if(record.done){done=true;break;}
+        source=record.value;offset=0;
+      }
+      let end=Math.min(source.length,offset+65536-length);
+      if(end<source.length&&source.charCodeAt(end-1)>=0xD800&&source.charCodeAt(end-1)<=0xDBFF)end--;
+      if(end===offset)break;
+      pieces.push(source.slice(offset,end));length+=end-offset;offset=end;
     }
-    let end=Math.min(source.length,offset+65536);
-    if(end<source.length&&source.charCodeAt(end-1)>=0xD800&&source.charCodeAt(end-1)<=0xDBFF)end--;
-    controller.enqueue(encoder.encode(source.slice(offset,end)));
-    offset=end;
+    if(length)controller.enqueue(encoder.encode(pieces.join('')));
+    if(done)controller.close();
   }});
 }
 function snapshotByteStream(serialized){return recordByteStream([String(serialized)][Symbol.iterator]());}
 
-function* worldJsonRecords(world){
-  yield '{';let first=true;
-  for(const [key,value] of Object.entries(world)){
-    if(value===undefined||typeof value==='function'||typeof value==='symbol')continue;
-    if(!first)yield ',';first=false;
-    yield `${JSON.stringify(key)}:`;
-    if(Array.isArray(value)){
-      yield '[';
-      for(let i=0;i<value.length;i++){
-        if(i)yield ',';
-        yield JSON.stringify(value[i])??'null';
-      }
-      yield ']';
-    }else yield JSON.stringify(value);
+function* worldJsonRecords(value,ancestors=new Set(),key=''){
+  if(value&&typeof value.toJSON==='function')value=value.toJSON(key);
+  if(!value||typeof value!=='object'){yield JSON.stringify(value)??'null';return;}
+  if(ancestors.has(value))throw new TypeError('Circular snapshot JSON');
+  ancestors.add(value);
+  if(Array.isArray(value)){
+    yield '[';
+    for(let i=0;i<value.length;i++){
+      if(i)yield ',';
+      yield* worldJsonRecords(value[i],ancestors,String(i));
+    }
+    yield ']';
+  }else{
+    yield '{';let first=true;
+    for(const name of Object.keys(value)){
+      const item=value[name];
+      if(item===undefined||typeof item==='function'||typeof item==='symbol')continue;
+      if(!first)yield ',';first=false;
+      yield `${JSON.stringify(name)}:`;
+      yield* worldJsonRecords(item,ancestors,name);
+    }
+    yield '}';
   }
-  yield '}';
+  ancestors.delete(value);
 }
 
 
@@ -246,6 +259,74 @@ export async function decodeSnapshot(encoded){
   const input=new Response(base64ToBytes(source.slice(prefix.length))).body;
   const decompressed=input.pipeThrough(new DecompressionStream('gzip'));
   return new Response(decompressed).text();
+}
+
+export async function decodeWorldSnapshot(encoded){
+  // Parse root arrays one entity at a time. A cold wake must never retain the
+  // full private JSON string alongside the hydrated canonical object graph.
+  const reader=snapshotJsonStream(encoded).pipeThrough(new TextDecoderStream()).getReader();
+  const world={};
+  let mode='start',key=null,array=null,parts=[],depth=0,quoted=false,escaped=false;
+  const fail=()=>{throw new SyntaxError('Invalid snapshot JSON');};
+  function finishToken(){
+    const text=parts.join('');parts=[];
+    if(!text.trim())fail();
+    return JSON.parse(text);
+  }
+  try{
+    while(true){
+      const {value:chunk,done}=await reader.read();
+      if(done)break;
+      let start=0;
+      for(let i=0;i<chunk.length;i++){
+        const c=chunk[i];
+        if(mode==='key'||mode==='token'){
+          if(quoted){
+            if(escaped)escaped=false;
+            else if(c==='\\')escaped=true;
+            else if(c==='"')quoted=false;
+            continue;
+          }
+          const delimiter=depth===0&&(mode==='key'?c===':':c===','||c===']'||c==='}');
+          if(delimiter){
+            parts.push(chunk.slice(start,i));start=i+1;
+            if(mode==='key'){
+              key=finishToken();if(typeof key!=='string')fail();mode='value';
+            }else{
+              const item=finishToken();
+              if(array){array.push(item);if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
+              else{Object.defineProperty(world,key,{value:item,writable:true,enumerable:true,configurable:true});mode=c===','?'next':c==='}'?'done':fail();}
+            }
+            continue;
+          }
+          if(c==='"')quoted=true;
+          else if(c==='['||c==='{')depth++;
+          else if(c===']'||c==='}')depth--;
+          if(depth<0)fail();
+          continue;
+        }
+        start=i+1;
+        if(c===' '||c==='\t'||c==='\r'||c==='\n')continue;
+        if(mode==='start'){if(c!=='{')fail();mode='first';}
+        else if(mode==='first'||mode==='next'){
+          if(c==='}'&&mode==='first'){mode='done';continue;}
+          if(c!=='"')fail();mode='key';quoted=true;parts=[];start=i;
+        }else if(mode==='value'){
+          if(c==='['){array=[];Object.defineProperty(world,key,{value:array,writable:true,enumerable:true,configurable:true});mode='firstItem';}
+          else{mode='token';parts=[];depth=0;quoted=false;escaped=false;start=i;i--;}
+        }else if(mode==='firstItem'||mode==='item'){
+          if(c===']'&&mode==='firstItem'){array=null;mode='after';}
+          else{mode='token';parts=[];depth=0;quoted=false;escaped=false;start=i;i--;}
+        }else if(mode==='after'){
+          if(c===',')mode='next';else if(c==='}')mode='done';else fail();
+        }else fail();
+      }
+      if(mode==='key'||mode==='token')parts.push(chunk.slice(start));
+    }
+    if(mode!=='done')fail();
+    return world;
+  }catch(error){await reader.cancel(error).catch(()=>{});throw error;}
+  finally{reader.releaseLock();}
 }
 
 export function snapshotJsonStream(encoded,{prefix='',suffix=''}={}){
