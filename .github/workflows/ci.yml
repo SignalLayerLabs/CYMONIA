@@ -140,7 +140,9 @@ jobs:
           console.log('health-c',c);
           if(!b.ok||b.service!=='cymonia-sovereign-world')throw new Error('canonical health unavailable');
           if(!(b.world_minute>a.world_minute))throw new Error(`canonical world minute did not advance; heartbeat=${JSON.stringify(b.heartbeat||{})}; lag=${b.lag_world_minutes}`);
-          if(!c.persisted_generation||c.persisted_generation===a.persisted_generation)throw new Error(`canonical snapshot was not persisted within checkpoint window; heartbeat=${JSON.stringify(c.heartbeat||{})}; persistence=${JSON.stringify(c.persistence_budget||{})}`);
+          if(!c.persisted_generation||!(c.clock_high_water_mark>a.clock_high_water_mark))throw new Error(`canonical snapshot was not persisted within checkpoint window; heartbeat=${JSON.stringify(c.heartbeat||{})}; persistence=${JSON.stringify(c.persistence_budget||{})}`);
+          if(c.heartbeat?.lastTickError||c.heartbeat?.tick_stalled)throw new Error(`canonical heartbeat remains unhealthy: ${JSON.stringify(c.heartbeat||{})}`);
+          if(a.world_id!==b.world_id||a.world_id!==c.world_id)throw new Error('canonical world identity changed');
           console.log({from:a.world_minute,to:b.world_minute,persisted_generation:c.persisted_generation});
           NODE
 
