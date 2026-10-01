@@ -114,22 +114,22 @@ jobs:
             sleep 2
           done
           test -s /tmp/cymonia-health-a.json
-          # Canonical advancement is alarm-driven. Production uses a
-          # 60-second alarm cadence, so allow more than two alarm windows
-          # plus normal Cloudflare scheduling jitter.
-          for i in $(seq 1 75); do
-            curl --max-time 15 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
-            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));process.exit(b.world_minute>a.world_minute?0:1)}catch{process.exit(1)}" && break
-            sleep 2
-          done
+          # Canonical advancement is alarm-driven. Do not hammer the same
+          # Durable Object every two seconds while testing whether its alarm
+          # can run. Give Cloudflare a full alarm interval plus jitter.
+          sleep 75
+          curl --max-time 20 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health
+
+          node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const b=JSON.parse(fs.readFileSync('/tmp/cymonia-health-b.json'));process.exit(b.world_minute>a.world_minute?0:1)" || {
+            echo "World did not advance in first quiet window; allowing one additional alarm window"
+            sleep 75
+            curl --max-time 20 -fsS -o /tmp/cymonia-health-b.json https://cymonia.pages.dev/api/v2/health
+          }
 
           # Persistence is intentionally throttled for the Durable Objects
-          # free-tier write budget. Allow one checkpoint interval to pass.
-          for i in $(seq 1 45); do
-            curl --max-time 15 -fsS -o /tmp/cymonia-health-c.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
-            node -e "const fs=require('fs');try{const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const c=JSON.parse(fs.readFileSync('/tmp/cymonia-health-c.json'));process.exit(c.persisted_generation&&c.persisted_generation!==a.persisted_generation?0:1)}catch{process.exit(1)}" && break
-            sleep 2
-          done
+          # free-tier write budget. Give one quiet checkpoint window.
+          sleep 75
+          curl --max-time 20 -fsS -o /tmp/cymonia-health-c.json https://cymonia.pages.dev/api/v2/health
           node <<'NODE'
           const fs=require('fs');
           const a=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));

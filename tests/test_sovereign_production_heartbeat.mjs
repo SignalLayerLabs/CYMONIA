@@ -26,16 +26,17 @@ function instanceAt(t,now=60_000){
   return {instance,alarmWrites,alarmTime:()=>scheduledAlarm};
 }
 
-test('stale alarm recovery is near-immediate and repeated health polling cannot postpone it',async t=>{
+test('repeated health polling preserves an overdue alarm for Cloudflare delivery',async t=>{
   const {instance,alarmWrites,alarmTime}=instanceAt(t);
   const first=await instance.ensureAlarm();
-  assert.equal(first,61_000);
-  assert.equal(alarmTime(),61_000);
+  assert.equal(first,-180_000);
+  assert.equal(alarmTime(),-180_000);
   for(let i=0;i<50;i++){
     const current=await instance.ensureAlarm();
-    assert.equal(current,61_000);
+    assert.equal(current,-180_000);
   }
-  assert.deepEqual(alarmWrites,[61_000]);
+  assert.deepEqual(alarmWrites,[]);
+  assert.equal(instance.world.runtime.lastAlarmRecoveryReason,'overdue_alarm_preserved');
 });
 
 test('health exposes stale-heartbeat diagnostics without advancing canonical time',async t=>{
@@ -51,8 +52,8 @@ test('health exposes stale-heartbeat diagnostics without advancing canonical tim
   const health=await response.json();
   assert.equal(response.status,200);
   assert.equal(instance.world.clock.worldMinute,before);
-  assert.equal(health.heartbeat.scheduledAlarmRealMs,61_000);
-  assert.equal(health.heartbeat.alarm_overdue_ms,0);
+  assert.equal(health.heartbeat.scheduledAlarmRealMs,-180_000);
+  assert.ok(health.heartbeat.alarm_overdue_ms>0);
   assert.equal(health.heartbeat.tick_stalled,true);
   assert.ok(health.heartbeat.tick_stale_ms>=50_000);
 });

@@ -63,14 +63,15 @@ test('an ordinary HTTP fetch repairs a missing alarm without advancing the world
   assert.equal(instance.world.clock.worldMinute,before);
 });
 
-test('an HTTP fetch pulls a long-overdue alarm near the present and repeated polling cannot postpone it',async t=>{
+test('an HTTP fetch preserves a long-overdue alarm so Cloudflare can deliver it',async t=>{
   const {instance,alarms,alarmTime,setStoredAlarm}=runtime(t);
   setStoredAlarm(-180_000);
   await instance.fetch(new Request('https://example.com/world/state'));
-  assert.equal(alarmTime(),61_000);
+  assert.equal(alarmTime(),-180_000);
   await instance.fetch(new Request('https://example.com/world/state'));
-  assert.equal(alarmTime(),61_000);
-  assert.deepEqual(alarms,[61_000]);
+  assert.equal(alarmTime(),-180_000);
+  assert.deepEqual(alarms,[]);
+  assert.equal(instance.world.runtime.lastAlarmRecoveryReason,'overdue_alarm_preserved');
 });
 
 test('alarm stores its successor before running the world tick',async t=>{

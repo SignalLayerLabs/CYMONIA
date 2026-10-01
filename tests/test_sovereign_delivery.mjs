@@ -16,6 +16,9 @@ test('CI deploys and verifies the Sovereign World only',()=>{
   assert.match(ci,/cymonia-observer-state-a\.json/);
   assert.match(ci,/cymonia-observer-state-b\.json/);
   assert.match(ci,/observer clock regressed/);
+  assert.match(ci,/sleep 75/);
+  assert.doesNotMatch(ci,/for i in \$\(seq 1 75\)/);
+  assert.doesNotMatch(ci,/for i in \$\(seq 1 45\)/);
   assert.doesNotMatch(ci,/Verify production WebSocket stability/);
   assert.doesNotMatch(ci,/new WebSocket\(/);
   assert.match(ci,/wrangler deploy --config wrangler\.world\.toml/);

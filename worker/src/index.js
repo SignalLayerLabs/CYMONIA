@@ -416,15 +416,13 @@ export class SovereignWorld {
       await this.ctx.storage.setAlarm(current);
       runtime.lastAlarmRecoveryReason='missing_alarm';
       runtime.lastAlarmRecoveryRealMs=now;
-    }else if(current<now-2*ALARM_MS){
-      // A stale alarm must be pulled toward the present, never pushed a full
-      // heartbeat interval away. Repeated /health polling then preserves the
-      // near-immediate successor instead of starving the alarm indefinitely.
-      current=now+1_000;
-      await this.ctx.storage.setAlarm(current);
-      runtime.lastAlarmRecoveryReason='stale_alarm_near_immediate';
+    }else if(current<now){
+      // Cloudflare already owns this alarm. Rewriting an overdue alarm from
+      // a read request can cancel/postpone the event that the platform is
+      // trying to deliver, especially under sustained health polling.
+      // Preserve the durable timestamp exactly and expose only diagnostics.
+      runtime.lastAlarmRecoveryReason='overdue_alarm_preserved';
       runtime.lastAlarmRecoveryRealMs=now;
-      runtime.alarmRecoveryCount=Number(runtime.alarmRecoveryCount||0)+1;
     }
 
     runtime.nextAlarmRealMs=current;
