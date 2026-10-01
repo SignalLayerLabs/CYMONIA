@@ -20,9 +20,36 @@ function base64ToBytes(value){
   return bytes;
 }
 
-export async function encodeSnapshot(serialized){
+function snapshotByteStream(serialized){
   const source=String(serialized);
-  const input=new Response(new TextEncoder().encode(source)).body;
+  const encoder=new TextEncoder();
+  let offset=0;
+  // Keep the full JSON text, but never allocate a second, whole-world byte
+  // buffer alongside the live world and its committed reader snapshot.
+  return new ReadableStream({pull(controller){
+    if(offset>=source.length){controller.close();return;}
+    let end=Math.min(source.length,offset+65536);
+    if(end<source.length&&source.charCodeAt(end-1)>=0xD800&&source.charCodeAt(end-1)<=0xDBFF)end--;
+    controller.enqueue(encoder.encode(source.slice(offset,end)));
+    offset=end;
+  }});
+}
+
+export async function sha256Snapshot(serialized){
+  let digest;
+  if(typeof crypto.DigestStream==='function'){
+    const stream=new crypto.DigestStream('SHA-256');
+    await snapshotByteStream(serialized).pipeTo(stream);
+    digest=await stream.digest;
+  }else{
+    // Node's unit-test Web Crypto has no Cloudflare DigestStream extension.
+    digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(serialized));
+  }
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+export async function encodeSnapshot(serialized){
+  const input=snapshotByteStream(serialized);
   const compressedStream=input.pipeThrough(new CompressionStream('gzip'));
   const compressed=new Uint8Array(await new Response(compressedStream).arrayBuffer());
   return `${SNAPSHOT_ENCODING}:${bytesToBase64(compressed)}`;

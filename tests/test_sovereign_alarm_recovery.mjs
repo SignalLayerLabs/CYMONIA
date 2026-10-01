@@ -80,6 +80,14 @@ test('alarm stores its successor before running the world tick',async t=>{
   assert.equal(instance.world.runtime.lastTickError,null);
 });
 
+test('a heartbeat with no observers does not allocate a public world broadcast',async t=>{
+  const {instance}=runtime(t);
+  let broadcasts=0;
+  instance.broadcast=()=>{broadcasts++;};
+  await instance.tick();
+  assert.equal(broadcasts,0);
+});
+
 test('a tick exception leaves its successor armed and records the failure',async t=>{
   const {instance,alarmTime}=runtime(t);
   t.mock.method(console,'error',()=>{});

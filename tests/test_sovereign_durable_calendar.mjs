@@ -6,6 +6,51 @@ import {decodeSnapshot} from '../worker/src/persistence.js';
 
 const YEAR=525600;
 
+test('wake loads only the newest valid snapshot instead of retaining both full worlds',async t=>{
+  const storage=sqliteStorage();
+  t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.clock.worldMinute=60;
+  await instance.persist({forceSeal:true});
+  const manifest=storage.sql.exec('SELECT * FROM world_state_manifest')[0];
+  const reads=[];
+  const exec=storage.sql.exec;
+  storage.sql.exec=(query,...args)=>{
+    if(query.includes('SELECT state_part FROM world_state_chunks_v2'))reads.push(args[0]);
+    return exec(query,...args);
+  };
+  const {instance:restarted}=await wake(storage);
+  assert.equal(restarted.world.clock.worldMinute,60);
+  assert.deepEqual(reads,[manifest.generation==='slot-b'?1_000_000:0]);
+});
+
+test('lazy recovery still selects a newer legacy snapshot and preserves its world identity',async t=>{
+  const storage=sqliteStorage();
+  t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.clock.worldMinute=90;
+  storage.sql.exec('INSERT INTO world_state VALUES(1,?,?,?,?)',JSON.stringify(instance.world),90,instance.world.ledgerHead,Date.now());
+  const {instance:restarted}=await wake(storage);
+  assert.equal(restarted.world.clock.worldMinute,90);
+  assert.equal(restarted.world.worldId,instance.world.worldId);
+});
+
+test('lazy recovery falls back to an intact snapshot at the same durable minute',async t=>{
+  const storage=sqliteStorage();
+  t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.clock.worldMinute=60;
+  await instance.persist({forceSeal:true});
+  await instance.persist({forceSeal:true});
+  const meta=storage.sql.exec('SELECT * FROM world_state_manifest')[0];
+  const base=meta.generation==='slot-b'?1_000_000:0;
+  storage.sql.exec("UPDATE world_state_chunks_v2 SET state_part='corrupt' WHERE id>=? AND id<?",base,base+meta.chunk_count);
+  t.mock.method(console,'error',()=>{});
+  const {instance:restarted}=await wake(storage);
+  assert.equal(restarted.world.clock.worldMinute,60);
+  assert.equal(restarted.snapshotRecoverySource,`slot:${meta.generation==='slot-a'?'slot-b':'slot-a'}`);
+});
+
 async function nearYearBoundary(t){
   let now=Date.parse('2026-09-30T12:00:00Z');
   t.mock.method(Date,'now',()=>now);
