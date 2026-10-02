@@ -231,7 +231,10 @@ try {
     dateBefore,
     'confirmed calendar minutes must visibly advance between snapshots'
   );
-  const visibleMinute=Number(dateAfter.match(/:(\d{2})$/)?.[1]);
+  const dateParts=dateAfter.match(/^YEAR (\d+) · DAY (\d+) · (\d{2}):(\d{2})$/);
+  assert.ok(dateParts,'calendar must expose a valid world date');
+  const [,year,day,hour,minute]=dateParts.map(Number);
+  const visibleMinute=(year-1)*525600+(day-1)*1440+hour*60+minute;
   assert.ok(visibleMinute<=liveWorld.clock.worldMinute,
     'the calendar must not invent minutes beyond the committed snapshot');
 
