@@ -109,7 +109,7 @@ jobs:
           for i in $(seq 1 30); do
             rm -f /tmp/cymonia-health-a.json /tmp/cymonia-state-a.json
             curl --max-time 15 -fsS -o /tmp/cymonia-health-a.json https://cymonia.pages.dev/api/v2/health 2>/dev/null || true
-            curl --max-time 15 -fsS -o /tmp/cymonia-state-a.json https://cymonia.pages.dev/api/v2/state 2>/dev/null || true
+            curl --compressed --max-time 15 -fsS -o /tmp/cymonia-state-a.json https://cymonia.pages.dev/api/v2/state 2>/dev/null || true
             node -e "const fs=require('fs');try{const h=JSON.parse(fs.readFileSync('/tmp/cymonia-health-a.json'));const x=JSON.parse(fs.readFileSync('/tmp/cymonia-state-a.json'));process.exit(h.ok&&h.service==='cymonia-sovereign-world'&&Number.isFinite(h.world_minute)&&h.persisted_generation&&x.ok&&x.world?.version===2&&x.world.citizens?.length>0&&x.world.citizens.some(c=>c.alive&&c.currentAction)?0:1)}catch{process.exit(1)}" && break
             sleep 2
           done
@@ -149,9 +149,11 @@ jobs:
       - name: Verify production Observer polling continuity
         run: |
           rm -f /tmp/cymonia-observer-state-a.json /tmp/cymonia-observer-state-b.json
-          curl --max-time 20 -fsS -o /tmp/cymonia-observer-state-a.json https://cymonia.pages.dev/api/v2/state
+          # Match browser compression negotiation for the mature public state.
+          # Keep the same deadlines and canonical continuity assertions.
+          curl --compressed --max-time 20 -fsS -o /tmp/cymonia-observer-state-a.json https://cymonia.pages.dev/api/v2/state
           sleep 10
-          curl --max-time 20 -fsS -o /tmp/cymonia-observer-state-b.json https://cymonia.pages.dev/api/v2/state
+          curl --compressed --max-time 20 -fsS -o /tmp/cymonia-observer-state-b.json https://cymonia.pages.dev/api/v2/state
           node <<'NODE'
           const fs=require('fs');
           const a=JSON.parse(fs.readFileSync('/tmp/cymonia-observer-state-a.json'));
