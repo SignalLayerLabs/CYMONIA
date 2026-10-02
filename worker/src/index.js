@@ -53,6 +53,7 @@ const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1536*1024;
+const MAX_STAGED_SNAPSHOT_PARTS=64;
 const MAX_CATCHUP_WORLD_MINUTES=90;
 const ALARM_MAX_ADVANCE_WORLD_MINUTES=30;
 const MAX_OUTAGE_WORLD_MINUTES=360;
@@ -532,26 +533,40 @@ export class SovereignWorld {
     worldId,
     snapshotClock,
   }){
-    // This activation owns every large private-checkpoint temporary. When it
-    // returns, gzip/base64 parts are unreachable before Observer projection
-    // work starts.
+    // Reserve enough headroom before staging: the exact chunk count is known
+    // only after streaming, and an incomplete inactive slot still costs rows.
+    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS+6).allowed){
+      return {persisted:false,reason:'write_budget_exhausted'};
+    }
+    const generation=nextSnapshotSlot(this.lastPersistedGeneration);
+    const slotBase=generation==='slot-b'?1_000_000:0;
+    let chunkCount=0;
     const encodingStartedAt=Date.now();
     console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute}));
-    const {parts,stateSha256}=await encodeWorldSnapshotParts(this.world,{
+    const {stateSha256}=await encodeWorldSnapshotParts(this.world,{
       sealDue:due,
       clock:snapshotClock,
       ledgerHead,
       maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
+      onPart:part=>{
+        if(chunkCount>=MAX_STAGED_SNAPSHOT_PARTS)throw new Error('sovereign_snapshot_exceeds_staging_limit');
+        // The active generation and its manifest remain intact until the
+        // final metadata transaction. No large SQLite transaction accumulates
+        // all of the compressed chunks in the isolate.
+        this.sql.exec(
+          'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
+          slotBase+chunkCount,part
+        );
+        chunkCount++;
+      },
     });
-    console.log('CYMONIA_CHECKPOINT_ENCODED',JSON.stringify({worldMinute,elapsedMs:Date.now()-encodingStartedAt,parts:parts.length}));
-    const generation=nextSnapshotSlot(this.lastPersistedGeneration);
-    const slotBase=generation==='slot-b'?1_000_000:0;
+    console.log('CYMONIA_CHECKPOINT_ENCODED',JSON.stringify({worldMinute,elapsedMs:Date.now()-encodingStartedAt,parts:chunkCount}));
     const sealCount=due
       ?Number([...this.sql.exec('SELECT COUNT(*) AS count FROM world_seals')][0]?.count||0)
       :0;
     const sealPruneRows=due&&sealCount>=4096?1:0;
     const rowWrites=estimateSnapshotRowWrites({
-      chunkCount:parts.length,
+      chunkCount,
       sealDue:due,
       sealPruneRows,
     });
@@ -561,18 +576,14 @@ export class SovereignWorld {
     }
 
     this.ctx.storage.transactionSync(()=>{
-      for(let seq=0;seq<parts.length;seq++)this.sql.exec(
-        'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
-        slotBase+seq,parts[seq]
-      );
       this.sql.exec(`INSERT INTO world_state_manifest(id,generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        generation,parts.length,worldMinute,ledgerHead,now);
+        generation,chunkCount,worldMinute,ledgerHead,now);
       this.sql.exec(`INSERT INTO world_snapshot_slots(generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(?,?,?,?,?)
         ON CONFLICT(generation) DO UPDATE SET chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        generation,parts.length,worldMinute,ledgerHead,now);
+        generation,chunkCount,worldMinute,ledgerHead,now);
       this.sql.exec(`INSERT INTO world_clock_guard(id,world_id,highest_world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET

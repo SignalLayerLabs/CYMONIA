@@ -90,11 +90,11 @@ function* worldJsonRecords(value,ancestors=new Set(),key=''){
 }
 
 
-function appendEncodedText(parts,state,text,maxCodeUnits){
+function appendEncodedText(emitPart,state,text,maxCodeUnits){
   let offset=0;
   while(offset<text.length){
     if(state.value.length>=maxCodeUnits){
-      parts.push(state.value);
+      emitPart(state.value);
       state.value='';
     }
     const room=maxCodeUnits-state.value.length;
@@ -104,7 +104,7 @@ function appendEncodedText(parts,state,text,maxCodeUnits){
   }
 }
 
-function appendBase64Bytes(parts,state,bytes,maxCodeUnits){
+function appendBase64Bytes(emitPart,state,bytes,maxCodeUnits){
   // 32766 is divisible by 3, so every non-final block is independently
   // padding-free and can be concatenated into one canonical base64 stream.
   const step=32766;
@@ -115,7 +115,7 @@ function appendBase64Bytes(parts,state,bytes,maxCodeUnits){
     for(let i=0;i<view.length;i+=0x2000){
       binary+=String.fromCharCode(...view.subarray(i,Math.min(view.length,i+0x2000)));
     }
-    appendEncodedText(parts,state,btoa(binary),maxCodeUnits);
+    appendEncodedText(emitPart,state,btoa(binary),maxCodeUnits);
   }
 }
 
@@ -124,6 +124,7 @@ export async function encodeWorldSnapshotParts(world,{
   clock=world.clock,
   ledgerHead=world.ledgerHead,
   maxCodeUnits=256*1024,
+  onPart=null,
 }={}){
   const limit=Math.max(1024,Math.floor(Number(maxCodeUnits)||256*1024));
   const snapshot={...world,clock:{...clock},ledgerHead};
@@ -152,6 +153,12 @@ export async function encodeWorldSnapshotParts(world,{
   }));
 
   const parts=[];
+  let partCount=0;
+  const emitPart=part=>{
+    if(onPart)onPart(part);
+    else parts.push(part);
+    partCount++;
+  };
   const state={value:`${SNAPSHOT_ENCODING}:`};
   const reader=input.pipeThrough(new CompressionStream('gzip')).getReader();
   let carry=new Uint8Array(0);
@@ -171,10 +178,10 @@ export async function encodeWorldSnapshotParts(world,{
       }else bytes=chunk;
 
       const aligned=bytes.length-(bytes.length%3);
-      if(aligned)appendBase64Bytes(parts,state,bytes.subarray(0,aligned),limit);
+      if(aligned)appendBase64Bytes(emitPart,state,bytes.subarray(0,aligned),limit);
       carry=aligned<bytes.length?bytes.slice(aligned):new Uint8Array(0);
     }
-    if(carry.length)appendBase64Bytes(parts,state,carry,limit);
+    if(carry.length)appendBase64Bytes(emitPart,state,carry,limit);
   }catch(error){
     await reader.cancel(error).catch(()=>{});
     if(writer)await writer.abort(error).catch(()=>{});
@@ -184,7 +191,7 @@ export async function encodeWorldSnapshotParts(world,{
     writer?.releaseLock();
   }
 
-  if(state.value||!parts.length)parts.push(state.value);
+  if(state.value||!partCount)emitPart(state.value);
 
   let stateSha256=null;
   if(sealDue){
@@ -201,7 +208,7 @@ export async function encodeWorldSnapshotParts(world,{
       .join('');
   }
 
-  return {parts,stateSha256};
+  return {parts,partCount,stateSha256};
 }
 
 export async function encodeWorldSnapshot(world,{sealDue=false,clock=world.clock,ledgerHead=world.ledgerHead}={}){

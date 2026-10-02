@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {randomBytes} from 'node:crypto';
 import {createSovereignGenesis,publicWorld} from '../world/index.js';
 import {sqliteStorage,wake} from './helpers/sovereign-sqlite.mjs';
 
@@ -79,4 +80,58 @@ test('Durable Object retains one full canonical graph and keeps public/diagnosti
   assert.equal(restarted.world.citizens[0].knowledge.length,canonicalCount);
   assert.equal(restarted.committedWorld,null);
   assert.equal(restarted.committedSnapshot,null);
+});
+
+test('checkpoint writes inactive chunks outside the metadata transaction',async t=>{
+  const storage=sqliteStorage();
+  t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  const originalExec=storage.sql.exec;
+  const originalTransaction=storage.transactionSync;
+  let insideTransaction=false,chunkWrites=0,manifestWrites=0;
+  storage.sql.exec=function(query,...args){
+    if(query.includes('INSERT INTO world_state_chunks_v2')){
+      chunkWrites++;
+      assert.equal(insideTransaction,false,'large chunks must be staged individually');
+    }
+    if(query.includes('INSERT INTO world_state_manifest')){
+      manifestWrites++;
+      assert.equal(insideTransaction,true,'manifest must commit atomically with the clock guard');
+    }
+    return originalExec.call(this,query,...args);
+  };
+  storage.transactionSync=function(callback){
+    return originalTransaction.call(this,()=>{
+      insideTransaction=true;
+      try{return callback();}finally{insideTransaction=false;}
+    });
+  };
+  instance.world.clock.worldMinute++;
+  await instance.persist({forceSeal:true});
+  assert.ok(chunkWrites>0);
+  assert.equal(manifestWrites,1);
+});
+
+test('an interrupted staged snapshot cannot replace the committed world',async t=>{
+  const storage=sqliteStorage();
+  t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  const originalExec=storage.sql.exec;
+  const committedMinute=instance.world.clock.worldMinute;
+  instance.world.clock.worldMinute++;
+  instance.world.privateCheckpointStress=randomBytes(2_000_000).toString('base64');
+  let staged=0;
+  storage.sql.exec=function(query,...args){
+    if(query.includes('INSERT INTO world_state_chunks_v2')&&++staged===2){
+      throw new Error('interrupted_before_manifest');
+    }
+    return originalExec.call(this,query,...args);
+  };
+  await assert.rejects(instance.persist({forceSeal:true}),/interrupted_before_manifest/);
+  assert.equal(staged,2,'failure must occur after the first chunk was staged');
+  storage.sql.exec=originalExec;
+  const {instance:restarted}=await wake(storage);
+  assert.equal(restarted.world.clock.worldMinute,committedMinute);
+  assert.equal(restarted.world.privateCheckpointStress,undefined);
+  assert.equal(restarted.clockHighWaterMark,committedMinute);
 });
