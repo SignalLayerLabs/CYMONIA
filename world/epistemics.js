@@ -1,3 +1,4 @@
+import {shareLearnedEvidence} from './evidence-pool.js';
 import {recordMemory} from './memory.js';
 const knowledgeIndexes=new WeakMap();
 const entityIndexes=new WeakMap();
@@ -37,6 +38,6 @@ export function knowledgeEntry(citizen,concept){
   return replacement;
 }
 export function knows(citizen,concept){return Boolean(knowledgeEntry(citizen,concept));}
-export function learn(citizen,concept,provenance,confidence=.7,worldMinute=0){if(!provenance?.kind)throw new Error('knowledge_provenance_required');let k=knowledgeEntry(citizen,concept);if(k){k.confidence=Math.max(k.confidence,confidence);k.provenance.push(provenance);return k;}k={concept:String(concept),confidence:Math.max(0,Math.min(1,confidence)),provenance:[provenance],active:true,learnedWorldMinute:worldMinute};citizen.knowledge.push(k);recordMemory(citizen,{kind:'semantic',content:{concept},source:provenance,confidence,salience:.5,worldMinute});return k;}
+export function learn(citizen,concept,provenance,confidence=.7,worldMinute=0){if(!provenance?.kind)throw new Error('knowledge_provenance_required');shareLearnedEvidence(citizen,provenance);let k=knowledgeEntry(citizen,concept);if(k){k.confidence=Math.max(k.confidence,confidence);k.provenance.push(provenance);return k;}k={concept:String(concept),confidence:Math.max(0,Math.min(1,confidence)),provenance:[provenance],active:true,learnedWorldMinute:worldMinute};citizen.knowledge.push(k);recordMemory(citizen,{kind:'semantic',content:{concept},source:provenance,confidence,salience:.5,worldMinute});return k;}
 export function forget(citizen,concept){const k=knowledgeEntry(citizen,concept);if(k)k.active=false;return Boolean(k);}
 export function validateProposalKnowledge(world,citizen,proposal){for(const concept of proposal?.concepts||[]){if(!knows(citizen,concept))return {ok:false,reason:`unknown_concept:${concept}`};}for(const a of proposal?.actions||[]){for(const concept of a.concepts||[]){if(!knows(citizen,concept))return {ok:false,reason:`unknown_concept:${concept}`};}}return {ok:true};}

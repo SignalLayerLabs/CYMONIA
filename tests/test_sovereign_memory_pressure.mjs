@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
-import {createSovereignGenesis,publicWorld} from '../world/index.js';
+import {createEvidencePool} from '../world/evidence-pool.js';
+import {createSovereignGenesis,publicWorld,learn} from '../world/index.js';
 import {sqliteStorage,wake} from './helpers/sovereign-sqlite.mjs';
 
 function inflateCitizen(c,count=5000){
@@ -110,6 +111,43 @@ test('checkpoint writes inactive chunks outside the metadata transaction',async 
   await instance.persist({forceSeal:true});
   assert.ok(chunkWrites>0);
   assert.equal(manifestWrites,1);
+});
+
+test('wake shares identical immutable evidence while Citizen knowledge and sources remain separate',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  const evidence={entityId:'object:shared',appearance:'hard irregular fragments',position:{x:10,y:20}};
+  for(let i=0;i<2;i++)instance.world.citizens[i].knowledge=[{
+    concept:'observed:shared',confidence:i?.7:.9,active:true,
+    provenance:[{kind:'observation',eventId:`personal:${i}`,evidence:structuredClone(evidence)}],
+    learnedWorldMinute:i,
+  }];
+  await instance.persist({forceSeal:true});
+  const {instance:restarted}=await wake(storage);
+  const [a,b]=restarted.world.citizens;
+  const ka=a.knowledge[0],kb=b.knowledge[0];
+  assert.notEqual(ka,kb);
+  assert.notEqual(ka.provenance[0],kb.provenance[0]);
+  assert.deepEqual(ka.provenance[0].evidence,evidence);
+  assert.equal(ka.provenance[0].evidence,kb.provenance[0].evidence);
+  assert.equal(ka.provenance[0].eventId,'personal:0');
+  assert.equal(kb.confidence,.7);
+  assert.equal(Object.isFrozen(ka.provenance[0].evidence.position),true);
+  assert.throws(()=>{ka.provenance[0].evidence.position.x=99;},TypeError);
+  const learned=learn(a,'another:personal',{kind:'observation',eventId:'personal:new',evidence:structuredClone(evidence)},.8,1);
+  assert.equal(learned.provenance[0].evidence,ka.provenance[0].evidence);
+  assert.equal(b.knowledge.length,1);
+});
+
+test('the evidence pool bounds its retained index without dropping historical evidence',()=>{
+  const pool=createEvidencePool({maxCodeUnits:2048,maxEntries:16}),retained=[];
+  for(let i=0;i<500;i++)retained.push(pool.intern({entityId:`entity:${i}`,position:{x:i,y:0},appearance:'observed matter'}));
+  const stats=pool.stats();
+  assert.ok(stats.pooledEvidence<=16);
+  assert.ok(stats.evidencePoolCodeUnits<=2048);
+  assert.equal(retained[0].entityId,'entity:0');
+  assert.equal(retained.at(-1).position.x,499);
+  assert.deepEqual(pool.intern({...retained.at(-1),position:{x:499,y:0}}),retained.at(-1));
 });
 
 test('an interrupted staged snapshot cannot replace the committed world',async t=>{
