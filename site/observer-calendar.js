@@ -1,7 +1,7 @@
 // Play a small window of already committed time at the world's 1 minute/second
 // rate. The upper bound is the server checkpoint, including during outages.
 export class ObserverCalendar{
-  constructor({nowFn=()=>performance.now(),bufferMinutes=60}={}){
+  constructor({nowFn=()=>performance.now(),bufferMinutes=120}={}){
     this.nowFn=nowFn;
     this.bufferMinutes=bufferMinutes;
     this.worldId=null;

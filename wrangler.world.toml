@@ -2,6 +2,11 @@ name = "cymonia-sovereign-world"
 main = "worker/src/index.js"
 compatibility_date = "2026-09-01"
 
+# Mature-world wake, simulation and checkpoint work can exceed the default 30s.
+# Runtime catch-up bounds still constrain each heartbeat's simulated work.
+[limits]
+cpu_ms = 300_000
+
 [ai]
 binding = "AI"
 

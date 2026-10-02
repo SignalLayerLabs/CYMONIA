@@ -5,6 +5,15 @@ import {runInNewContext} from 'node:vm';
 import {SovereignWorld} from '../worker/src/index.js';
 import {createSovereignGenesis} from '../world/index.js';
 
+test('deployment CPU budget covers a mature-world invocation instead of the 30-second default',()=>{
+  const config=readFileSync(new URL('../wrangler.world.toml',import.meta.url),'utf8');
+  const limits=(config.split(/^\[limits\]\s*$/m)[1]||'').split(/^\[/m)[0];
+  const configured=limits.match(/^\s*cpu_ms\s*=\s*([\d_]+)/m)?.[1];
+  const cpuMs=configured?Number(configured.replaceAll('_','')):30000;
+  assert.ok(cpuMs>=60000,'mature-world wake and simulation exceed the default CPU budget');
+  assert.ok(cpuMs<=300000,'CPU budget must remain within the supported Durable Object limit');
+});
+
 function instanceAt(t,now=60_000){
   t.mock.method(Date,'now',()=>now);
   let scheduledAlarm=-180_000;
