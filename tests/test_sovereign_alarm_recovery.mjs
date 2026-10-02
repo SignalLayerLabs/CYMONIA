@@ -306,12 +306,35 @@ test('rejected local plan starts observation and does not block peer actions',()
 });
 
 
-test('two missed alarm windows recover without replaying several minutes of CPU work',()=>{
+test('two missed alarm windows retain pending time without one CPU-heavy tick',()=>{
   const world=createSovereignGenesis({realEpochMs:0});
   const id=world.worldId;
   const progress=advanceWorldBounded(world,120000);
-  assert.equal(progress.recovered,true);
-  assert.equal(progress.skippedWorldMinutes,119);
-  assert.equal(world.clock.worldMinute,1);
+  assert.equal(progress.recovered,false);
+  assert.equal(progress.skippedWorldMinutes,0);
+  assert.equal(world.clock.worldMinute,90);
+  assert.equal(progress.lagWorldMinutes,30);
   assert.equal(world.worldId,id);
+});
+
+test('ordinary alarm backlog drains in bounded chunks without discarding world time',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});
+  const id=world.worldId;
+  const minutes=[];
+  for(let i=0;i<3;i++){
+    const progress=advanceWorldBounded(world,75_000,30,360);
+    assert.equal(progress.recovered,false);
+    minutes.push(world.clock.worldMinute);
+  }
+  assert.deepEqual(minutes,[30,60,75]);
+  assert.equal(world.worldId,id);
+  assert.equal(world.ledger.some(event=>event.type==='RUNTIME_LAG_REBASED'),false);
+});
+
+test('a genuine multi-hour outage still rebases to one safe world minute',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});
+  const progress=advanceWorldBounded(world,600_000,30,360);
+  assert.equal(progress.recovered,true);
+  assert.equal(progress.skippedWorldMinutes,599);
+  assert.equal(world.clock.worldMinute,1);
 });

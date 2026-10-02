@@ -67,9 +67,9 @@ write budget. Each part remains below SQLite's 2 MB per-value/row limit.
 Simulation indexes active knowledge outside canonical state and computes
 perception positions once per segment. Fifteen-second alarms split ordinary
 world-time progression into CPU-bounded segments; the checkpoint remains due
-every 60 world minutes. Scheduled alarms rebase lag beyond 30 world minutes
-instead of attempting several minutes of simulation in one 30-second CPU
-invocation.
+every 60 world minutes. Scheduled alarms drain ordinary lag in chunks of at
+most 30 world minutes; only a true outage beyond 360 world minutes rebases
+the clock. This avoids both unbounded CPU work and discarding pending time.
 
 An alarm whose scheduled time and last successful tick are both more than five
 minutes old is rearmed for immediate delivery. A durable two-minute cooldown
