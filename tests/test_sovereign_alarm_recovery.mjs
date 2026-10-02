@@ -338,3 +338,13 @@ test('a genuine multi-hour outage still rebases to one safe world minute',()=>{
   assert.equal(progress.skippedWorldMinutes,599);
   assert.equal(world.clock.worldMinute,1);
 });
+
+test('legacy private memories are bounded before a mature world tick allocates new state',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});
+  const citizen=world.citizens[0];
+  citizen.memories=Array.from({length:1500},(_,i)=>({id:`m:${i}`,salience:.9,confidence:1,source:{kind:'observation',eventId:`e:${i}`}}));
+  advanceWorldBounded(world,0,30,360);
+  assert.equal(citizen.memories.length,512);
+  assert.equal(citizen.memories[0].id,'m:988');
+  assert.equal(citizen.memories.at(-1).source.eventId,'e:1499');
+});

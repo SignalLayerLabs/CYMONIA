@@ -16,6 +16,7 @@ import {
   REAL_MS_PER_WORLD_MINUTE,
   queueCognition,
   takeCognitionCandidate,
+  trimCitizenMemories,
 } from '../../world/index.js';
 import {
   SAFE_ROW_WRITE_BUDGET,
@@ -147,6 +148,8 @@ export function splitSnapshot(serialized,maxCodeUnits=SNAPSHOT_CHUNK_CODE_UNITS)
 }
 export function joinSnapshot(parts){return parts.join('');}
 export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES){
+  let trimmedMemories=0;
+  for(const citizen of world.citizens)trimmedMemories+=trimCitizenMemories(citizen);
   let target=worldMinuteAt(world,nowMs),recovered=false,skippedWorldMinutes=0;
   const lag=Math.max(0,target-world.clock.worldMinute);
   if(lag>maxOutage){
@@ -158,7 +161,7 @@ export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHU
   const next=Math.min(target,world.clock.worldMinute+maxCatchup);
   const boundedNow=world.clock.realEpochMs+next*REAL_MS_PER_WORLD_MINUTE;
   advanceWorldTo(world,boundedNow);
-  return {recovered,skippedWorldMinutes,lagWorldMinutes:Math.max(0,target-next)};
+  return {recovered,skippedWorldMinutes,lagWorldMinutes:Math.max(0,target-next),trimmedMemories};
 }
 
 export class SovereignWorld {
@@ -198,7 +201,14 @@ export class SovereignWorld {
       console.log('CYMONIA_WAKE_BEGIN');
       this.initializeSQLite();
       this.world=await this.loadWorld();
-      console.log('CYMONIA_WAKE_DECODED',JSON.stringify({elapsedMs:Date.now()-wakeStartedAt,worldMinute:this.world?.clock?.worldMinute??null}));
+      const citizens=this.world?.citizens||[];
+      console.log('CYMONIA_WAKE_DECODED',JSON.stringify({
+        elapsedMs:Date.now()-wakeStartedAt,
+        worldMinute:this.world?.clock?.worldMinute??null,
+        privateMemories:citizens.reduce((n,c)=>n+(c.memories?.length||0),0),
+        knowledgeEntries:citizens.reduce((n,c)=>n+(c.knowledge?.length||0),0),
+        objects:this.world?.objects?.length||0,
+      }));
       if(!this.world){
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
         ensureRuntime(this.world);
@@ -715,6 +725,7 @@ export class SovereignWorld {
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
       const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage);
+      if(progress.trimmedMemories)console.log('CYMONIA_PRIVATE_MEMORY_BOUNDED',JSON.stringify({worldMinute:this.world.clock.worldMinute,trimmedMemories:progress.trimmedMemories}));
       console.log('CYMONIA_ADVANCE_READY',JSON.stringify({worldMinute:this.world.clock.worldMinute,elapsedMs:Date.now()-advancementStartedAt}));
 
       const lastPersisted=Number(
@@ -725,16 +736,15 @@ export class SovereignWorld {
         this.world.clock.worldMinute-lastPersisted >=
         PERSIST_INTERVAL_WORLD_MINUTES;
 
-      if(progress.recovered){
-        // Recovery rebases realEpochMs so downtime is not counted as lived
-        // world time. Persist that boundary immediately; otherwise Durable
-        // Object hibernation can discard it and reload the pre-recovery state.
+      if(progress.recovered||progress.trimmedMemories){
+        // Persist a recovery rebase or private-memory trim immediately so
+        // hibernation cannot reload the previous, oversized generation.
         await this.persist({forceSeal:true});
       }else if(checkpointDue){
         await this.persist();
       }
 
-      const cognitionChanged=!progress.recovered&&await this.processCognition(1);
+      const cognitionChanged=!progress.recovered&&!progress.trimmedMemories&&await this.processCognition(1);
 
       if(cognitionChanged){
         await this.persist();
