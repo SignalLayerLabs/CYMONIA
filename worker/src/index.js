@@ -44,6 +44,8 @@ import {createEvidencePool} from '../../world/evidence-pool.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=15_000;
+const ALARM_PULSE_MS=2_500;
+const ALARM_MAX_SEGMENTS=4;
 const STALE_ALARM_MS=5*60_000;
 const ALARM_REARM_COOLDOWN_MS=2*60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
@@ -149,7 +151,7 @@ export function splitSnapshot(serialized,maxCodeUnits=SNAPSHOT_CHUNK_CODE_UNITS)
   return parts.length?parts:[''];
 }
 export function joinSnapshot(parts){return parts.join('');}
-export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES){
+export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES,options={}){
   let trimmedMemories=0;
   for(const citizen of world.citizens)trimmedMemories+=trimCitizenMemories(citizen);
   let target=worldMinuteAt(world,nowMs),recovered=false,skippedWorldMinutes=0;
@@ -160,10 +162,10 @@ export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHU
     appendEvent(world,'RUNTIME_LAG_REBASED','world',{skippedWorldMinutes,reason:'runtime_outage'},[],world.clock.worldMinute);
     target=world.clock.worldMinute+1;recovered=true;
   }
-  const next=Math.min(target,world.clock.worldMinute+maxCatchup);
+  const next=recovered?target:Math.min(target,world.clock.worldMinute+maxCatchup,options.targetWorldMinute??Infinity);
   const boundedNow=world.clock.realEpochMs+next*REAL_MS_PER_WORLD_MINUTE;
-  advanceWorldTo(world,boundedNow);
-  return {recovered,skippedWorldMinutes,lagWorldMinutes:Math.max(0,target-next),trimmedMemories};
+  advanceWorldTo(world,boundedNow,options);
+  return {recovered,skippedWorldMinutes,advanceTargetWorldMinute:next,lagWorldMinutes:Math.max(0,target-world.clock.worldMinute),trimmedMemories};
 }
 
 export class SovereignWorld {
@@ -195,6 +197,9 @@ export class SovereignWorld {
     this.clockRegressionDetected=false;
     this.snapshotRecoverySource=null;
     this.pendingTrimmedMemories=0;
+    this.pendingCheckpoint=false;
+    this.pendingForceSeal=false;
+    this.pendingAdvanceTarget=null;
     this.evidencePool=null;
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
@@ -544,6 +549,9 @@ export class SovereignWorld {
     // External inference already consumed this budget even if saving failed.
     if(this.pendingRecoveryNeuronBudget)restored.runtime.neuronBudget=this.pendingRecoveryNeuronBudget;
     this.world=restored;
+    this.pendingCheckpoint=false;
+    this.pendingForceSeal=false;
+    this.pendingAdvanceTarget=null;
     this.pendingRecoveryNeuronBudget=null;
   }
   readableWorld(){return this.committedStats||committedStats(this.world);}
@@ -760,13 +768,23 @@ export class SovereignWorld {
 
     return canonical;
   }
-  async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES){
+  async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES,{maxSegments=Infinity,deferCheckpoint=false}={}){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
+      // Encoding a mature checkpoint gets a separate CPU allowance from the
+      // simulation pulse. Failed commits leave this request pending.
+      if(deferCheckpoint&&this.pendingCheckpoint){
+        await this.persist({forceSeal:Boolean(this.pendingForceSeal)});
+        this.pendingCheckpoint=false;this.pendingForceSeal=false;
+        this.pendingTrimmedMemories=0;
+        if(this.ctx.getWebSockets().length)this.broadcastWorldSignal('world_signal');
+        return;
+      }
       this.registerCitizenEvidence();
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
-      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage);
+      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage,{maxSegments,targetWorldMinute:this.pendingAdvanceTarget??Infinity});
+      this.pendingAdvanceTarget=this.world.clock.worldMinute<progress.advanceTargetWorldMinute?progress.advanceTargetWorldMinute:null;
       this.registerCitizenEvidence();
       progress.trimmedMemories+=this.pendingTrimmedMemories||0;
       if(progress.trimmedMemories)console.log('CYMONIA_PRIVATE_MEMORY_BOUNDED',JSON.stringify({worldMinute:this.world.clock.worldMinute,trimmedMemories:progress.trimmedMemories}));
@@ -780,30 +798,29 @@ export class SovereignWorld {
         this.world.clock.worldMinute-lastPersisted >=
         PERSIST_INTERVAL_WORLD_MINUTES;
 
-      if(progress.recovered||progress.trimmedMemories){
-        // Persist a recovery rebase or private-memory trim immediately so
-        // hibernation cannot reload the previous, oversized generation.
-        await this.persist({forceSeal:true});
-        this.pendingTrimmedMemories=0;
-      }else if(checkpointDue){
-        await this.persist();
+      const forceSeal=Boolean(progress.recovered||progress.trimmedMemories);
+      const cognitionChanged=!forceSeal&&await this.processCognition(1);
+      if(forceSeal||checkpointDue||cognitionChanged){
+        if(deferCheckpoint){
+          this.pendingCheckpoint=true;
+          this.pendingForceSeal=Boolean(this.pendingForceSeal||forceSeal);
+        }else{
+          await this.persist({forceSeal});
+          this.pendingTrimmedMemories=0;
+        }
       }
 
-      const cognitionChanged=!progress.recovered&&!progress.trimmedMemories&&await this.processCognition(1);
-
-      if(cognitionChanged){
-        await this.persist();
-      }
-
-      // Publish the final state of this heartbeat, including a strategy
-      // accepted by cognition during the same tick.
-      if(this.ctx.getWebSockets().length)this.broadcastWorldSignal('world_signal');
+      // Deferred pulses publish only after their checkpoint commits.
+      if(!deferCheckpoint&&this.ctx.getWebSockets().length)this.broadcastWorldSignal('world_signal');
     });
   }
   async alarm(alarmInfo){
     if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
     const startedAt=Date.now();
-    const nextAlarm=startedAt+ALARM_MS;
+    const pendingTime=worldMinuteAt(this.world,startedAt)>this.world.clock.worldMinute;
+    const uncommitted=this.world.clock.worldMinute>Number(this.lastPersistedWorldMinute??this.world.clock.worldMinute);
+    const pulse=(pendingTime||this.pendingCheckpoint||uncommitted)&&!(startedAt<this.persistenceDeferredUntilRealMs);
+    let nextAlarm=startedAt+(pulse?ALARM_PULSE_MS:ALARM_MS);
     // Commit the successor before tick can throw or exhaust its CPU budget.
     await this.ctx.storage.setAlarm(nextAlarm);
     // setAlarm can resolve while its write is still buffered. Flush it before
@@ -812,13 +829,16 @@ export class SovereignWorld {
     let runtime=ensureRuntime(this.world);
     runtime.nextAlarmRealMs=nextAlarm;
 
+    const savingCheckpoint=Boolean(this.pendingCheckpoint);
     try{
-      await this.tick(ALARM_MAX_ADVANCE_WORLD_MINUTES,MAX_OUTAGE_WORLD_MINUTES);
+      await this.tick(ALARM_MAX_ADVANCE_WORLD_MINUTES,MAX_OUTAGE_WORLD_MINUTES,{maxSegments:ALARM_MAX_SEGMENTS,deferCheckpoint:true});
       runtime=ensureRuntime(this.world);
       runtime.lastTickRealMs=Date.now();
       runtime.lastTickWorldMinute=this.world.clock.worldMinute;
       runtime.lastTickError=null;
       runtime.lastAlarmRetryCount=Number(alarmInfo?.retryCount||0);
+      // Leave the precommitted successor unchanged, even if already due.
+      // One alarm write per healthy pulse bounds daily Free-plan row usage.
     }catch(error){
       runtime=this.world?ensureRuntime(this.world):{
         lastTickRealMs:null,
@@ -839,14 +859,22 @@ export class SovereignWorld {
         error:String(error?.message||error).slice(0,300)
       }));
 
-      // Do not rethrow here.
-      // A single malformed Citizen or transient runtime error must never
-      // permanently stop the Sovereign World heartbeat.
+      // Back off failed pulses; the precommitted successor also survives a
+      // CPU reset that cannot run this catch block.
+      const retryAt=Date.now()+ALARM_MS;
+      try{await this.ctx.storage.setAlarm(retryAt);nextAlarm=retryAt;}
+      catch(scheduleError){console.error('CYMONIA_ALARM_BACKOFF_FAILED',String(scheduleError?.message||scheduleError).slice(0,300));}
     }
     runtime.nextAlarmRealMs=nextAlarm;
     try{
-      // A world snapshot may have been written before the tick outcome was known.
-      await this.ctx.storage.put(HEARTBEAT_STATUS_KEY,tickDiagnostics(runtime));
+      // Rapid simulation pulses must not consume the Free daily write quota
+      // just to repeat healthy diagnostics. Failures and commits flush at once.
+      const now=Date.now();
+      if(savingCheckpoint||runtime.lastTickError!==this.lastHeartbeatStatusError||now-(this.lastHeartbeatStatusRealMs??-Infinity)>=ALARM_MS){
+        await this.ctx.storage.put(HEARTBEAT_STATUS_KEY,tickDiagnostics(runtime));
+        this.lastHeartbeatStatusRealMs=now;
+        this.lastHeartbeatStatusError=runtime.lastTickError;
+      }
     }catch(error){
       console.error('CYMONIA_HEARTBEAT_STATUS_SAVE_FAILED',String(error?.message||error).slice(0,300));
     }
