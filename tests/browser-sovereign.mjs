@@ -262,17 +262,17 @@ try {
   liveWorld.clock={worldMinute:525599,realEpochMs:Date.now()-525660000};
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
-  await page.clock.fastForward(61000);
+  await page.clock.fastForward(121000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
   liveWorld.clock.realEpochMs=Date.now()-525599000;
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
-  await page.clock.fastForward(61000);
+  await page.clock.fastForward(121000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
   liveWorld.clock={worldMinute:525600,realEpochMs:Date.now()-525600000};
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
-  await page.clock.fastForward(61000);
+  await page.clock.fastForward(121000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 2 · DAY 1 · 00:00');
 
   await page.setViewportSize({

@@ -4,7 +4,7 @@ import {ObserverCalendar} from '../site/observer-calendar.js';
 
 function fixture(){
   let now=0;
-  const calendar=new ObserverCalendar({nowFn:()=>now});
+  const calendar=new ObserverCalendar({nowFn:()=>now,bufferMinutes:60});
   const world=minute=>({worldId:'existing-world',clock:{worldMinute:minute}});
   return {calendar,world,at:ms=>{now=ms;return calendar.minute();}};
 }
@@ -56,4 +56,17 @@ test('young worlds never display negative minutes or advance beyond Genesis',()=
   f.calendar.accept(f.world(3));
   assert.equal(f.at(12000),2);
   assert.equal(f.at(14000),3);
+});
+
+test('normal checkpoint and delivery jitter cannot pause the production calendar',()=>{
+  let now=0;
+  const calendar=new ObserverCalendar({nowFn:()=>now});
+  calendar.accept({worldId:'existing-world',clock:{worldMinute:1000}});
+  now=60000;const before=calendar.minute();
+  now=65000;assert.equal(calendar.minute()-before,5);
+  now=75000;const arrival=calendar.minute();
+  calendar.accept({worldId:'existing-world',clock:{worldMinute:1075}});
+  assert.equal(calendar.minute(),arrival);
+  now=140000;assert.equal(calendar.minute()-arrival,65);
+  now=1000000;assert.equal(calendar.minute(),1075);
 });
