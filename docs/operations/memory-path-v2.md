@@ -61,14 +61,15 @@ SHA-256 seals retain their original format.
 
 Small evidence objects use native JSON serialization within the record-size
 budget; large private arrays continue to stream. Encoded SQLite parts use
-1 MiB per row to keep the current civilization's checkpoints within the daily
+1.5 MiB per row to keep the current civilization's checkpoints within the daily
 write budget. Each part remains below SQLite's 2 MB per-value/row limit.
 
 Simulation indexes active knowledge outside canonical state and computes
-perception positions once per segment. Outage recovery rebases lag beyond
-90 world minutes rather than attempting several minutes of simulation in one
-30-second CPU invocation. Ordinary 60-second heartbeats preserve their original
-world-time progression.
+perception positions once per segment. Fifteen-second alarms split ordinary
+world-time progression into CPU-bounded segments; the checkpoint remains due
+every 60 world minutes. Scheduled alarms rebase lag beyond 30 world minutes
+instead of attempting several minutes of simulation in one 30-second CPU
+invocation.
 
 An alarm whose scheduled time and last successful tick are both more than five
 minutes old is rearmed for immediate delivery. A durable two-minute cooldown

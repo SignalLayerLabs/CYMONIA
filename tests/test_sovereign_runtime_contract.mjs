@@ -25,7 +25,7 @@ test('hibernating websocket runtime survives object eviction without volatile cl
 });
 
 test('runtime recovery is persisted immediately before hibernation can discard the rebase',()=>{
-  const tickStart=worker.indexOf('async tick(){');
+  const tickStart=worker.indexOf('async tick(');
   const tickEnd=worker.indexOf('async alarm(',tickStart);
   assert.ok(tickStart>=0&&tickEnd>tickStart,'tick method boundaries must exist');
   const tick=worker.slice(tickStart,tickEnd);
@@ -147,7 +147,7 @@ test('monotonic clock guard prevents loading older snapshots and exposes recover
 
 
 test('heartbeat broadcasts after cognition processing',()=>{
-  const start=worker.indexOf('async tick(){');
+  const start=worker.indexOf('async tick(');
   const end=worker.indexOf('async alarm(',start);
   const tick=worker.slice(start,end);
   const cognition=tick.indexOf('processCognition(1)');

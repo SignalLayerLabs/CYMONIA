@@ -59,8 +59,18 @@ test('an ordinary HTTP fetch repairs a missing alarm without advancing the world
   const before=instance.world.clock.worldMinute;
   const response=await instance.fetch(new Request('https://example.com/world/state'));
   assert.equal(response.status,200);
-  assert.equal(alarmTime(),120_000);
+  assert.equal(alarmTime(),75_000);
   assert.equal(instance.world.clock.worldMinute,before);
+});
+
+test('a fresh alarm limits one invocation to fifteen world minutes',async t=>{
+  const {instance,alarmTime}=runtime(t);
+  await instance.ensureAlarm();
+  assert.equal(alarmTime(),75_000);
+  const world=createSovereignGenesis({realEpochMs:0});
+  const progress=advanceWorldBounded(world,15_000);
+  assert.equal(progress.recovered,false);
+  assert.equal(world.clock.worldMinute,15);
 });
 
 test('an HTTP fetch preserves a long-overdue alarm so Cloudflare can deliver it',async t=>{
@@ -97,7 +107,7 @@ test('a stale scheduled timestamp is preserved after a recent successful tick',a
 
 test('alarm stores its successor before running the world tick',async t=>{
   const {instance,alarmTime}=runtime(t);
-  instance.tick=async()=>{assert.equal(alarmTime(),120_000);};
+  instance.tick=async maxCatchup=>{assert.equal(alarmTime(),75_000);assert.equal(maxCatchup,30);};
   await instance.alarm();
   assert.equal(instance.world.runtime.lastTickError,null);
 });
@@ -128,11 +138,11 @@ test('a tick exception leaves its successor armed and records the failure',async
   const {instance,alarmTime}=runtime(t);
   t.mock.method(console,'error',()=>{});
   instance.tick=async()=>{
-    assert.equal(alarmTime(),120_000);
+    assert.equal(alarmTime(),75_000);
     throw new Error('injected fatal tick');
   };
   await assert.doesNotReject(instance.alarm({retryCount:1}));
-  assert.equal(alarmTime(),120_000);
+  assert.equal(alarmTime(),75_000);
   assert.match(instance.world.runtime.lastTickError,/injected fatal tick/);
   assert.equal(instance.world.runtime.lastAlarmRetryCount,1);
 });
@@ -169,10 +179,10 @@ test('health reports the real alarm and tick diagnostics without synthetic advan
   const response=await instance.fetch(new Request('https://example.com/world/health'));
   const health=await response.json();
   assert.equal(response.status,200);
-  assert.equal(alarmTime(),120_000);
+  assert.equal(alarmTime(),75_000);
   assert.deepEqual(health.heartbeat,{
-    scheduledAlarmRealMs:120_000,
-    nextAlarmRealMs:120_000,
+    scheduledAlarmRealMs:75_000,
+    nextAlarmRealMs:75_000,
     lastTickRealMs:55_000,
     lastTickWorldMinute:7,
     lastTickError:'previous tick failed',
@@ -214,7 +224,7 @@ test('failed tick diagnostics survive a wakeup and leave the alarm armed',async 
   const waking=await wakeWorld(instance.ctx.storage);
   waking.readPersistenceBudget=()=>({day:'1970-01-01',rowsWritten:0});
   const health=await (await waking.fetch(new Request('https://example.com/world/health'))).json();
-  assert.equal(alarmTime(),120_000);
+  assert.equal(alarmTime(),75_000);
   assert.match(health.heartbeat.lastTickError,/malformed action/);
   assert.equal(health.heartbeat.lastAlarmRetryCount,3);
 });
@@ -228,10 +238,10 @@ test('ensureAlarm preserves existing due and future alarms',async t=>{
   assert.deepEqual(alarms,[]);
 });
 
-test('ensureAlarm arms a missing alarm one minute ahead',async t=>{
+test('ensureAlarm arms a missing alarm one quarter-minute ahead',async t=>{
   const {instance,alarms}=runtime(t);
   await instance.ensureAlarm();
-  assert.deepEqual(alarms,[120_000]);
+  assert.deepEqual(alarms,[75_000]);
 });
 
 test('successful alarm advances the real world and schedules the next heartbeat',async t=>{
@@ -241,7 +251,7 @@ test('successful alarm advances the real world and schedules the next heartbeat'
   assert.ok(instance.world.clock.worldMinute>0);
   assert.ok(instance.world.citizens.some(c=>c.currentActionId));
   assert.equal(instance.world.runtime.lastTickError,null);
-  assert.deepEqual(alarms,[120_000]);
+  assert.deepEqual(alarms,[75_000]);
 });
 
 test('failed tick is diagnosed and the next alarm can recover',async t=>{
@@ -254,11 +264,11 @@ test('failed tick is diagnosed and the next alarm can recover',async t=>{
   assert.match(instance.world.runtime.lastTickError,/injected cognition outage/);
   assert.equal(instance.world.runtime.lastAlarmRetryCount,2);
   assert.equal(logs[0][0],'CYMONIA_TICK_FAILED');
-  assert.deepEqual(alarms,[120_000]);
+  assert.deepEqual(alarms,[75_000]);
   instance.processCognition=original;
   await instance.alarm();
   assert.equal(instance.world.runtime.lastTickError,null);
-  assert.deepEqual(alarms,[120_000,120_000]);
+  assert.deepEqual(alarms,[75_000,75_000]);
 });
 
 test('rescheduling failure remains visible to Cloudflare for retry',async t=>{

@@ -41,9 +41,9 @@ import {
 } from './neuron-governor.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
-const ALARM_MS=60_000;
-const STALE_ALARM_MS=5*ALARM_MS;
-const ALARM_REARM_COOLDOWN_MS=2*ALARM_MS;
+const ALARM_MS=15_000;
+const STALE_ALARM_MS=5*60_000;
+const ALARM_REARM_COOLDOWN_MS=2*60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
 const MAX_COMPLETION_TOKENS=200;
 const AI_SYSTEM_PROMPT=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7,"programBlueprints":[{"name":"short name","trigger":{"kind":"always|resource_known|high_sleep|low_hydration|low_calories|rain|damaged_structure|grievance|loose_object|near_citizen","threshold":0.5},"cooldownMinutes":120,"steps":[{"type":"OBSERVE|REST|GATHER|CARE|COMMUNICATE|TRANSFER|EXPERIMENT|PICKUP|DROP|REPAIR|DISMANTLE|DESTROY","selector":"self|nearest_known_resource|nearest_known_structure|nearest_damaged_structure|nearest_known_citizen|grievance_actor|loose_known_object|held_object"}]}]}. programBlueprints is optional and should be used only when a reusable behavior genuinely follows from this Citizen evidence. Programs never bypass the sovereign kernel. The strategy should guide several world-days of local autonomous behavior; use adapt when evidence is insufficient.`;
@@ -51,8 +51,9 @@ const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
-const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1024*1024;
+const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1536*1024;
 const MAX_CATCHUP_WORLD_MINUTES=90;
+const ALARM_MAX_ADVANCE_WORLD_MINUTES=30;
 const HOT_LEDGER_EVENTS=4096;
 const CAUSAL_LEDGER_EVENTS=512;
 const CAUSAL_RECEIPTS=64;
@@ -707,12 +708,12 @@ export class SovereignWorld {
 
     return canonical;
   }
-  async tick(){
+  async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
-      const progress=advanceWorldBounded(this.world,Date.now());
+      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup);
       console.log('CYMONIA_ADVANCE_READY',JSON.stringify({worldMinute:this.world.clock.worldMinute,elapsedMs:Date.now()-advancementStartedAt}));
 
       const lastPersisted=Number(
@@ -756,7 +757,7 @@ export class SovereignWorld {
     runtime.nextAlarmRealMs=nextAlarm;
 
     try{
-      await this.tick();
+      await this.tick(ALARM_MAX_ADVANCE_WORLD_MINUTES);
       runtime=ensureRuntime(this.world);
       runtime.lastTickRealMs=Date.now();
       runtime.lastTickWorldMinute=this.world.clock.worldMinute;
@@ -949,7 +950,7 @@ export class SovereignWorld {
           tick_stalled:Boolean(
             worldMinuteAt(world,Date.now())>world.clock.worldMinute &&
             runtime.lastTickRealMs!=null &&
-            Date.now()-Number(runtime.lastTickRealMs)>2*ALARM_MS
+            Date.now()-Number(runtime.lastTickRealMs)>60_000
           ),
           last_alarm_recovery_reason:runtime.lastAlarmRecoveryReason??null,
           last_alarm_recovery_real_ms:runtime.lastAlarmRecoveryRealMs??null,
