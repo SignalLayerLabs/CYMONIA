@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SovereignWorld} from '../worker/src/index.js';
+import {SovereignWorld,advanceWorldBounded} from '../worker/src/index.js';
 import {createSovereignGenesis,advanceWorldTo,REAL_MS_PER_WORLD_MINUTE} from '../world/index.js';
 
 // Cloudflare owns storage and scheduling. Exercise the real handler with
@@ -72,6 +72,27 @@ test('an HTTP fetch preserves a long-overdue alarm so Cloudflare can deliver it'
   assert.equal(alarmTime(),-180_000);
   assert.deepEqual(alarms,[]);
   assert.equal(instance.world.runtime.lastAlarmRecoveryReason,'overdue_alarm_preserved');
+});
+
+test('a stale exhausted alarm is rearmed once with durable cooldown',async t=>{
+  const {instance,alarms,alarmTime,setStoredAlarm}=runtime(t);
+  setStoredAlarm(-900_000);
+  instance.world.runtime={lastTickRealMs:-900_000};
+  await instance.ensureAlarm();
+  assert.equal(alarmTime(),61_000);
+  assert.deepEqual(alarms,[61_000]);
+  assert.equal(instance.world.runtime.lastAlarmRecoveryReason,'stale_alarm_rearmed');
+  setStoredAlarm(-900_000);
+  await instance.ensureAlarm();
+  assert.deepEqual(alarms,[61_000]);
+});
+
+test('a stale scheduled timestamp is preserved after a recent successful tick',async t=>{
+  const {instance,alarms,setStoredAlarm}=runtime(t);
+  setStoredAlarm(-900_000);
+  instance.world.runtime={lastTickRealMs:59_000};
+  await instance.ensureAlarm();
+  assert.deepEqual(alarms,[]);
 });
 
 test('alarm stores its successor before running the world tick',async t=>{
@@ -272,4 +293,15 @@ test('rejected local plan starts observation and does not block peer actions',()
   assert.equal(world.actions.find(a=>a.id===citizen.currentActionId)?.type,'OBSERVE');
   assert.ok(world.citizens.slice(1).some(c=>c.currentActionId));
   assert.ok(world.ledger.some(e=>e.type==='LOCAL_PLAN_REJECTED'&&e.actorId===citizen.id));
+});
+
+
+test('two missed alarm windows recover without replaying several minutes of CPU work',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});
+  const id=world.worldId;
+  const progress=advanceWorldBounded(world,120000);
+  assert.equal(progress.recovered,true);
+  assert.equal(progress.skippedWorldMinutes,119);
+  assert.equal(world.clock.worldMinute,1);
+  assert.equal(world.worldId,id);
 });

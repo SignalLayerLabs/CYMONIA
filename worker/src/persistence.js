@@ -42,9 +42,30 @@ function recordByteStream(records){
 }
 function snapshotByteStream(serialized){return recordByteStream([String(serialized)][Symbol.iterator]());}
 
+function isSmallJsonRecord(value){
+  // Keep the native JSON fast path for ordinary evidence records. Reject
+  // large collections before traversing them; nested private arrays still
+  // stream without allocating a whole Citizen or memory-array string.
+  const pending=[value];let nodes=0,units=0;
+  while(pending.length){
+    const item=pending.pop();
+    if(++nodes>64)return false;
+    if(typeof item==='string'){units+=item.length;if(units>8192)return false;}
+    else if(item&&typeof item==='object'){
+      if(typeof item.toJSON==='function')return false;
+      const keys=Object.keys(item);
+      if(keys.length>32)return false;
+      for(const key of keys){units+=key.length;pending.push(item[key]);}
+      if(units>8192)return false;
+    }
+  }
+  return true;
+}
+
 function* worldJsonRecords(value,ancestors=new Set(),key=''){
   if(value&&typeof value.toJSON==='function')value=value.toJSON(key);
   if(!value||typeof value!=='object'){yield JSON.stringify(value)??'null';return;}
+  if(isSmallJsonRecord(value)){yield JSON.stringify(value);return;}
   if(ancestors.has(value))throw new TypeError('Circular snapshot JSON');
   ancestors.add(value);
   if(Array.isArray(value)){

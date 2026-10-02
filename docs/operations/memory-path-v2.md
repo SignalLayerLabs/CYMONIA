@@ -58,3 +58,19 @@ Cold wake and rollback parse the decompressed root arrays one entity at a time.
 They no longer allocate the entire private world JSON string before hydrating
 the canonical graph. Existing gzip/base64 SQLite slots, field ordering and
 SHA-256 seals retain their original format.
+
+Small evidence objects use native JSON serialization within the record-size
+budget; large private arrays continue to stream. Encoded SQLite parts use
+1 MiB per row to keep the current civilization's checkpoints within the daily
+write budget. Each part remains below SQLite's 2 MB per-value/row limit.
+
+Simulation indexes active knowledge outside canonical state and computes
+perception positions once per segment. Outage recovery rebases lag beyond
+90 world minutes rather than attempting several minutes of simulation in one
+30-second CPU invocation. Ordinary 60-second heartbeats preserve their original
+world-time progression.
+
+An alarm whose scheduled time and last successful tick are both more than five
+minutes old is rearmed for immediate delivery. A durable two-minute cooldown
+prevents repeated health polling from postponing that delivery; recently due
+alarms remain under Cloudflare's normal retry handling.
