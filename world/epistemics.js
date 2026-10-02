@@ -1,5 +1,20 @@
 import {recordMemory} from './memory.js';
 const knowledgeIndexes=new WeakMap();
+const entityIndexes=new WeakMap();
+export function knowsEntity(citizen,entityId){
+  const entries=citizen.knownEntityIds;
+  if(!Array.isArray(entries))return false;
+  let index=entityIndexes.get(entries);
+  if(!index||entries.length<index.length){
+    index={length:0,ids:new Set()};
+    entityIndexes.set(entries,index);
+  }
+  // Canonical entity lists are append-only. Replaced snapshot arrays and
+  // truncated lists rebuild automatically; new IDs are indexed once.
+  for(let i=index.length;i<entries.length;i++)index.ids.add(entries[i]);
+  index.length=entries.length;
+  return index.ids.has(entityId);
+}
 export function knowledgeEntry(citizen,concept){
   if(concept!==concept)return null;
   const entries=citizen.knowledge;

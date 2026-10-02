@@ -1,4 +1,4 @@
-import {knows} from './epistemics.js';
+import {knows,knowsEntity} from './epistemics.js';
 import {ensureCognitionState,outcomeModifier} from './cognition-state.js';
 import {resourceConceptId,explorationCellKey} from './perception.js';
 import {MATERIAL_PROPERTIES} from './materials.js';
@@ -46,7 +46,7 @@ export function explorationTarget(world,citizen,at=world.clock.worldMinute){
     const target={x:5+cx*10,y:5+cy*10},key=`${cx}:${cy}`;
     const visits=Number(map[key]?.visits||0),distance=dist(citizen.position,target);
     const crowd=rememberedCrowding(citizen,target,at,10);
-    const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&dist(deposit.position,target)<=12);
+    const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&knowsEntity(citizen,deposit.id)&&dist(deposit.position,target)<=12);
     const deterministic=(hash32(`${world.seed}|${citizen.id}|${cycle}|frontier|${key}`)%10000)/10000;
     const score=
       (1/(1+visits))*2.4+
@@ -71,7 +71,7 @@ function exploreCandidate(world,citizen,at){
 
   const immediateKnownResource=(world.resourceDeposits||[]).some(deposit=>
     deposit.quantity>0 &&
-    citizen.knownEntityIds.includes(deposit.id) &&
+    knowsEntity(citizen,deposit.id) &&
     knows(citizen,resourceConceptId(deposit)) &&
     dist(citizen.position,deposit.position)<=3
   );
@@ -153,7 +153,7 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
     if(Number.isFinite(cx)&&Number.isFinite(cy))anchors.push({x:5+cx*10,y:5+cy*10});
   }
   for(const deposit of world.resourceDeposits||[]){
-    if(deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id))anchors.push({...deposit.position});
+    if(deposit.quantity>0&&knowsEntity(citizen,deposit.id))anchors.push({...deposit.position});
   }
 
   const seen=new Set(),unique=[];
@@ -178,7 +178,7 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
       const buildings=(world.buildings||[]).filter(b=>b.position&&dist(b.position,site)<=14).length;
       const projects=(world.projects||[]).filter(pr=>pr.status==='construction'&&pr.site&&dist(pr.site,site)<=14).length;
       const visited=Number(map[explorationCellKey(site)]?.visits||0)>0?1:0;
-      const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&dist(deposit.position,site)<=12)?1:0;
+      const knownResource=(world.resourceDeposits||[]).some(deposit=>deposit.quantity>0&&knowsEntity(citizen,deposit.id)&&dist(deposit.position,site)<=12)?1:0;
       const travel=Math.min(1,dist(citizen.position,site)/70);
       const score=
         visited*.45+
@@ -198,8 +198,8 @@ export function proposeBuildSite(world,citizen,at=world.clock.worldMinute){
 export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   if(!citizen?.alive||citizen.currentActionId)return [];
   const candidates=[],held=heldObjects(world,citizen);
-  const knownResources=world.resourceDeposits.filter(deposit=>deposit.quantity>0&&citizen.knownEntityIds.includes(deposit.id)&&knows(citizen,resourceConceptId(deposit)));
-  const nearby=world.citizens.filter(other=>other.id!==citizen.id&&other.alive&&citizen.knownEntityIds.includes(other.id)&&dist(citizen.position,other.position)<=10);
+  const knownResources=world.resourceDeposits.filter(deposit=>deposit.quantity>0&&knowsEntity(citizen,deposit.id)&&knows(citizen,resourceConceptId(deposit)));
+  const nearby=world.citizens.filter(other=>other.id!==citizen.id&&other.alive&&knowsEntity(citizen,other.id)&&dist(citizen.position,other.position)<=10);
 
   for(const deposit of knownResources){
     const distance=dist(citizen.position,deposit.position),heldSame=held.reduce((sum,object)=>sum+(object.material===deposit.type?object.quantity:0),0);
@@ -234,14 +234,14 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   }
 
 
-  const looseKnown=(world.objects||[]).filter(object=>object.quantity>0&&(object.holderId===null||object.holderId===undefined)&&object.position&&citizen.knownEntityIds.includes(object.id)&&dist(citizen.position,object.position)<=14).slice(0,6);
+  const looseKnown=(world.objects||[]).filter(object=>object.quantity>0&&(object.holderId===null||object.holderId===undefined)&&object.position&&knowsEntity(citizen,object.id)&&dist(citizen.position,object.position)<=14).slice(0,6);
   for(const object of looseKnown){
     const distance=dist(citizen.position,object.position);
     candidates.push({family:'pickup',key:`pickup:${object.id}`,targetId:object.id,utility:.10,inventoryFit:.35,novelty:object.provenance?.type==='DESTRUCTION_SALVAGE'?.42:.12,effort:Math.min(.35,distance/40),risk:.03,proposal:proposal('pickup',[],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:object.id,targetPosition:object.position,purpose:'self_directed',concepts:[]},{type:'PICKUP',durationMinutes:5,targetId:object.id,purpose:'self_directed',concepts:[]}]:[{type:'PICKUP',durationMinutes:5,targetId:object.id,purpose:'self_directed',concepts:[]}])});
   }
 
   const repairMaterial=held.find(object=>object.quantity>.1);
-  for(const structure of (world.buildings||[]).filter(b=>b.position&&b.condition>0&&b.condition<.82&&citizen.knownEntityIds.includes(b.id)).slice(0,5)){
+  for(const structure of (world.buildings||[]).filter(b=>b.position&&b.condition>0&&b.condition<.82&&knowsEntity(citizen,b.id)).slice(0,5)){
     const distance=dist(citizen.position,structure.position),use=structureUseSummary(world,structure.id,at);
     if(repairMaterial)candidates.push({family:'repair',key:`repair:${structure.id}`,targetId:structure.id,utility:.12+(1-structure.condition)*.3+Math.min(.2,use.minutes/5000),relationship:0,inventoryFit:.55,novelty:.12,effort:Math.min(.5,distance/50),risk:.04,proposal:proposal('repair',[],distance>1.5?[{type:'MOVE',durationMinutes:Math.max(2,Math.ceil(distance*2)),targetId:structure.id,targetPosition:structure.position,purpose:'cooperate',concepts:[]},{type:'REPAIR',durationMinutes:30,targetId:structure.id,purpose:'cooperate',concepts:[],payload:{materialObjectId:repairMaterial.id,effortMinutes:30}}]:[{type:'REPAIR',durationMinutes:30,targetId:structure.id,purpose:'cooperate',concepts:[],payload:{materialObjectId:repairMaterial.id,effortMinutes:30}}])});
     if(structure.condition<.38&&use.minutes<240){
@@ -256,7 +256,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
 
   const grievance=strongestGrievance(world,citizen,at);
   if(grievance&&grievance.severity>.28){
-    const other=(world.citizens||[]).find(x=>x.id===grievance.againstId&&x.alive&&citizen.knownEntityIds.includes(x.id));
+    const other=(world.citizens||[]).find(x=>x.id===grievance.againstId&&x.alive&&knowsEntity(citizen,x.id));
     if(other&&dist(citizen.position,other.position)<=10)candidates.push({family:'conflict',key:`attack:${other.id}`,targetId:other.id,utility:.02+grievance.severity*.34+clamp01(citizen.psychology.aggression)*.15,relationship:0,novelty:.02,effort:.08,risk:.65,proposal:proposal('conflict',[],[{type:'ATTACK',durationMinutes:6,targetId:other.id,purpose:'defend',concepts:[]}])});
   }
 
@@ -267,7 +267,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
     }
   }
 
-  const activeProjects=(world.projects||[]).filter(project=>project.status==='construction'&&(project.initiatorId===citizen.id||citizen.knownEntityIds.includes(project.id)));
+  const activeProjects=(world.projects||[]).filter(project=>project.status==='construction'&&(project.initiatorId===citizen.id||knowsEntity(citizen,project.id)));
   for(const project of activeProjects){
     const distance=dist(citizen.position,project.site),conceptsForProject=(world.designs.find(design=>design.id===project.designId)?.concepts||[]).filter(concept=>knows(citizen,concept));
     if(!conceptsForProject.length)continue;
