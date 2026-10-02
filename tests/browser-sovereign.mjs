@@ -256,18 +256,23 @@ try {
   );
 
   // A long outage can rebase the epoch while the canonical year has not yet
-  // ended. Reloading either snapshot must show the same year and day.
+  // ended. Once confirmed playback drains, either epoch must show the same
+  // durable date; extra local time cannot announce an uncommitted new year.
+  await page.clock.install();
   liveWorld.clock={worldMinute:525599,realEpochMs:Date.now()-525660000};
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  await page.clock.fastForward(61000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
   liveWorld.clock.realEpochMs=Date.now()-525599000;
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  await page.clock.fastForward(61000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
   liveWorld.clock={worldMinute:525600,realEpochMs:Date.now()-525600000};
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  await page.clock.fastForward(61000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 2 · DAY 1 · 00:00');
 
   await page.setViewportSize({
