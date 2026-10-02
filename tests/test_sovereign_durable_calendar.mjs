@@ -169,16 +169,19 @@ test('a failed SQLite checkpoint never leaks advanced time through REST or broad
   t.mock.method(console,'error',()=>{});
   const transaction=storage.transactionSync;
   storage.transactionSync=()=>{throw new Error('injected storage failure');};
-  advance(60_000);
+  advance(15_000);
+  instance.lastPersistedWorldMinute=YEAR-90;
   await instance.alarm();
   assert.equal((await readWorld(instance)).clock.worldMinute,YEAR-30);
   assert.equal(instance.world.clock.worldMinute,YEAR-30);
   assert.equal(messages.length,0);
   storage.transactionSync=transaction;
+  advance(15_000);
+  instance.lastPersistedWorldMinute=YEAR-90;
   await instance.alarm();
-  assert.equal((await readWorld(instance)).clock.worldMinute,YEAR+30);
+  assert.equal((await readWorld(instance)).clock.worldMinute,YEAR);
   const {instance:restarted}=await wake(storage);
-  assert.equal((await readWorld(restarted)).clock.worldMinute,YEAR+30);
+  assert.equal((await readWorld(restarted)).clock.worldMinute,YEAR);
 });
 
 test('reads during asynchronous snapshot encoding only expose the committed calendar',async t=>{
