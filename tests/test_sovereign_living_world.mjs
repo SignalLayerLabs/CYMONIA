@@ -54,6 +54,34 @@ test('spatial memory retains the earliest observations on ties without repeatedl
   assert.equal(entities.new.worldMinute,11);
 });
 
+test('dense same-time observations discard overflow without repeatedly enumerating the spatial cache',()=>{
+  const entities=Object.fromEntries(Array.from({length:64},(_,i)=>[`old:${i}`,{worldMinute:1,position:{x:i,y:0},kind:'object'}]));
+  let enumerations=0;
+  const citizen={spatialMemory:{entities:new Proxy(entities,{ownKeys(target){enumerations++;return Reflect.ownKeys(target);}})}};
+  for(let i=0;i<5000;i++)recordSpatialObservation(citizen,`new:${i}`,{x:i,y:0},2,'object');
+  assert.deepEqual(Object.keys(entities),Array.from({length:64},(_,i)=>`new:${i}`));
+  assert.ok(enumerations<100,`repeated spatial cache scans: ${enumerations}`);
+  recordSpatialObservation(citizen,'new:0',{x:9,y:9},10,'object');
+  recordSpatialObservation(citizen,'future',{x:1,y:1},5,'object');
+  assert.equal(entities['new:63'],undefined);
+  assert.equal(entities['new:0'].worldMinute,10);
+  assert.equal(entities.future.worldMinute,5);
+});
+
+test('cached spatial retention preserves stable ordering across updates and integer IDs',()=>{
+  const citizen={spatialMemory:{entities:{}}},expected={};
+  for(let i=0;i<1000;i++){
+    const key=i%7===0?String(i%101):`entity:${i%157}`;
+    const at=(i*7)%23,position={x:i,y:1};
+    expected[key]={position,worldMinute:at,kind:'object'};
+    const retained=Object.entries(expected).sort((a,b)=>b[1].worldMinute-a[1].worldMinute);
+    for(const [discard] of retained.slice(64))delete expected[discard];
+    recordSpatialObservation(citizen,key,position,at,'object');
+    if(i%25===0)assert.deepEqual(citizen.spatialMemory.entities,expected);
+  }
+  assert.deepEqual(citizen.spatialMemory.entities,expected);
+});
+
 test('oversized spatial memory from a legacy snapshot retains its highest timestamps and stable ties',()=>{
   const entries=Array.from({length:80},(_,i)=>[`entity:${i}`,{worldMinute:i%7,position:{x:i,y:0},kind:'object'}]);
   const citizen={spatialMemory:{entities:Object.fromEntries(entries)}};
