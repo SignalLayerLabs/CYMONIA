@@ -39,6 +39,19 @@ test('snapshot compression never allocates a whole-world UTF-8 buffer',async t=>
   assert.ok(Math.max(...sizes)<=65536,`unbounded encoding: ${Math.max(...sizes)}`);
 });
 
+test('canonical encoder streams compressed parts to a sink without retaining them',async()=>{
+  const world={clock:{worldMinute:1},citizens:[{id:'large',memories:'🌍'.repeat(200000)}],ledger:[]};
+  const parts=[];
+  const result=await persistence.encodeWorldSnapshotParts(world,{
+    maxCodeUnits:1024,
+    onPart:part=>parts.push(part),
+  });
+  assert.ok(parts.length>1);
+  assert.equal(result.partCount,parts.length);
+  assert.equal(result.parts.length,0);
+  assert.deepEqual(await persistence.decodeWorldSnapshot(parts.join('')),world);
+});
+
 test('world checkpoints stream JSON records and retain the exact canonical SHA-256 seal',async t=>{
   const world={version:2,clock:{worldMinute:128566},citizens:Array.from({length:4},(_,i)=>({id:i,memories:'🌍'.repeat(40000)})),ledger:[],optional:undefined};
   const expected=JSON.stringify(world);
