@@ -1,6 +1,12 @@
 name: Runtime diagnostics
 on:
   workflow_dispatch:
+    inputs:
+      deploy_candidate:
+        description: Deploy this branch to the incident Worker before tailing
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
 jobs:
@@ -16,6 +22,9 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-save wrangler@4
+      - name: Deploy candidate runtime for this incident
+        if: inputs.deploy_candidate
+        run: npx wrangler deploy --config wrangler.world.toml
       - name: Read bounded runtime diagnostics with sanitized output
         run: |
           TAIL_STATUS=0
