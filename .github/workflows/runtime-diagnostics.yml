@@ -1,8 +1,6 @@
 name: Runtime diagnostics
 on:
   workflow_dispatch:
-  push:
-    branches: [fix/cymonia-native-json-scanner]
 permissions:
   contents: read
 jobs:
@@ -18,9 +16,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-save wrangler@4
-      - name: Deploy instrumented runtime for this incident
-        if: github.event_name == 'push'
-        run: npx wrangler deploy --config wrangler.world.toml
       - name: Read bounded runtime diagnostics with sanitized output
         run: |
           TAIL_STATUS=0
