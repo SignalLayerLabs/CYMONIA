@@ -8,6 +8,29 @@ import {
   snapshotGzipSize,
 } from '../worker/src/persistence.js';
 import {sqliteStorage,wake} from './helpers/sovereign-sqlite.mjs';
+import {recordMemory} from '../world/memory.js';
+
+test('new private memories keep a bounded recent window with provenance',()=>{
+  const citizen={id:'memory-cap',memories:[]};
+  for(let minute=0;minute<520;minute++)recordMemory(citizen,{content:{minute},source:{kind:'observation',eventId:`e:${minute}`},worldMinute:minute});
+  assert.equal(citizen.memories.length,512);
+  assert.equal(citizen.memories[0].createdWorldMinute,8);
+  assert.equal(citizen.memories.at(-1).source.eventId,'e:519');
+});
+
+test('a legacy oversized memory snapshot is compacted and remains bounded after wake',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  instance.world.citizens[0].memories=Array.from({length:1500},(_,i)=>({id:`legacy:${i}`,kind:'episodic',content:{i},source:{kind:'observation',eventId:`e:${i}`},confidence:1,salience:.9,createdWorldMinute:i,lastRecalledWorldMinute:i}));
+  await instance.persist({forceSeal:true});
+  const {instance:restarted}=await wake(storage);
+  await restarted.tick(0);
+  const {instance:verified}=await wake(storage);
+  const memories=verified.world.citizens[0].memories;
+  assert.equal(memories.length,512);
+  assert.equal(memories[0].id,'legacy:988');
+  assert.equal(memories.at(-1).source.eventId,'e:1499');
+});
 
 test('canonical snapshot compression emits bounded parts without a whole compressed ArrayBuffer',async t=>{
   const world={

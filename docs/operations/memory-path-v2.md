@@ -71,6 +71,12 @@ every 60 world minutes. Scheduled alarms drain ordinary lag in chunks of at
 most 30 world minutes; only a true outage beyond 360 world minutes rebases
 the clock. This avoids both unbounded CPU work and discarding pending time.
 
+On the first tick after a legacy oversized snapshot wakes, each Citizen keeps
+the newest 512 private memories and the compacted world is checkpointed
+immediately. Future memories follow the same bound. Long-term causal evidence
+remains in the ledger and provenance records while the private working set
+stays below the Durable Object memory ceiling.
+
 An alarm whose scheduled time and last successful tick are both more than five
 minutes old is rearmed for immediate delivery. A durable two-minute cooldown
 prevents repeated health polling from postponing that delivery; recently due
