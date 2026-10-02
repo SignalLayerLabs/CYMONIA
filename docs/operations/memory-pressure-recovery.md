@@ -52,6 +52,8 @@ The runtime now applies these bounds while loading and advancing the existing wo
 
 Regression coverage checks personal knowledge isolation, immutable sharing, bounded pool retention, entity-index updates, spatial tie ordering and interruption during snapshot staging. Recovery must also be verified against production alarms and consecutive durable clock advances; HTTP health alone does not prove that the simulation is running.
 
+At world minute 133578 a later production invocation exhausted the default 30-second CPU limit (32,500 ms recorded), causing resets and queued-request overload despite successful snapshot hydration. The snapshot was then 137,341,255 uncompressed bytes with 257,653 personal knowledge entries. `wrangler.world.toml` explicitly sets the supported Durable Object CPU ceiling to 300,000 ms. Existing 30-minute alarm advancement, outage recovery, memory bounds and durable commit rules remain in effect. The deployment regression prevents a return to the insufficient default; production proof must include successful ticks and checkpoints after a fresh wake.
+
 ## Observer calendar
 
 Durable checkpoints are separated by at least 60 world minutes to respect the write budget. Showing only the latest checkpoint minute left the visible clock frozen between saves, followed by an abrupt jump.
