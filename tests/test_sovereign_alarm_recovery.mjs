@@ -74,6 +74,27 @@ test('an HTTP fetch preserves a long-overdue alarm so Cloudflare can deliver it'
   assert.equal(instance.world.runtime.lastAlarmRecoveryReason,'overdue_alarm_preserved');
 });
 
+test('a stale exhausted alarm is rearmed once with durable cooldown',async t=>{
+  const {instance,alarms,alarmTime,setStoredAlarm}=runtime(t);
+  setStoredAlarm(-900_000);
+  instance.world.runtime={lastTickRealMs:-900_000};
+  await instance.ensureAlarm();
+  assert.equal(alarmTime(),61_000);
+  assert.deepEqual(alarms,[61_000]);
+  assert.equal(instance.world.runtime.lastAlarmRecoveryReason,'stale_alarm_rearmed');
+  setStoredAlarm(-900_000);
+  await instance.ensureAlarm();
+  assert.deepEqual(alarms,[61_000]);
+});
+
+test('a stale scheduled timestamp is preserved after a recent successful tick',async t=>{
+  const {instance,alarms,setStoredAlarm}=runtime(t);
+  setStoredAlarm(-900_000);
+  instance.world.runtime={lastTickRealMs:59_000};
+  await instance.ensureAlarm();
+  assert.deepEqual(alarms,[]);
+});
+
 test('alarm stores its successor before running the world tick',async t=>{
   const {instance,alarmTime}=runtime(t);
   instance.tick=async()=>{assert.equal(alarmTime(),120_000);};

@@ -69,3 +69,8 @@ perception positions once per segment. Outage recovery rebases lag beyond
 90 world minutes rather than attempting several minutes of simulation in one
 30-second CPU invocation. Ordinary 60-second heartbeats preserve their original
 world-time progression.
+
+An alarm whose scheduled time and last successful tick are both more than five
+minutes old is rearmed for immediate delivery. A durable two-minute cooldown
+prevents repeated health polling from postponing that delivery; recently due
+alarms remain under Cloudflare's normal retry handling.

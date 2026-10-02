@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const worker=fs.readFileSync(new URL('../worker/src/index.js',import.meta.url),'utf8');
 const ci=fs.readFileSync(new URL('../.github/workflows/ci.yml',import.meta.url),'utf8');
 
-test('HTTP polling never rewrites an existing Durable Object alarm',()=>{
+test('HTTP polling preserves due alarms until a durable stale-recovery threshold',()=>{
   const start=worker.indexOf('async ensureAlarm(){');
   const end=worker.indexOf('\n  persist(',start);
   assert.ok(start>=0&&end>start);
@@ -14,7 +14,9 @@ test('HTTP polling never rewrites an existing Durable Object alarm',()=>{
   assert.match(block,/if\(current===null\)/);
   assert.match(block,/setAlarm\(current\)/);
   assert.doesNotMatch(block,/current<now-2\*ALARM_MS/);
-  assert.doesNotMatch(block,/now\+1_000/);
+  assert.match(block,/STALE_ALARM_MS/);
+  assert.match(block,/ALARM_REARM_COOLDOWN_MS/);
+  assert.match(block,/cymonia:alarm_rearm_ms/);
   assert.match(block,/overdue_alarm_preserved/);
 });
 

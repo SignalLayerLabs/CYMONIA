@@ -42,6 +42,8 @@ import {
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=60_000;
+const STALE_ALARM_MS=5*ALARM_MS;
+const ALARM_REARM_COOLDOWN_MS=2*ALARM_MS;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
 const MAX_COMPLETION_TOKENS=200;
 const AI_SYSTEM_PROMPT=`You are the private strategic cognition of one CYMONIA citizen. Use ONLY opaque concept IDs, citizen IDs, evidence, memories and entities present in the supplied context. Never invent Earth knowledge. Return strict compact JSON only: {"focus":"known concept id or null","intent":"explore|understand|share|cooperate|care|construct|adapt","actionBias":["supported action type"],"partnerIds":["known citizen id"],"successSignals":["known concept id"],"horizonMinutes":4320,"confidence":0.7,"programBlueprints":[{"name":"short name","trigger":{"kind":"always|resource_known|high_sleep|low_hydration|low_calories|rain|damaged_structure|grievance|loose_object|near_citizen","threshold":0.5},"cooldownMinutes":120,"steps":[{"type":"OBSERVE|REST|GATHER|CARE|COMMUNICATE|TRANSFER|EXPERIMENT|PICKUP|DROP|REPAIR|DISMANTLE|DESTROY","selector":"self|nearest_known_resource|nearest_known_structure|nearest_damaged_structure|nearest_known_citizen|grievance_actor|loose_known_object|held_object"}]}]}. programBlueprints is optional and should be used only when a reusable behavior genuinely follows from this Citizen evidence. Programs never bypass the sovereign kernel. The strategy should guide several world-days of local autonomous behavior; use adapt when evidence is insufficient.`;
@@ -428,10 +430,28 @@ export class SovereignWorld {
     }else if(current<now){
       // Cloudflare already owns this alarm. Rewriting an overdue alarm from
       // a read request can cancel/postpone the event that the platform is
-      // trying to deliver, especially under sustained health polling.
-      // Preserve the durable timestamp exactly and expose only diagnostics.
-      runtime.lastAlarmRecoveryReason='overdue_alarm_preserved';
-      runtime.lastAlarmRecoveryRealMs=now;
+      // trying to deliver, especially under sustained health polling. Only
+      // rearm after both the alarm and the last successful tick are stale;
+      // durable cooldown prevents repeated reads from postponing delivery.
+      let rearmed=false;
+      if(now-current>STALE_ALARM_MS&&
+          (runtime.lastTickRealMs==null||now-Number(runtime.lastTickRealMs)>STALE_ALARM_MS)){
+        const lastRearm=await this.ctx.storage.get('cymonia:alarm_rearm_ms');
+        if(lastRearm==null||now-Number(lastRearm)>ALARM_REARM_COOLDOWN_MS){
+          current=now+1_000;
+          await this.ctx.storage.setAlarm(current);
+          await this.ctx.storage.put('cymonia:alarm_rearm_ms',now);
+          await this.ctx.storage.sync?.();
+          runtime.lastAlarmRecoveryReason='stale_alarm_rearmed';
+          runtime.lastAlarmRecoveryRealMs=now;
+          runtime.alarmRecoveryCount=Number(runtime.alarmRecoveryCount||0)+1;
+          rearmed=true;
+        }
+      }
+      if(!rearmed){
+        runtime.lastAlarmRecoveryReason='overdue_alarm_preserved';
+        runtime.lastAlarmRecoveryRealMs=now;
+      }
     }
 
     runtime.nextAlarmRealMs=current;
