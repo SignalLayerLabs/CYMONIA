@@ -42,9 +42,9 @@ test('repeated health polling preserves an overdue alarm for Cloudflare delivery
 });
 
 test('health exposes stale-heartbeat diagnostics without advancing canonical time',async t=>{
-  const {instance}=instanceAt(t);
+  const {instance}=instanceAt(t,200_000);
   instance.world.runtime={
-    lastTickRealMs:-70_000,
+    lastTickRealMs:70_000,
     lastTickWorldMinute:0,
     lastTickError:null,
     lastAlarmRetryCount:0,
@@ -58,6 +58,14 @@ test('health exposes stale-heartbeat diagnostics without advancing canonical tim
   assert.ok(health.heartbeat.alarm_overdue_ms>0);
   assert.equal(health.heartbeat.tick_stalled,true);
   assert.ok(health.heartbeat.tick_stale_ms>=50_000);
+});
+
+test('a recent durable checkpoint takes precedence over an old volatile tick diagnostic',async t=>{
+  const {instance}=instanceAt(t);
+  instance.world.runtime={lastTickRealMs:-900_000,lastTickWorldMinute:123,lastTickError:null};
+  instance.sqlRows=()=>[{updated_at:59_000}];
+  const health=await (await instance.fetch(new Request('https://example.com/world/health'))).json();
+  assert.equal(health.heartbeat.tick_stalled,false);
 });
 
 test('a recent due alarm remains untouched while Cloudflare is expected to deliver it',async t=>{

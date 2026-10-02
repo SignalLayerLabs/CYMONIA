@@ -137,7 +137,7 @@ test('budget deferral cannot publish a new year that disappears after eviction',
   const afterRestart=await readWorld(restarted);
   assert.equal(afterRestart.clock.worldMinute,beforeRestart.clock.worldMinute);
   assert.equal(worldDate(beforeRestart.clock.worldMinute).year,1);
-  assert.ok(messages.every(m=>m.state.clock.worldMinute<=afterRestart.clock.worldMinute));
+  assert.ok(messages.every(m=>(m.worldMinute??m.state?.clock.worldMinute)<=afterRestart.clock.worldMinute));
   advance(24*60*60_000);
   await restarted.alarm();
   assert.ok((await readWorld(restarted)).clock.worldMinute>afterRestart.clock.worldMinute);

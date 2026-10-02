@@ -54,6 +54,7 @@ const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1536*1024;
 const MAX_CATCHUP_WORLD_MINUTES=90;
 const ALARM_MAX_ADVANCE_WORLD_MINUTES=30;
+const MAX_OUTAGE_WORLD_MINUTES=360;
 const HOT_LEDGER_EVENTS=4096;
 const CAUSAL_LEDGER_EVENTS=512;
 const CAUSAL_RECEIPTS=64;
@@ -145,10 +146,10 @@ export function splitSnapshot(serialized,maxCodeUnits=SNAPSHOT_CHUNK_CODE_UNITS)
   return parts.length?parts:[''];
 }
 export function joinSnapshot(parts){return parts.join('');}
-export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES){
+export function advanceWorldBounded(world,nowMs=Date.now(),maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES){
   let target=worldMinuteAt(world,nowMs),recovered=false,skippedWorldMinutes=0;
   const lag=Math.max(0,target-world.clock.worldMinute);
-  if(lag>maxCatchup){
+  if(lag>maxOutage){
     skippedWorldMinutes=lag-1;
     world.clock.realEpochMs=nowMs-(world.clock.worldMinute+1)*REAL_MS_PER_WORLD_MINUTE;
     appendEvent(world,'RUNTIME_LAG_REBASED','world',{skippedWorldMinutes,reason:'runtime_outage'},[],world.clock.worldMinute);
@@ -708,12 +709,12 @@ export class SovereignWorld {
 
     return canonical;
   }
-  async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES){
+  async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
-      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup);
+      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage);
       console.log('CYMONIA_ADVANCE_READY',JSON.stringify({worldMinute:this.world.clock.worldMinute,elapsedMs:Date.now()-advancementStartedAt}));
 
       const lastPersisted=Number(
@@ -757,7 +758,7 @@ export class SovereignWorld {
     runtime.nextAlarmRealMs=nextAlarm;
 
     try{
-      await this.tick(ALARM_MAX_ADVANCE_WORLD_MINUTES);
+      await this.tick(ALARM_MAX_ADVANCE_WORLD_MINUTES,MAX_OUTAGE_WORLD_MINUTES);
       runtime=ensureRuntime(this.world);
       runtime.lastTickRealMs=Date.now();
       runtime.lastTickWorldMinute=this.world.clock.worldMinute;
@@ -911,6 +912,7 @@ export class SovereignWorld {
     if(request.method==='GET'&&path==='/health'){
       const runtime=ensureRuntime(this.world),budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
       const operational=world.operationalState;
+      const checkpointRealMs=Number(this.sqlRows('SELECT updated_at FROM world_clock_guard WHERE id=1 LIMIT 1')[0]?.updated_at??runtime.lastTickRealMs??0);
       return json({
         ok:true,
         service:'cymonia-sovereign-world',
@@ -949,8 +951,8 @@ export class SovereignWorld {
           tick_stale_ms:runtime.lastTickRealMs==null?null:Math.max(0,Date.now()-Number(runtime.lastTickRealMs)),
           tick_stalled:Boolean(
             worldMinuteAt(world,Date.now())>world.clock.worldMinute &&
-            runtime.lastTickRealMs!=null &&
-            Date.now()-Number(runtime.lastTickRealMs)>60_000
+            checkpointRealMs>0 &&
+            Date.now()-checkpointRealMs>120_000
           ),
           last_alarm_recovery_reason:runtime.lastAlarmRecoveryReason??null,
           last_alarm_recovery_real_ms:runtime.lastAlarmRecoveryRealMs??null,
