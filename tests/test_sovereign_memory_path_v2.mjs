@@ -24,6 +24,8 @@ test('a legacy oversized memory snapshot is compacted and remains bounded after 
   instance.world.citizens[0].memories=Array.from({length:1500},(_,i)=>({id:`legacy:${i}`,kind:'episodic',content:{i},source:{kind:'observation',eventId:`e:${i}`},confidence:1,salience:.9,createdWorldMinute:i,lastRecalledWorldMinute:i}));
   await instance.persist({forceSeal:true});
   const {instance:restarted}=await wake(storage);
+  assert.equal(restarted.world.citizens[0].memories.length,512,'old memories must be discarded while decoding each Citizen');
+  assert.equal(restarted.pendingTrimmedMemories,988);
   await restarted.tick(0);
   const {instance:verified}=await wake(storage);
   const memories=verified.world.citizens[0].memories;

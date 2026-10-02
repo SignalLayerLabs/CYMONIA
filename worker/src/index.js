@@ -40,6 +40,7 @@ import {
   resolveNeuronConfig,
   reserveNeurons,
 } from './neuron-governor.js';
+import {createEvidencePool} from '../../world/evidence-pool.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=15_000;
@@ -193,6 +194,8 @@ export class SovereignWorld {
     this.clockHighWaterMark=null;
     this.clockRegressionDetected=false;
     this.snapshotRecoverySource=null;
+    this.pendingTrimmedMemories=0;
+    this.evidencePool=null;
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
@@ -202,16 +205,20 @@ export class SovereignWorld {
       console.log('CYMONIA_WAKE_BEGIN');
       this.initializeSQLite();
       this.world=await this.loadWorld();
+      if(this.world)this.registerCitizenEvidence();
       const citizens=this.world?.citizens||[];
       console.log('CYMONIA_WAKE_DECODED',JSON.stringify({
         elapsedMs:Date.now()-wakeStartedAt,
         worldMinute:this.world?.clock?.worldMinute??null,
         privateMemories:citizens.reduce((n,c)=>n+(c.memories?.length||0),0),
         knowledgeEntries:citizens.reduce((n,c)=>n+(c.knowledge?.length||0),0),
+        knowledgeSources:citizens.reduce((n,c)=>n+(c.knowledge||[]).reduce((m,k)=>m+(k.provenance?.length||0),0),0),
         objects:this.world?.objects?.length||0,
+        ...(this.evidencePool?.stats()||{}),
       }));
       if(!this.world){
         this.world=createSovereignGenesis({realEpochMs:Date.now()});
+        this.registerCitizenEvidence();
         ensureRuntime(this.world);
         await this.persist({forceSeal:true});
       }else{
@@ -336,6 +343,10 @@ export class SovereignWorld {
           }
           assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
           if(Number(meta.world_minute)!==world.clock.worldMinute||meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
+          const pool=createEvidencePool();
+          let trimmedMemories=0;
+          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);pool.hydrateCitizen(citizen);}
+          this.evidencePool=pool;this.pendingTrimmedMemories=trimmedMemories;
           selected={world,generation,source:meta.source};
           break;
         }
@@ -348,12 +359,19 @@ export class SovereignWorld {
         if(parts.length!==count)continue;
         const encoded=joinSnapshot(parts);
         console.log('CYMONIA_SNAPSHOT_LOAD',JSON.stringify({generation:meta.generation,compressedCodeUnits:encoded.length,uncompressedBytes:snapshotGzipSize(encoded)}));
-        const world=await decodeWorldSnapshot(encoded);
+        let trimmedMemories=0;
+        const pool=createEvidencePool();
+        const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
+          if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);}
+          return item;
+        }});
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
         if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
         assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
         selected={world,generation:meta.generation,source:meta.source};
+        this.pendingTrimmedMemories=trimmedMemories;
+        this.evidencePool=pool;
         this.committedSnapshot=null;
         break;
       }catch(error){console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));}
@@ -390,7 +408,12 @@ export class SovereignWorld {
       base,base+count
     )].map(row=>row.state_part);
     if(parts.length!==count)throw new Error('sovereign_committed_snapshot_incomplete');
-    const restored=await decodeWorldSnapshot(joinSnapshot(parts));
+    let trimmedMemories=0;
+    const pool=createEvidencePool();
+    const restored=await decodeWorldSnapshot(joinSnapshot(parts),{onArrayItem:(key,item)=>{
+      if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);}
+      return item;
+    }});
     assertMonotonicSnapshot(restored,{
       highWaterMark:this.clockHighWaterMark,
       worldId:this.committedStats?.worldId||null
@@ -409,7 +432,13 @@ export class SovereignWorld {
     this.lastPersistedWorldMinute=Number(meta.world_minute);
     this.loadedSnapshotMinute=Number(meta.world_minute);
     this.snapshotRecoverySource=`rollback:${generation}`;
+    this.pendingTrimmedMemories=trimmedMemories;
+    this.evidencePool=pool;
     return restored;
+  }
+  registerCitizenEvidence(){
+    this.evidencePool??=createEvidencePool();
+    for(const citizen of this.world?.citizens||[])this.evidencePool.hydrateCitizen(citizen);
   }
   establishClockGuardBaseline(){
     if(!this.world)return;
@@ -509,6 +538,7 @@ export class SovereignWorld {
     // reload exactly the durable committed generation from SQLite.
     if(neuronBudget)this.pendingRecoveryNeuronBudget=neuronBudget;
     this.world=null;
+    this.evidencePool=null;
     const restored=await this.loadCommittedWorldFromStorage();
     ensureRuntime(restored);
     // External inference already consumed this budget even if saving failed.
@@ -542,7 +572,7 @@ export class SovereignWorld {
     const slotBase=generation==='slot-b'?1_000_000:0;
     let chunkCount=0;
     const encodingStartedAt=Date.now();
-    console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute}));
+    console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute,streamingDigest:typeof crypto.DigestStream==='function'}));
     const {stateSha256}=await encodeWorldSnapshotParts(this.world,{
       sealDue:due,
       clock:snapshotClock,
@@ -733,9 +763,12 @@ export class SovereignWorld {
   async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
+      this.registerCitizenEvidence();
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
       const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage);
+      this.registerCitizenEvidence();
+      progress.trimmedMemories+=this.pendingTrimmedMemories||0;
       if(progress.trimmedMemories)console.log('CYMONIA_PRIVATE_MEMORY_BOUNDED',JSON.stringify({worldMinute:this.world.clock.worldMinute,trimmedMemories:progress.trimmedMemories}));
       console.log('CYMONIA_ADVANCE_READY',JSON.stringify({worldMinute:this.world.clock.worldMinute,elapsedMs:Date.now()-advancementStartedAt}));
 
@@ -751,6 +784,7 @@ export class SovereignWorld {
         // Persist a recovery rebase or private-memory trim immediately so
         // hibernation cannot reload the previous, oversized generation.
         await this.persist({forceSeal:true});
+        this.pendingTrimmedMemories=0;
       }else if(checkpointDue){
         await this.persist();
       }

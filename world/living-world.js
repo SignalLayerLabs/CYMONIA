@@ -4,6 +4,7 @@ const TRAFFIC_HALF_LIFE=20160;
 const HARVEST_HALF_LIFE=10080;
 const MAX_TRAFFIC_CELLS=900;
 const MAX_SPATIAL_MEMORY=64;
+const spatialObservationCaches=new WeakMap();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number(v)||0));
 
 function decay(value,last,at,halfLife){
@@ -53,13 +54,43 @@ export function recordSpatialObservation(citizen,entityId,position,at=0,kind='en
   if(!citizen||!entityId||!position)return null;
   citizen.spatialMemory??={entities:{}};
   citizen.spatialMemory.entities??={};
-  citizen.spatialMemory.entities[String(entityId)]={
+  const record=citizen.spatialMemory.entities,key=String(entityId),minute=Number(at)||0;
+  let cache=spatialObservationCaches.get(record);
+  if(!cache){cache={size:Object.keys(record).length,minimum:null};spatialObservationCaches.set(record,cache);}
+  const existing=Object.hasOwn(record,key);
+  const numericKey=Number(key)>=0&&Number(key)<4294967295&&String(Math.trunc(Number(key)))===key;
+  if(!existing&&cache.size===MAX_SPATIAL_MEMORY&&!numericKey&&Number.isFinite(minute)){
+    if(!cache.minimum){
+      let value=Infinity,discard=null;
+      for(const id of Object.keys(record)){
+        const score=Number(record[id].worldMinute)||0;
+        if(score<=value){value=score;discard=id;}
+      }
+      cache.minimum={value,key:discard};
+    }
+    if(Number.isFinite(cache.minimum.value)){
+      // A new non-numeric key is last in insertion order. It loses a tie,
+      // exactly as the stable retention rule, without allocating then pruning
+      // thousands of identical-time observations in a dense physical scene.
+      if(minute<=cache.minimum.value)return undefined;
+      delete record[cache.minimum.key];cache.size--;
+      cache.minimum=null;
+    }
+  }
+  record[key]={
     position:{x:Number(position.x),y:Number(position.y)},
-    worldMinute:Number(at)||0,
+    worldMinute:minute,
     kind:String(kind||'entity').slice(0,32)
   };
-  pruneRecord(citizen.spatialMemory.entities,MAX_SPATIAL_MEMORY,x=>Number(x.worldMinute)||0);
-  return citizen.spatialMemory.entities[String(entityId)];
+  if(!existing)cache.size++;
+  if(cache.minimum&&(cache.minimum.key===key||minute<=cache.minimum.value))cache.minimum=null;
+  if(cache.size>MAX_SPATIAL_MEMORY){
+    // Imported oversized records and integer keys retain the full original
+    // enumeration/tie semantics, then start using the bounded cache.
+    pruneRecord(record,MAX_SPATIAL_MEMORY,x=>Number(x.worldMinute)||0);
+    cache.size=Object.keys(record).length;cache.minimum=null;
+  }
+  return record[key];
 }
 export function rememberedCrowding(citizen,position,at=0,radius=10){
   const entries=Object.values(citizen?.spatialMemory?.entities||{});

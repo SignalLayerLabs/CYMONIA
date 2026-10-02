@@ -295,7 +295,7 @@ export function snapshotGzipSize(encoded){
   return tail.byteLength>=4?new DataView(tail.buffer).getUint32(tail.byteLength-4,true):null;
 }
 
-export async function decodeWorldSnapshot(encoded){
+export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
   // Parse root arrays one entity at a time. A cold wake must never retain the
   // full private JSON string alongside the hydrated canonical object graph.
   const reader=snapshotJsonStream(encoded).pipeThrough(new TextDecoderStream()).getReader();
@@ -328,7 +328,7 @@ export async function decodeWorldSnapshot(encoded){
               key=finishToken();if(typeof key!=='string')fail();mode='value';
             }else{
               const item=finishToken();
-              if(array){array.push(item);if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
+              if(array){array.push(onArrayItem?onArrayItem(key,item):item);if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
               else{Object.defineProperty(world,key,{value:item,writable:true,enumerable:true,configurable:true});mode=c===','?'next':c==='}'?'done':fail();}
             }
             continue;

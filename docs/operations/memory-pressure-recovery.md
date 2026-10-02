@@ -35,4 +35,19 @@ Production now follows a single-canonical-memory model:
 
 The public Observer projection is also bounded. Large private knowledge remains canonical and durable, but only a small recent preview is exposed to the Observer. The same rule is applied to lexicon, known-entity, possession, and relationship views.
 
-This changes representation, not civilization state. It does not delete canonical knowledge, reset the Durable Object, rewrite Genesis, fork the world, or move the calendar backwards.
+Canonical knowledge, its personal provenance, the world identity and the durable calendar remain authoritative. Recent private episodic memories use the existing FIFO retention rule with a 512-record window.
+
+## Mature-world recovery
+
+On 2026-10-02 the committed snapshot at world minute 128901 contained 105,436,862 uncompressed bytes. Trimming old memories after loading the complete graph still left too little memory for the next checkpoint. Later, a growing world also reached the invocation CPU limit during perception.
+
+The runtime now applies these bounds while loading and advancing the existing world:
+
+- The decoder trims each Citizen's recent memories before adding that Citizen to the root graph. The next tick persists a pending trim even if no world time advances.
+- Identical sensory evidence is represented by one deeply immutable object. Every Citizen keeps separate knowledge entries, confidence, source event IDs and access checks. Sharing storage grants no new knowledge. New `learn()` evidence uses the same pool.
+- The evidence pool's lookup keys are bounded to 4 Mi code units and 16,384 entries. Eviction removes only an index entry; evidence still referenced by a Citizen remains intact.
+- Known-entity membership uses an index over the canonical append-only array. New IDs are indexed once, while snapshot replacements and truncation rebuild the index.
+- Spatial memory retains the same 64 highest timestamps and stable tie order. Cached minima discard dense, equal-time overflow without repeatedly scanning or allocating rejected observations.
+- Compressed checkpoint chunks are staged individually into the inactive slot. A small final transaction publishes the manifest, clock guard, seal and row budget together. An interrupted stage cannot publish a partial world.
+
+Regression coverage checks personal knowledge isolation, immutable sharing, bounded pool retention, entity-index updates, spatial tie ordering and interruption during snapshot staging. Recovery must also be verified against production alarms and consecutive durable clock advances; HTTP health alone does not prove that the simulation is running.
