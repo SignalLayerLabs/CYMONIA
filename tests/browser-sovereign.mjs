@@ -222,15 +222,21 @@ try {
     `expected fractional canonical movement: ${before} -> ${after}`
   );
 
-  // Movement interpolates, but the calendar must only show committed time.
+  // The calendar plays confirmed minutes instead of freezing between saves.
   const dateBefore = await page.locator('#worldDate').innerText();
   await page.waitForTimeout(1250);
   const dateAfter = await page.locator('#worldDate').innerText();
-  assert.equal(
+  assert.notEqual(
     dateAfter,
     dateBefore,
-    'the calendar must not invent minutes before the next committed snapshot'
+    'confirmed calendar minutes must visibly advance between snapshots'
   );
+  const dateParts=dateAfter.match(/^YEAR (\d+) · DAY (\d+) · (\d{2}):(\d{2})$/);
+  assert.ok(dateParts,'calendar must expose a valid world date');
+  const [,year,day,hour,minute]=dateParts.map(Number);
+  const visibleMinute=(year-1)*525600+(day-1)*1440+hour*60+minute;
+  assert.ok(visibleMinute<=liveWorld.clock.worldMinute,
+    'the calendar must not invent minutes beyond the committed snapshot');
 
   await page.locator('#historyOpen').click();
 
@@ -250,18 +256,23 @@ try {
   );
 
   // A long outage can rebase the epoch while the canonical year has not yet
-  // ended. Reloading either snapshot must show the same year and day.
+  // ended. Once confirmed playback drains, either epoch must show the same
+  // durable date; extra local time cannot announce an uncommitted new year.
+  await page.clock.install();
   liveWorld.clock={worldMinute:525599,realEpochMs:Date.now()-525660000};
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  await page.clock.fastForward(61000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
   liveWorld.clock.realEpochMs=Date.now()-525599000;
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  await page.clock.fastForward(61000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 1 · DAY 365 · 23:59');
   liveWorld.clock={worldMinute:525600,realEpochMs:Date.now()-525600000};
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='1');
+  await page.clock.fastForward(61000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 2 · DAY 1 · 00:00');
 
   await page.setViewportSize({
