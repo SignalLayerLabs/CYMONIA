@@ -49,7 +49,8 @@ const AI_RETRY_COOLDOWN_MS=60_000;
 const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
-const MAX_CATCHUP_WORLD_MINUTES=360;
+const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1024*1024;
+const MAX_CATCHUP_WORLD_MINUTES=90;
 const HOT_LEDGER_EVENTS=4096;
 const CAUSAL_LEDGER_EVENTS=512;
 const CAUSAL_RECEIPTS=64;
@@ -508,7 +509,7 @@ export class SovereignWorld {
       sealDue:due,
       clock:snapshotClock,
       ledgerHead,
-      maxCodeUnits:SNAPSHOT_CHUNK_CODE_UNITS,
+      maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
     });
     console.log('CYMONIA_CHECKPOINT_ENCODED',JSON.stringify({worldMinute,elapsedMs:Date.now()-encodingStartedAt,parts:parts.length}));
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
@@ -581,7 +582,7 @@ export class SovereignWorld {
     const encoded=await encodeWorldSnapshotParts(publicState,{
       clock:publicState.clock,
       ledgerHead:publicState.ledgerHead,
-      maxCodeUnits:SNAPSHOT_CHUNK_CODE_UNITS,
+      maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
     });
     // Drop the materialized projection before joining its much smaller,
     // compressed representation.

@@ -175,3 +175,14 @@ test('checkpoint diagnostics read the gzip footer without inflating private stat
   const {parts}=await encodeWorldSnapshotParts(world);
   assert.equal(snapshotGzipSize(parts.join('')),new TextEncoder().encode(JSON.stringify(world)).byteLength);
 });
+
+
+test('bounded checkpoint records use native JSON serialization for small evidence objects',async t=>{
+  const world={clock:{worldMinute:42},citizens:[{id:'large',memories:Array.from({length:1000},(_,i)=>({id:i,kind:'episodic',content:{entity:`object:${i}`,position:{x:i%7,y:i%13}},source:{kind:'observation'},confidence:.8,salience:.9}))}]};
+  const expected=JSON.stringify(world);
+  const stringify=JSON.stringify;let calls=0;
+  t.mock.method(JSON,'stringify',function(...args){calls++;return stringify(...args);});
+  const {parts}=await encodeWorldSnapshotParts(world);
+  assert.equal(await decodeSnapshot(parts.join('')),expected);
+  assert.ok(calls<2000,`private evidence processed field by field: ${calls} stringify calls`);
+});

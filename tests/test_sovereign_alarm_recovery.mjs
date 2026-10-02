@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SovereignWorld} from '../worker/src/index.js';
+import {SovereignWorld,advanceWorldBounded} from '../worker/src/index.js';
 import {createSovereignGenesis,advanceWorldTo,REAL_MS_PER_WORLD_MINUTE} from '../world/index.js';
 
 // Cloudflare owns storage and scheduling. Exercise the real handler with
@@ -272,4 +272,15 @@ test('rejected local plan starts observation and does not block peer actions',()
   assert.equal(world.actions.find(a=>a.id===citizen.currentActionId)?.type,'OBSERVE');
   assert.ok(world.citizens.slice(1).some(c=>c.currentActionId));
   assert.ok(world.ledger.some(e=>e.type==='LOCAL_PLAN_REJECTED'&&e.actorId===citizen.id));
+});
+
+
+test('two missed alarm windows recover without replaying several minutes of CPU work',()=>{
+  const world=createSovereignGenesis({realEpochMs:0});
+  const id=world.worldId;
+  const progress=advanceWorldBounded(world,120000);
+  assert.equal(progress.recovered,true);
+  assert.equal(progress.skippedWorldMinutes,119);
+  assert.equal(world.clock.worldMinute,1);
+  assert.equal(world.worldId,id);
 });
