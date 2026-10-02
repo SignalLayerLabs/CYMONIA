@@ -122,7 +122,24 @@ function stepSegment(world,from,to){
   }
   for(const c of world.citizens)if(c.alive&&!c.currentActionId)runReflex(world,c,to);
 }
-export function advanceWorldTo(world,nowMs=Date.now()){compactOperationalState(world);const target=worldMinuteAt(world,nowMs);let cursor=world.clock.worldMinute;if(target<=cursor)return world;while(cursor<target){const next=nextBoundary(world,cursor,target);stepSegment(world,cursor,next);compactOperationalState(world);cursor=next;}for(const c of world.citizens){const last=c.cognition.lastReflectionMinute;if(c.alive&&(last===null||target-last>=10080)){queueCognition(world,c,'reflection',.2,target);c.cognition.lastReflectionMinute=target;}}return world;}
+export function advanceWorldTo(world,nowMs=Date.now(),{maxSegments=Infinity}={}){
+  compactOperationalState(world);
+  const target=worldMinuteAt(world,nowMs);
+  let cursor=world.clock.worldMinute,segments=0;
+  if(target<=cursor)return world;
+  while(cursor<target&&segments<maxSegments){
+    const next=nextBoundary(world,cursor,target);
+    stepSegment(world,cursor,next);compactOperationalState(world);
+    cursor=next;segments++;
+  }
+  for(const c of world.citizens){
+    const last=c.cognition.lastReflectionMinute;
+    if(cursor===target&&c.alive&&(last===null||cursor-last>=10080)){
+      queueCognition(world,c,'reflection',.2,cursor);c.cognition.lastReflectionMinute=cursor;
+    }
+  }
+  return world;
+}
 export function createHumanAvatar(world,{externalId,displayName=null,massKg=70},at=world.clock.worldMinute){if(world.citizens.some(c=>c.externalId===externalId))return world.citizens.find(c=>c.externalId===externalId);if(world.reserves.observerEmbodimentKg<massKg)throw new Error('embodiment_reserve_depleted');world.reserves.observerEmbodimentKg-=massKg;const id=stableId('human',externalId),genome={metabolism:1,immuneResilience:1,physicalCapacity:1,sensorySensitivity:1,fertility:.75,lifespanYears:82,temperamentBias:0};const c={id,kind:'HUMAN_LINKED',selfName:null,observerDisplayName:displayName,externalId,birthWorldMinute:at,deathWorldMinute:null,alive:true,position:{x:50,y:50},genome,body:{massKg,hydration:92,calories:92,sleepPressure:5,temperatureC:36.6,health:100,injuries:[],diseases:[],fertility:.75,pregnancy:null,reproductiveRole:'non_gestating',ageMinutes:25*525600,alive:true},psychology:{curiosity:.6,riskTolerance:.5,socialDrive:.6,aggression:.2,empathy:.6,noveltySeeking:.6,stress:0,fear:0,attachment:.2,confidence:.5},knowledge:[],memories:[],knownEntityIds:[id],skills:{},language:{primitiveSignals:['attention','danger','need','point','accept','reject'],lexicon:{},heard:{},grammarPatterns:{}},relationships:{},beliefs:[],possessions:[],goals:[],activeGoal:null,plans:[],currentActionId:null,commitments:[],programs:[],cognition:{lastReflectionMinute:null,pending:true,reason:'arrival'}};world.citizens.push(c);const event=appendEvent(world,'HUMAN_AVATAR_EMBODIED',c.id,{massKg,source:'OBSERVER_EMBODIMENT_RESERVE'},[],at);queueCognition(world,c,'arrival',.95,at,event.id);return c;}
 export function submitHumanIntent(world,citizenId,intent,at=world.clock.worldMinute){const c=world.citizens.find(x=>x.id===citizenId&&x.kind==='HUMAN_LINKED');if(!c||!c.alive)throw new Error('human_avatar_unavailable');world.privateHumanIntents[c.id]={intent:String(intent||'').slice(0,2000),worldMinute:at};const event=appendEvent(world,'EXTERNAL_DIRECTION_RECEIVED',c.id,{hasDirection:true},[],at);queueCognition(world,c,'human_direction',1,at,event.id);return {citizenId:c.id,queued:true};}
 export function acceptCognitiveProposal(world,citizenId,proposal,at=world.clock.worldMinute){const c=world.citizens.find(x=>x.id===citizenId);if(!c||!c.alive)throw new Error('citizen_unavailable');const v=validateCognitiveProposal(world,c,proposal);if(!v.ok)throw new Error(v.reason);appendEvent(world,'COGNITIVE_PLAN_ACCEPTED',c.id,{conceptIds:proposal.concepts||[],actionTypes:(proposal.actions||[]).map(x=>x.type),contextKnowledgeCount:c.knowledge.filter(k=>k.active!==false).length},[],at);return applyAcceptedPlan(world,c,proposal,at);}

@@ -24,22 +24,6 @@ test('hibernating websocket runtime survives object eviction without volatile cl
   assert.doesNotMatch(worker,/this\.clients/);
 });
 
-test('runtime recovery is persisted immediately before hibernation can discard the rebase',()=>{
-  const tickStart=worker.indexOf('async tick(');
-  const tickEnd=worker.indexOf('async alarm(',tickStart);
-  assert.ok(tickStart>=0&&tickEnd>tickStart,'tick method boundaries must exist');
-  const tick=worker.slice(tickStart,tickEnd);
-
-  assert.match(tick,/progress\.recovered/);
-  assert.match(tick,/persist\(\{forceSeal:true\}\)/);
-
-  const recoveryIndex=tick.indexOf('progress.recovered');
-  const checkpointIndex=tick.indexOf('checkpointDue',recoveryIndex);
-
-  assert.ok(recoveryIndex>=0);
-  assert.ok(checkpointIndex>recoveryIndex);
-});
-
 test('canonical world persists in Durable Object SQLite with SHA-256 checkpoint seals',()=>{
   assert.match(worker,/storage\.sql/);
   assert.match(worker,/CREATE TABLE IF NOT EXISTS world_state/);
@@ -151,7 +135,7 @@ test('heartbeat broadcasts after cognition processing',()=>{
   const end=worker.indexOf('async alarm(',start);
   const tick=worker.slice(start,end);
   const cognition=tick.indexOf('processCognition(1)');
-  const broadcast=tick.indexOf("broadcastWorldSignal('world_signal')");
+  const broadcast=tick.lastIndexOf("broadcastWorldSignal('world_signal')");
   assert.ok(cognition>=0);
   assert.ok(broadcast>cognition);
 });

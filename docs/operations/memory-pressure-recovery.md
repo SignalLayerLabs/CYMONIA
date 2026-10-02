@@ -43,7 +43,7 @@ On 2026-10-02 the committed snapshot at world minute 128901 contained 105,436,86
 
 The runtime now applies these bounds while loading and advancing the existing world:
 
-- The decoder trims each Citizen's recent memories before adding that Citizen to the root graph. The next tick persists a pending trim even if no world time advances.
+- The decoder trims each Citizen's recent memories before adding that Citizen to the root graph. The next checkpoint phase persists a pending trim even if no further world time advances.
 - Identical sensory evidence is represented by one deeply immutable object. Every Citizen keeps separate knowledge entries, confidence, source event IDs and access checks. Sharing storage grants no new knowledge. New `learn()` evidence uses the same pool.
 - The evidence pool's lookup keys are bounded to 4 Mi code units and 16,384 entries. Eviction removes only an index entry; evidence still referenced by a Citizen remains intact.
 - Known-entity membership uses an index over the canonical append-only array. New IDs are indexed once, while snapshot replacements and truncation rebuild the index.
@@ -52,7 +52,11 @@ The runtime now applies these bounds while loading and advancing the existing wo
 
 Regression coverage checks personal knowledge isolation, immutable sharing, bounded pool retention, entity-index updates, spatial tie ordering and interruption during snapshot staging. Recovery must also be verified against production alarms and consecutive durable clock advances; HTTP health alone does not prove that the simulation is running.
 
-At world minute 133578 a later production invocation exhausted the default 30-second CPU limit (32,500 ms recorded), causing resets and queued-request overload despite successful snapshot hydration. The snapshot was then 137,341,255 uncompressed bytes with 257,653 personal knowledge entries. `wrangler.world.toml` explicitly sets the supported Durable Object CPU ceiling to 300,000 ms. Existing 30-minute alarm advancement, outage recovery, memory bounds and durable commit rules remain in effect. The deployment regression prevents a return to the insufficient default; production proof must include successful ticks and checkpoints after a fresh wake.
+At world minute 133578 a later production invocation exhausted the default 30-second CPU limit (32,500 ms recorded), causing resets and queued-request overload despite successful snapshot hydration. The snapshot was then 137,341,255 uncompressed bytes with 257,653 personal knowledge entries. Cloudflare rejected custom CPU limits on the Free plan with error 100328.
+
+The alarm handler now completes at most four simulation boundaries per invocation, retaining the remaining lag. Checkpoint compression runs in a separate invocation without another simulation step. Each alarm flushes its successor before risky work: 2.5 seconds for normal work and 15 seconds during write-budget backoff or a caught exception. Even a caught-up tick can change private cognition, so its next checkpoint phase must remain warm. Keeping uncommitted work warm prevents the ten-second hibernation window from discarding every pulse before the 60-minute checkpoint. Healthy pulses leave that successor unchanged, bounding alarm writes to 34,560 per day. Healthy status writes are throttled to the normal heartbeat interval, with immediate writes for commits and error changes. Failures keep the fallback and durable committed readers. Recovery and memory trims request a forced checkpoint; its pending flags clear after a successful save or a rollback to the previous committed world. Partial pulses retain their original catch-up target so reflection cannot drift or starve while draining a backlog. Outage rebasing, memory bounds, row budgets and atomic durable commits remain in effect. No paid-plan CPU setting is required.
+
+Regression coverage checks partial lag accounting, deterministic segmented simulation, separate checkpoint invocations, failed-save retention and prompt alarm continuation. Production proof must include successful ticks and checkpoints after a fresh wake.
 
 ## Observer calendar
 

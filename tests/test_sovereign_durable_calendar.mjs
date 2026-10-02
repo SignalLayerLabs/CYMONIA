@@ -1,11 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {sqliteStorage,wake,readWorld} from './helpers/sovereign-sqlite.mjs';
-import {worldDate} from '../world/clock.js';
+import {worldDate,worldMinuteAt} from '../world/clock.js';
 import {decodeSnapshot} from '../worker/src/persistence.js';
 import {publicWorld} from '../world/index.js';
 
 const YEAR=525600;
+
+async function drainPulses(instance){
+  for(let i=0;i<100;i++){
+    await instance.alarm();
+    if(!instance.pendingCheckpoint&&instance.world.clock.worldMinute>=worldMinuteAt(instance.world,Date.now()))return;
+  }
+  assert.fail('CPU pulses did not drain the bounded test backlog');
+}
 
 test('committed readers retain public evidence without duplicating private Citizen memory',async t=>{
   const storage=sqliteStorage();t.after(()=>storage.db.close());
@@ -139,7 +147,7 @@ test('budget deferral cannot publish a new year that disappears after eviction',
   assert.equal(worldDate(beforeRestart.clock.worldMinute).year,1);
   assert.ok(messages.every(m=>(m.worldMinute??m.state?.clock.worldMinute)<=afterRestart.clock.worldMinute));
   advance(24*60*60_000);
-  await restarted.alarm();
+  await drainPulses(restarted);
   assert.ok((await readWorld(restarted)).clock.worldMinute>afterRestart.clock.worldMinute);
 });
 
@@ -171,14 +179,16 @@ test('a failed SQLite checkpoint never leaks advanced time through REST or broad
   storage.transactionSync=()=>{throw new Error('injected storage failure');};
   advance(15_000);
   instance.lastPersistedWorldMinute=YEAR-90;
-  await instance.alarm();
+  await instance.alarm(); // simulation requests a checkpoint
+  await instance.alarm(); // separate checkpoint invocation fails
+  assert.match(instance.world.runtime.lastTickError,/injected storage failure/);
   assert.equal((await readWorld(instance)).clock.worldMinute,YEAR-30);
   assert.equal(instance.world.clock.worldMinute,YEAR-30);
   assert.equal(messages.length,0);
   storage.transactionSync=transaction;
   advance(15_000);
   instance.lastPersistedWorldMinute=YEAR-90;
-  await instance.alarm();
+  await drainPulses(instance);
   assert.equal((await readWorld(instance)).clock.worldMinute,YEAR);
   const {instance:restarted}=await wake(storage);
   assert.equal((await readWorld(restarted)).clock.worldMinute,YEAR);
