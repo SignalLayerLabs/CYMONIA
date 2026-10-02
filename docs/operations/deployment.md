@@ -44,7 +44,7 @@ Then open the production site and verify that it enters the game-only Observer d
 
 ## Runtime reliability guardrails
 
-The canonical world uses a one-minute Durable Object alarm cadence. Each alarm catches the deterministic world up to canonical real time, so reducing alarm frequency does not slow in-world time while it substantially reduces `setAlarm()` row writes.
+The canonical world uses a fifteen-second Durable Object alarm cadence. This divides simulation CPU across four invocations per real minute while preserving the original world clock and one-checkpoint-per-60-world-minute schedule.
 
 Snapshot persistence uses a 40,000-row soft daily budget and a 60,000-row emergency ceiling, both below the 100,000 free-tier account ceiling. The remaining capacity is intentional headroom for alarms, SQLite index effects, migrations, and other account-level Durable Object writes.
 

@@ -430,7 +430,7 @@ export function simulateDay({
   cognitionPersists=0,
   chunkCount=1,
   sealEveryCheckpoints=60,
-  alarmEverySeconds=60,
+  alarmEverySeconds=15,
   day='simulation',
   limit=SAFE_ROW_WRITE_BUDGET,
 }={}){

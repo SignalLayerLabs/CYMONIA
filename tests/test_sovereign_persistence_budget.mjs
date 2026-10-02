@@ -150,19 +150,19 @@ test('budget reservation is atomic in-memory semantics and never overspends',()=
 });
 
 test('expected 24h production envelope fits without persistence deferral',()=>{
-  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:8,sealEveryCheckpoints:60,alarmEverySeconds:60});
-  assert.equal(result.alarmRowsWritten,1_440);
-  assert.equal(result.heartbeatDiagnosticRowsWritten,1_440);
+  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:8,sealEveryCheckpoints:60,alarmEverySeconds:15});
+  assert.equal(result.alarmRowsWritten,5_760);
+  assert.equal(result.heartbeatDiagnosticRowsWritten,5_760);
   assert.ok(result.rowsWritten<=SAFE_ROW_WRITE_BUDGET,result);
   assert.ok(result.totalRowsWritten<SAFE_ROW_WRITE_BUDGET,result);
   assert.equal(result.deferredPersists,0,result);
 });
 
 test('stress envelope is throttled while preserving free-tier account headroom',()=>{
-  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:64,sealEveryCheckpoints:1,alarmEverySeconds:60});
+  const result=simulateDay({checkpointEverySeconds:60,cognitionPersists:200,chunkCount:64,sealEveryCheckpoints:1,alarmEverySeconds:15});
   assert.ok(result.rowsWritten<=SAFE_ROW_WRITE_BUDGET,result);
-  assert.equal(result.alarmRowsWritten,1_440);
-  assert.equal(result.heartbeatDiagnosticRowsWritten,1_440);
+  assert.equal(result.alarmRowsWritten,5_760);
+  assert.equal(result.heartbeatDiagnosticRowsWritten,5_760);
   assert.ok(result.totalRowsWritten<=FREE_TIER_ROW_WRITE_BUDGET-ACCOUNT_RESERVE_ROW_WRITE_BUDGET,result);
   assert.ok(result.freeTierHeadroom>=ACCOUNT_RESERVE_ROW_WRITE_BUDGET,result);
   assert.ok(result.acceptedPersists>0,result);
