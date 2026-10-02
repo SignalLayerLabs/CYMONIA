@@ -107,3 +107,13 @@ test('quiet production alarms retain unsaved minutes until a durable checkpoint'
   assert.equal((await readWorld(restarted)).clock.worldMinute,instance.lastPersistedWorldMinute);
   assert.equal(restarted.world.worldId,initialId);
 });
+
+test('cognition at a committed clock still has a warm successor for its pending checkpoint',async t=>{
+  const {instance,alarms}=pulseRuntime(t);
+  instance.world.clock.realEpochMs=60000;
+  instance.lastPersistedWorldMinute=instance.world.clock.worldMinute;
+  instance.processCognition=async()=>true;
+  await instance.alarm();
+  assert.equal(instance.pendingCheckpoint,true);
+  assert.ok(alarms.at(-1)<71000,'new private mutations must be saved before hibernation');
+});

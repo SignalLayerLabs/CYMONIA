@@ -817,10 +817,9 @@ export class SovereignWorld {
   async alarm(alarmInfo){
     if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
     const startedAt=Date.now();
-    const pendingTime=worldMinuteAt(this.world,startedAt)>this.world.clock.worldMinute;
-    const uncommitted=this.world.clock.worldMinute>Number(this.lastPersistedWorldMinute??this.world.clock.worldMinute);
-    const pulse=(pendingTime||this.pendingCheckpoint||uncommitted)&&!(startedAt<this.persistenceDeferredUntilRealMs);
-    let nextAlarm=startedAt+(pulse?ALARM_PULSE_MS:ALARM_MS);
+    // Even a caught-up tick can change private cognition or trim memories.
+    // Keep every mutation-capable invocation warm until its next phase.
+    let nextAlarm=startedAt+(startedAt<this.persistenceDeferredUntilRealMs?ALARM_MS:ALARM_PULSE_MS);
     // Commit the successor before tick can throw or exhaust its CPU budget.
     await this.ctx.storage.setAlarm(nextAlarm);
     // setAlarm can resolve while its write is still buffered. Flush it before
@@ -1025,7 +1024,7 @@ export class SovereignWorld {
           backoff_until_real_ms:this.persistenceDeferredUntilRealMs||null
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
-        alarm_interval_ms:ALARM_MS,
+        alarm_interval_ms:ALARM_PULSE_MS,
         heartbeat:{
           scheduledAlarmRealMs,
           nextAlarmRealMs:runtime.nextAlarmRealMs??null,
