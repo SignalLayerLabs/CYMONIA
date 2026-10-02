@@ -222,15 +222,18 @@ try {
     `expected fractional canonical movement: ${before} -> ${after}`
   );
 
-  // Movement interpolates, but the calendar must only show committed time.
+  // The calendar plays confirmed minutes instead of freezing between saves.
   const dateBefore = await page.locator('#worldDate').innerText();
   await page.waitForTimeout(1250);
   const dateAfter = await page.locator('#worldDate').innerText();
-  assert.equal(
+  assert.notEqual(
     dateAfter,
     dateBefore,
-    'the calendar must not invent minutes before the next committed snapshot'
+    'confirmed calendar minutes must visibly advance between snapshots'
   );
+  const visibleMinute=Number(dateAfter.match(/:(\d{2})$/)?.[1]);
+  assert.ok(visibleMinute<=liveWorld.clock.worldMinute,
+    'the calendar must not invent minutes beyond the committed snapshot');
 
   await page.locator('#historyOpen').click();
 

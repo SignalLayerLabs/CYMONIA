@@ -51,3 +51,9 @@ The runtime now applies these bounds while loading and advancing the existing wo
 - Compressed checkpoint chunks are staged individually into the inactive slot. A small final transaction publishes the manifest, clock guard, seal and row budget together. An interrupted stage cannot publish a partial world.
 
 Regression coverage checks personal knowledge isolation, immutable sharing, bounded pool retention, entity-index updates, spatial tie ordering and interruption during snapshot staging. Recovery must also be verified against production alarms and consecutive durable clock advances; HTTP health alone does not prove that the simulation is running.
+
+## Observer calendar
+
+Durable checkpoints are separated by at least 60 world minutes to respect the write budget. Showing only the latest checkpoint minute left the visible clock frozen between saves, followed by an abrupt jump.
+
+The Observer now plays the last 60 confirmed world minutes at one world minute per real second. This small display delay makes minutes visible between polls without extrapolating beyond durable state. Repeated snapshots do not restart playback, new checkpoints extend its upper bound, and a disconnected client stops at the last confirmed minute. Genesis replay remains frozen. The canonical world clock, motion model and persistence schedule are unchanged.
