@@ -193,6 +193,7 @@ export class SovereignWorld {
     this.clockHighWaterMark=null;
     this.clockRegressionDetected=false;
     this.snapshotRecoverySource=null;
+    this.pendingTrimmedMemories=0;
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
@@ -208,6 +209,7 @@ export class SovereignWorld {
         worldMinute:this.world?.clock?.worldMinute??null,
         privateMemories:citizens.reduce((n,c)=>n+(c.memories?.length||0),0),
         knowledgeEntries:citizens.reduce((n,c)=>n+(c.knowledge?.length||0),0),
+        knowledgeSources:citizens.reduce((n,c)=>n+(c.knowledge||[]).reduce((m,k)=>m+(k.provenance?.length||0),0),0),
         objects:this.world?.objects?.length||0,
       }));
       if(!this.world){
@@ -348,12 +350,17 @@ export class SovereignWorld {
         if(parts.length!==count)continue;
         const encoded=joinSnapshot(parts);
         console.log('CYMONIA_SNAPSHOT_LOAD',JSON.stringify({generation:meta.generation,compressedCodeUnits:encoded.length,uncompressedBytes:snapshotGzipSize(encoded)}));
-        const world=await decodeWorldSnapshot(encoded);
+        let trimmedMemories=0;
+        const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
+          if(key==='citizens')trimmedMemories+=trimCitizenMemories(item);
+          return item;
+        }});
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
         if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
         assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
         selected={world,generation:meta.generation,source:meta.source};
+        this.pendingTrimmedMemories=trimmedMemories;
         this.committedSnapshot=null;
         break;
       }catch(error){console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));}
@@ -390,7 +397,11 @@ export class SovereignWorld {
       base,base+count
     )].map(row=>row.state_part);
     if(parts.length!==count)throw new Error('sovereign_committed_snapshot_incomplete');
-    const restored=await decodeWorldSnapshot(joinSnapshot(parts));
+    let trimmedMemories=0;
+    const restored=await decodeWorldSnapshot(joinSnapshot(parts),{onArrayItem:(key,item)=>{
+      if(key==='citizens')trimmedMemories+=trimCitizenMemories(item);
+      return item;
+    }});
     assertMonotonicSnapshot(restored,{
       highWaterMark:this.clockHighWaterMark,
       worldId:this.committedStats?.worldId||null
@@ -409,6 +420,7 @@ export class SovereignWorld {
     this.lastPersistedWorldMinute=Number(meta.world_minute);
     this.loadedSnapshotMinute=Number(meta.world_minute);
     this.snapshotRecoverySource=`rollback:${generation}`;
+    this.pendingTrimmedMemories=trimmedMemories;
     return restored;
   }
   establishClockGuardBaseline(){
@@ -542,7 +554,7 @@ export class SovereignWorld {
     const slotBase=generation==='slot-b'?1_000_000:0;
     let chunkCount=0;
     const encodingStartedAt=Date.now();
-    console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute}));
+    console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute,streamingDigest:typeof crypto.DigestStream==='function'}));
     const {stateSha256}=await encodeWorldSnapshotParts(this.world,{
       sealDue:due,
       clock:snapshotClock,
@@ -736,6 +748,7 @@ export class SovereignWorld {
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
       const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage);
+      progress.trimmedMemories+=this.pendingTrimmedMemories||0;
       if(progress.trimmedMemories)console.log('CYMONIA_PRIVATE_MEMORY_BOUNDED',JSON.stringify({worldMinute:this.world.clock.worldMinute,trimmedMemories:progress.trimmedMemories}));
       console.log('CYMONIA_ADVANCE_READY',JSON.stringify({worldMinute:this.world.clock.worldMinute,elapsedMs:Date.now()-advancementStartedAt}));
 
@@ -751,6 +764,7 @@ export class SovereignWorld {
         // Persist a recovery rebase or private-memory trim immediately so
         // hibernation cannot reload the previous, oversized generation.
         await this.persist({forceSeal:true});
+        this.pendingTrimmedMemories=0;
       }else if(checkpointDue){
         await this.persist();
       }
