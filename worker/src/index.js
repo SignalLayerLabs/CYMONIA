@@ -616,15 +616,19 @@ export class SovereignWorld {
       return {persisted:false,reason:'write_budget_exhausted',rowWrites};
     }
 
+    // Workers clocks stay frozen during pure CPU work. Complete staged I/O
+    // before timestamping publication; encoding start is not commit time.
+    await this.ctx.storage.sync?.();
+    const committedAtRealMs=Date.now();
     this.ctx.storage.transactionSync(()=>{
       this.sql.exec(`INSERT INTO world_state_manifest(id,generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        generation,chunkCount,worldMinute,ledgerHead,now);
+        generation,chunkCount,worldMinute,ledgerHead,committedAtRealMs);
       this.sql.exec(`INSERT INTO world_snapshot_slots(generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(?,?,?,?,?)
         ON CONFLICT(generation) DO UPDATE SET chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        generation,chunkCount,worldMinute,ledgerHead,now);
+        generation,chunkCount,worldMinute,ledgerHead,committedAtRealMs);
       this.sql.exec(`INSERT INTO world_clock_guard(id,world_id,highest_world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET
@@ -632,11 +636,11 @@ export class SovereignWorld {
           highest_world_minute=CASE WHEN excluded.highest_world_minute>world_clock_guard.highest_world_minute THEN excluded.highest_world_minute ELSE world_clock_guard.highest_world_minute END,
           ledger_head=CASE WHEN excluded.highest_world_minute>=world_clock_guard.highest_world_minute THEN excluded.ledger_head ELSE world_clock_guard.ledger_head END,
           updated_at=excluded.updated_at`,
-        worldId,worldMinute,ledgerHead,now);
+        worldId,worldMinute,ledgerHead,committedAtRealMs);
       if(due){
         this.sql.exec(
           'INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',
-          worldMinute,ledgerHead,stateSha256,now
+          worldMinute,ledgerHead,stateSha256,committedAtRealMs
         );
         if(sealPruneRows)this.sql.exec(
           'DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)'
@@ -644,12 +648,14 @@ export class SovereignWorld {
       }
       this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
         ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
-        day,reservation.budget.rowsWritten,now);
+        day,reservation.budget.rowsWritten,committedAtRealMs);
     });
+    await this.ctx.storage.sync?.();
 
     return {
       persisted:true,
       generation,
+      committedAtRealMs:Date.now(),
       rowWrites,
       rowsWritten:reservation.budget.rowsWritten,
     };
@@ -757,7 +763,8 @@ export class SovereignWorld {
     );
     this.snapshotRecoverySource=`persist:${canonical.generation}`;
     this.persistenceDeferredUntilRealMs=0;
-    console.log('CYMONIA_CHECKPOINT_COMMITTED',JSON.stringify({worldMinute,generation:canonical.generation}));
+    this.lastCompletedCheckpointRealMs=canonical.committedAtRealMs;
+    console.log('CYMONIA_CHECKPOINT_COMMITTED',JSON.stringify({worldMinute,generation:canonical.generation,committedAtRealMs:canonical.committedAtRealMs}));
 
     try{
       // Private gzip/base64 buffers belonged to writeCanonicalSnapshot() and
@@ -1034,7 +1041,7 @@ export class SovereignWorld {
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
-        last_checkpoint_real_ms:checkpointRealMs,
+        last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
         alarm_interval_ms:ALARM_PULSE_MS,
         heartbeat:{
           scheduledAlarmRealMs,
