@@ -6,7 +6,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ICON=Object.fromEntries(ACTION_TYPES_VISUAL.map(type=>[type,'']));
 const state={world:null,selected:null,renderer:null,myAvatar:null,keys:new Set(),lastFrame:performance.now(),lastHud:0,connection:null,mode:CONNECTION.CONNECTING};
-async function getJSON(url,opts={}){const r=await fetch(url,{cache:'no-store',credentials:'same-origin',...opts});if(!r.ok)throw new Error(`${r.status}`);return r.json();}
+async function getJSON(url,opts={}){const r=await fetch(url,{cache:'no-store',credentials:'same-origin',signal:AbortSignal.timeout(20000),...opts});if(!r.ok)throw new Error(`${r.status}`);return r.json();}
 function dateLabel(min){const m=Math.max(0,Math.floor(min)),year=Math.floor(m/525600)+1,rem=m%525600,day=Math.floor(rem/1440)+1,hour=Math.floor((rem%1440)/60),minute=rem%60;return `YEAR ${year} · DAY ${day} · ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;}
 function climateState(w){const minute=worldMinute(w),dayPhase=Number(w.environment?.dayPhase??((minute%1440)/1440)),seasonPhase=Number(w.environment?.seasonPhase??((minute%525600)/525600)),temperature=Number(w.environment?.temperatureC??18),rain=Number(w.environment?.precipitation??0),seasons=['DEEPWINTER','THAW','HIGHSUN','HARVEST'],season=seasons[Math.floor((((seasonPhase+.125)%1)+1)%1*4)%4];return{dayPhase,season,temperature,rain,night:dayPhase<.21||dayPhase>.79};}
 function citizenName(c){return c.selfName||c.observerDisplayName||c.id.replace('genesis:','Citizen ');}
@@ -344,8 +344,8 @@ async function boot(){
   await refreshMyAvatar({quiet:true});
 
   state.connection=new ObserverConnection({
-    fetchState:async()=>{
-      const d=await getJSON('/api/v2/state');
+    fetchState:async({signal})=>{
+      const d=await getJSON('/api/v2/state',{signal});
       return d.world;
     },
     loadReplay:async()=>{

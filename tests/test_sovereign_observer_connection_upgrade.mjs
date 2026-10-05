@@ -7,7 +7,7 @@ function scheduler(){
   return {
     set(fn,ms){const token={fn,ms,cancelled:false};queue.push(token);return token;},
     clear(token){if(token)token.cancelled=true;},
-    async run(){const t=queue.shift();if(t&&!t.cancelled)await t.fn();},
+    async run(){let t;do{t=queue.shift();}while(t?.cancelled);if(t)await t.fn();},
     get pending(){return queue.filter(x=>!x.cancelled).length;}
   };
 }
@@ -34,6 +34,69 @@ test('initial failure stays on replay during retries then recovers to canonical 
     false,
     'background retries must not replace a usable replay with RECONNECTING'
   );
+});
+
+test('a hung poll expires, preserves the world and resumes updates without a reload',{timeout:1000},async()=>{
+  const s=scheduler(),worlds=[];let calls=0,late,signal;
+  const c=new ObserverConnection({
+    fetchState:options=>{calls++;if(calls===2){signal=options?.signal;return new Promise(resolve=>{late=resolve;});}
+      return Promise.resolve({version:2,worldId:'live',clock:{worldMinute:calls===1?100:160}});},
+    onWorld:w=>worlds.push(w.clock.worldMinute),setTimeoutFn:s.set.bind(s),clearTimeoutFn:s.clear.bind(s),randomFn:()=>.5,
+  });
+  await c.start();
+  const pending=c.refreshNow({poll:true});
+  // A successful first fetch leaves a poll timer. Skip that timer while the
+  // explicit poll is in flight, then fire the request's expiration.
+  await s.run();await s.run();await pending;
+  assert.equal(c.attempting,false);
+  assert.equal(signal?.aborted,true);
+  assert.equal(c.mode,CONNECTION.DEGRADED);
+  assert.equal(c.lastCanonical.clock.worldMinute,100);
+  await s.run();
+  assert.deepEqual(worlds,[100,160]);
+  assert.equal(c.mode,CONNECTION.LIVE);
+  late({version:2,worldId:'live',clock:{worldMinute:110}});
+  await Promise.resolve();
+  assert.equal(c.lastCanonical.clock.worldMinute,160,'late timed-out responses must not replace a newer state');
+  c.stop();
+});
+
+test('a hung initial request can enter replay and later recover',{timeout:1000},async()=>{
+  const s=scheduler();let calls=0;
+  const c=new ObserverConnection({
+    fetchState:()=>++calls===1?new Promise(()=>{}):Promise.resolve({version:2,worldId:'live',clock:{worldMinute:160}}),
+    loadReplay:async()=>({version:2,worldId:'replay',clock:{worldMinute:0}}),
+    setTimeoutFn:s.set.bind(s),clearTimeoutFn:s.clear.bind(s),randomFn:()=>.5,
+  });
+  const start=c.start();await s.run();await start;
+  assert.equal(c.mode,CONNECTION.REPLAY);
+  assert.equal(c.attempting,false);
+  await s.run();assert.equal(c.mode,CONNECTION.LIVE);
+  assert.equal(c.lastCanonical.clock.worldMinute,160);c.stop();
+});
+
+test('stopping a hung request aborts it without retrying or delivering its late result',{timeout:1000},async()=>{
+  const s=scheduler(),worlds=[];let late,signal;
+  const c=new ObserverConnection({
+    fetchState:options=>{signal=options.signal;return new Promise(resolve=>{late=resolve;});},
+    onWorld:w=>worlds.push(w),setTimeoutFn:s.set.bind(s),clearTimeoutFn:s.clear.bind(s),
+  });
+  const start=c.start();c.stop();await start;
+  assert.equal(signal.aborted,true);assert.equal(c.attempting,false);
+  assert.equal(c.mode,CONNECTION.STOPPED);assert.equal(s.pending,0);
+  late({version:2,worldId:'live',clock:{worldMinute:160}});await Promise.resolve();
+  assert.equal(worlds.length,0);
+});
+
+test('stopping during replay loading prevents late replay delivery',{timeout:1000},async()=>{
+  const s=scheduler(),worlds=[];let finishReplay,startedReplay;
+  const loading=new Promise(resolve=>{startedReplay=resolve;});
+  const c=new ObserverConnection({fetchState:async()=>{throw new Error('offline');},
+    loadReplay:()=>{startedReplay();return new Promise(resolve=>{finishReplay=resolve;});},
+    onWorld:w=>worlds.push(w),setTimeoutFn:s.set.bind(s),clearTimeoutFn:s.clear.bind(s)});
+  const start=c.start();await loading;c.stop();
+  finishReplay({version:2,worldId:'replay',clock:{worldMinute:0}});await start;
+  assert.equal(c.mode,CONNECTION.STOPPED);assert.equal(worlds.length,0);assert.equal(s.pending,0);
 });
 
 
