@@ -1,6 +1,7 @@
 // Sharing immutable historical data is a storage representation. Each
 // Citizen still owns its own concepts, confidence and provenance records.
 const citizenPools=new WeakMap();
+import {knowledgeStorage} from './knowledge-storage.js';
 
 function freezeEvidence(value){
   if(value&&typeof value==='object'&&!Object.isFrozen(value)){
@@ -37,6 +38,7 @@ export function createEvidencePool({maxCodeUnits=4*1024*1024,maxEntries=16384}={
     hydrateCitizen(citizen){
       if(citizenPools.get(citizen)===pool)return citizen;
       citizenPools.set(citizen,pool);
+      if(knowledgeStorage(citizen.knowledge))return citizen;
       for(const entry of citizen.knowledge||[]){
         for(const source of entry.provenance||[])shareLearnedEvidence(citizen,source);
       }

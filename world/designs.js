@@ -1,4 +1,5 @@
 const MAX_PRIMITIVES=32;
+import {knowledgeStorage} from './knowledge-storage.js';
 const PRIMITIVES=new Set(['point','line','strip','panel','volume','block','frame','layer','enclosure','opening','ridge','shell','support','repeated_unit','surface_motif']);
 
 function fail(reason){const error=new Error(reason);error.code=reason;throw error;}
@@ -9,7 +10,7 @@ function sorted(value){
 }
 export function canonicalDesignJson(value){return JSON.stringify(sorted(value));}
 export function designHash(value){let hash=2166136261;for(const character of canonicalDesignJson(value)){hash^=character.charCodeAt(0);hash=Math.imul(hash,16777619);}return (hash>>>0).toString(16).padStart(8,'0');}
-function knownConcept(citizen,concept){return (citizen?.knowledge||[]).some(item=>(item.concept||item.id)===concept);}
+function knownConcept(citizen,concept){const store=knowledgeStorage(citizen?.knowledge);return store?store.anyConcept(concept):(citizen?.knowledge||[]).some(item=>(item.concept||item.id)===concept);}
 function hasCycle(designs,id,parents,seen=new Set()){if(seen.has(id))return true;seen.add(id);return parents.some(parent=>parent===id||hasCycle(designs,parent,designs[parent]?.parentDesignIds||[],new Set(seen)));}
 export function validateDesign(world,citizen,input){
   if(!input||typeof input!=='object')fail('design_invalid');

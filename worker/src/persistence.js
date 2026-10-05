@@ -3,6 +3,7 @@ export const ACCOUNT_RESERVE_ROW_WRITE_BUDGET=40_000;
 export const SAFE_ROW_WRITE_BUDGET=40_000;
 export const EMERGENCY_ROW_WRITE_BUDGET=60_000;
 export const SNAPSHOT_ENCODING='gzip-base64-v1';
+import {knowledgeStorage,knowledgeSnapshotValue} from '../../world/knowledge-storage.js';
 
 function bytesToBase64(bytes){
   let binary='';
@@ -63,6 +64,11 @@ function isSmallJsonRecord(value){
 }
 
 function* worldJsonRecords(value,ancestors=new Set(),key=''){
+  const archive=knowledgeStorage(value);
+  if(archive){yield '[';let first=true;for(const entry of archive.records()){
+    if(!first)yield ',';first=false;yield JSON.stringify(entry);
+  }yield ']';return;}
+  value=knowledgeSnapshotValue(value);
   if(value&&typeof value.toJSON==='function')value=value.toJSON(key);
   if(!value||typeof value!=='object'){yield JSON.stringify(value)??'null';return;}
   if(isSmallJsonRecord(value)){yield JSON.stringify(value);return;}
@@ -328,7 +334,9 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
               key=finishToken();if(typeof key!=='string')fail();mode='value';
             }else{
               const item=finishToken();
-              if(array){array.push(onArrayItem?onArrayItem(key,item):item);if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
+              if(array){const processed=onArrayItem?onArrayItem(key,item):item;
+                array.push(processed&&typeof processed.then==='function'?await processed:processed);
+                if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
               else{Object.defineProperty(world,key,{value:item,writable:true,enumerable:true,configurable:true});mode=c===','?'next':c==='}'?'done':fail();}
             }
             continue;

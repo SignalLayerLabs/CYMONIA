@@ -1,0 +1,204 @@
+import {bindKnowledgeStorage,bindKnowledgeView} from '../../world/knowledge-storage.js';
+import {hash32} from '../../world/rng.js';
+
+const PAGE_UNITS=65536,CACHE_UNITS=524288,DIRTY_UNITS=524288;
+const numeric=key=>typeof key==='string'&&/^(0|[1-9][0-9]*)$/.test(key);
+// Parsed strings can retain their large Citizen JSON backing buffer in V8.
+// Logical indexes must own small strings independently of evicted records.
+const ownedString=value=>typeof value==='string'?JSON.parse(JSON.stringify(value)):value;
+
+// Disposable immutable SQLite pages back the live graph. They never appear
+// in the canonical snapshot: a reset reconstructs them from the guarded gzip.
+export class KnowledgeArchive {
+  constructor(sql,{chargeRows,hydrateEntry=()=>{}}){
+    this.sql=sql;this.chargeRows=chargeRows;this.hydrateEntry=hydrateEntry;
+    this.cache=new Map();this.cachedCodeUnits=0;this.stores=new Set();
+    this.dirtyCodeUnits=0;this.pageRefs=new Map();this.pageCounts=new Map();this.pageReads=0;
+    sql.exec('CREATE TABLE IF NOT EXISTS world_knowledge_scratch(id INTEGER PRIMARY KEY AUTOINCREMENT,state_json TEXT NOT NULL,state_checksum INTEGER NOT NULL)');
+  }
+  stats(){return {cachedCodeUnits:this.cachedCodeUnits,dirtyCodeUnits:this.dirtyCodeUnits,
+    cachedPages:this.cache.size,pageReads:this.pageReads,livePages:this.pageRefs.size};}
+  readPage(id){
+    let page=this.cache.get(id);
+    if(page){this.cache.delete(id);this.cache.set(id,page);return page.records;}
+    const row=[...this.sql.exec('SELECT state_json,state_checksum FROM world_knowledge_scratch WHERE id=?',id)][0];
+    if(!row)throw new Error('knowledge_scratch_page_missing');
+    if(hash32(row.state_json)!==Number(row.state_checksum))throw new Error('knowledge_scratch_checksum');
+    const records=JSON.parse(row.state_json);
+    if(!Array.isArray(records))throw new Error('knowledge_scratch_page_invalid');
+    for(const entry of records)this.hydrateEntry(entry);
+    page={records,units:row.state_json.length};this.pageReads++;
+    // A single exceptionally large record is read without retaining its page.
+    if(page.units<=CACHE_UNITS){
+      this.cache.set(id,page);this.cachedCodeUnits+=page.units;
+      while(this.cachedCodeUnits>CACHE_UNITS||this.cache.size>8){const first=this.cache.keys().next().value;
+        this.cachedCodeUnits-=this.cache.get(first).units;this.cache.delete(first);}
+    }
+    return records;
+  }
+  write(records,handles){
+    const text=`[${records.join(',')}]`;
+    this.chargeRows(1);
+    const row=[...this.sql.exec('INSERT INTO world_knowledge_scratch(state_json,state_checksum) VALUES(?,?) RETURNING id',text,hash32(text))][0];
+    const id=Number(row.id);
+    this.pageRefs.set(id,handles.length);
+    this.pageCounts.set(id,handles.length);
+    for(let offset=0;offset<handles.length;offset++){
+      const {store,index}=handles[offset],old=store.rows[index];
+      if(old)this.pageRefs.set(old,this.pageRefs.get(old)-1);
+      store.rows[index]=id;store.offsets[index]=offset;
+      const pending=store.dirty.get(index);
+      if(pending){this.dirtyCodeUnits-=pending.units;store.dirty.delete(index);}
+    }
+  }
+  appendBatch(items){
+    let records=[],handles=[],units=2;
+    const flush=()=>{if(records.length)this.write(records,handles);records=[];handles=[];units=2;};
+    for(const item of items){const text=JSON.stringify(item.entry);
+      // SQLite rows are bounded at 2 MiB. Rejecting an oversized record rolls
+      // back to the intact full checkpoint; private evidence is never trimmed.
+      if(new TextEncoder().encode(text).length>1_500_000)throw new Error('knowledge_record_exceeds_sqlite_row');
+      if(units+text.length+1>PAGE_UNITS)flush();
+      records.push(text);handles.push(item);units+=text.length+1;
+      if(units>=PAGE_UNITS)flush();
+    }
+    flush();
+  }
+  attach(citizen){
+    if(citizen.knowledge?.runtimeKnowledgeArchive===this)return citizen.knowledge;
+    const source=citizen.knowledge||[],store=new ArchivedKnowledge(this);
+    this.stores.add(store);
+    this.appendBatch((function*(){for(let index=0;index<source.length;index++){
+      const entry=source[index];store.indexEntry(index,entry);yield {store,index,entry};
+    }})());
+    citizen.knowledge=store.array;return store.array;
+  }
+  flush(){
+    const archive=this;
+    this.appendBatch((function*(){for(const store of archive.stores)
+      for(const [index,pending] of store.dirty)yield {store,index,entry:pending.entry};})());
+  }
+  reclaim(){
+    // RAM handles describe every live record. GC runs synchronously between
+    // mutations, never while the checkpoint stream is reading these pages.
+    const fragmented=new Set([...this.pageRefs].filter(([id,count])=>count>0&&count<this.pageCounts.get(id)/2).map(([id])=>id));
+    if(fragmented.size){
+      const archive=this;
+      this.appendBatch((function*(){for(const store of archive.stores)
+        for(let index=0;index<store.rows.length;index++)if(fragmented.has(store.rows[index]))
+          yield {store,index,entry:store.raw(index)};})());
+    }
+    const dead=[...this.pageRefs].filter(([,count])=>count===0).map(([id])=>id);
+    if(!dead.length)return;
+    this.chargeRows(dead.length);
+    for(const id of dead){this.sql.exec('DELETE FROM world_knowledge_scratch WHERE id=?',id);
+      const page=this.cache.get(id);if(page){this.cachedCodeUnits-=page.units;this.cache.delete(id);}
+      this.pageRefs.delete(id);this.pageCounts.delete(id);}
+  }
+}
+
+class ArchivedKnowledge {
+  constructor(archive){
+    this.archive=archive;this.concepts=[];this.active=[];this.entities=[];
+    this.rows=[];this.offsets=[];this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
+    this.activeCount=0;this.sourceCount=0;this.sourceCounts=[];this.views=new Map();
+    const store=this;
+    this.array=bindKnowledgeStorage(new Proxy([],{
+      get(target,key,receiver){
+        if(key==='runtimeKnowledgeArchive')return archive;
+        if(key==='length')return store.concepts.length;
+        if(numeric(key))return Number(key)<store.concepts.length?store.view(Number(key)):undefined;
+        if(key==='push')return (...entries)=>{for(const entry of entries)store.replace(store.concepts.length,entry);return store.concepts.length;};
+        return Reflect.get(target,key,receiver);
+      },
+      has(target,key){return numeric(key)?Number(key)<store.concepts.length:Reflect.has(target,key);},
+      ownKeys(){return [...store.concepts.keys()].map(String).concat('length');},
+      getOwnPropertyDescriptor(target,key){return numeric(key)&&Number(key)<store.concepts.length?
+        {value:undefined,writable:true,enumerable:true,configurable:true}:Reflect.getOwnPropertyDescriptor(target,key);},
+      set(target,key,value){
+        if(numeric(key)){store.replace(Number(key),value);return true;}
+        if(key==='length'&&value===store.concepts.length)return true;
+        throw new Error('knowledge_archive_array_mutation_unsupported');
+      }
+    }),store);
+  }
+  indexEntry(index,entry){
+    const was=this.active[index],concept=this.concepts[index];
+    if(was)this.activeCount--;
+    this.concepts[index]=ownedString(entry.concept);this.active[index]=entry.active!==false;
+    if(!entry.concept&&entry.id)this.fallbackIds.set(index,ownedString(entry.id));else this.fallbackIds.delete(index);
+    const ids=[...new Set((entry.provenance||[]).map(source=>source.evidence?.entityId).filter(Boolean))].map(ownedString);
+    this.entities[index]=ids.length>1?ids:ids[0]??null;
+    const sources=entry.provenance?.length||0;
+    this.sourceCount+=sources-(this.sourceCounts[index]||0);this.sourceCounts[index]=sources;
+    if(this.active[index])this.activeCount++;
+    if(concept!==undefined&&this.lookupIndex.get(concept)===index){
+      this.lookupIndex.delete(concept);
+      if(concept!==entry.concept||!this.active[index]){
+        const replacement=this.concepts.findIndex((id,i)=>id===concept&&this.active[i]);
+        if(replacement>=0)this.lookupIndex.set(concept,replacement);
+      }
+    }
+    if(this.active[index]&&(!this.lookupIndex.has(entry.concept)||index<this.lookupIndex.get(entry.concept)))this.lookupIndex.set(this.concepts[index],index);
+  }
+  raw(index){
+    const pending=this.dirty.get(index);if(pending)return pending.entry;
+    const entry=this.archive.readPage(this.rows[index])[this.offsets[index]];
+    if(!entry||entry.concept!==this.concepts[index]||(entry.active!==false)!==this.active[index])
+      throw new Error('knowledge_scratch_record_mismatch');
+    return entry;
+  }
+  lookup(concept){
+    const index=this.lookupIndex.get(concept);
+    if(index===undefined)return null;
+    return this.view(index);
+  }
+  has(concept){return this.lookupIndex.has(concept);}
+  anyConcept(concept){return this.concepts.some((id,i)=>(id||this.fallbackIds.get(i))===concept);}
+  replace(index,entry){
+    if(index>this.concepts.length)throw new Error('knowledge_archive_sparse_array');
+    this.archive.hydrateEntry(entry);
+    const old=this.dirty.get(index);
+    const units=JSON.stringify(entry).length;
+    this.archive.dirtyCodeUnits+=units-(old?.units||0);
+    this.dirty.set(index,{entry,units});this.indexEntry(index,entry);
+    if(this.archive.dirtyCodeUnits>=DIRTY_UNITS){this.archive.flush();this.archive.reclaim();}
+  }
+  change(index,path,key,value){
+    // Clone only the changed record. Frozen evidence remains shared; its
+    // immutability is part of the existing Citizen evidence contract.
+    const raw=this.raw(index),copy=structuredClone(raw);
+    let object=copy;for(const part of path)object=object[part];
+    object[key]=value;this.replace(index,copy);
+  }
+  view(index){
+    let view=this.views.get(index);if(view)return view;
+    const store=this;
+    function facade(path){
+      const read=()=>{let value=store.raw(index);for(const part of path)value=value[part];return value;};
+      const value=read();if(!value||typeof value!=='object'||Object.isFrozen(value))return value;
+      const target=Array.isArray(value)?[]:{};
+      return bindKnowledgeView(new Proxy(target,{
+        get(_target,key){const object=read(),item=object[key];
+          if(typeof item==='function')return item;
+          if(item&&typeof item==='object')return facade([...path,key]);return item;},
+        set(_target,key,value){store.change(index,path,key,value);return true;},
+        has(_target,key){return key in read();},
+        ownKeys(){return Reflect.ownKeys(read());},
+        getOwnPropertyDescriptor(_target,key){
+          if(Array.isArray(target)&&key==='length')return Reflect.getOwnPropertyDescriptor(target,key);
+          const d=Object.getOwnPropertyDescriptor(read(),key);return d?{...d,configurable:true}:undefined;
+        }
+      }),read);
+    }
+    view=facade([]);this.views.set(index,view);
+    if(this.views.size>64)this.views.delete(this.views.keys().next().value);
+    return view;
+  }
+  recent(limit){const entries=[];for(let i=this.concepts.length-1;i>=0&&entries.length<limit;i--)
+    if(this.active[i])entries.push(this.view(i));return entries.reverse();}
+  activeConcepts(){return this.concepts.filter((_,i)=>this.active[i]);}
+  forEntity(id){const entries=[];for(let i=0;i<this.entities.length;i++)if(this.active[i]&&
+    (this.entities[i]===id||Array.isArray(this.entities[i])&&this.entities[i].includes(id)))entries.push(this.view(i));return entries;}
+  *records(){for(let i=0;i<this.concepts.length;i++)yield this.raw(i);}
+}

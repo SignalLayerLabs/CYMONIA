@@ -7,11 +7,11 @@ import {activeStrategy} from './strategy.js';
 import {terrainAt,nearestDryLandPoint,isWaterTerrainKind,isSleepUnsafeTerrainKind} from './terrain.js';
 import {constructionDemand,nightPressure,rememberedCrowding,structureUseSummary} from './living-world.js';
 import {grievancePressure,strongestGrievance} from './destruction.js';
+import {activeConcepts,knowledgeForEntity as storedKnowledgeForEntity} from './knowledge-storage.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const heldObjects=(world,citizen)=>world.objects.filter(object=>object.holderId===citizen.id&&object.quantity>0&&!object.reservedProjectId);
-const activeKnowledge=citizen=>(citizen.knowledge||[]).filter(entry=>entry.active!==false);
 const relation=(citizen,targetId)=>citizen.relationships?.[targetId]||{};
 
 export const AFFORDANCE_WEIGHTS=Object.freeze({
@@ -32,7 +32,7 @@ function resourceAction(citizen,deposit,type,duration,purpose,payload={}){
 }
 
 function knowledgeForEntity(citizen,entityId){
-  return activeKnowledge(citizen).filter(entry=>(entry.provenance||[]).some(source=>source?.evidence?.entityId===entityId));
+  return storedKnowledgeForEntity(citizen,entityId);
 }
 
 function hasUnknownObservableProperty(citizen,target){
@@ -219,7 +219,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
     if(knowledgeForEntity(citizen,object.id).length)candidates.push({family:'transform',key:`transform:${object.id}`,targetId:object.id,utility:.24,inventoryFit:.9,knowledgeGap:.2,novelty:.55,effort:.2,risk:.12,proposal:proposal('transform',knowledgeForEntity(citizen,object.id).map(entry=>entry.concept),[{type:'ASSEMBLE',durationMinutes:35,purpose:'experiment',concepts:knowledgeForEntity(citizen,object.id).map(entry=>entry.concept),payload:{inputObjectIds:[object.id],quantities:[object.quantity],form:'bundle'}}])});
   }
 
-  const concepts=activeKnowledge(citizen).map(entry=>entry.concept);
+  const concepts=activeConcepts(citizen);
   for(const other of nearby){
     const gap=concepts.find(concept=>!knows(other,concept));
     if(gap){

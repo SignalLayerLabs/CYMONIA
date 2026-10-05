@@ -37,6 +37,18 @@ The public Observer projection is also bounded. Large private knowledge remains 
 
 Canonical knowledge, its personal provenance, the world identity and the durable calendar remain authoritative. Recent private episodic memories use the existing FIFO retention rule with a 512-record window.
 
+## Private knowledge paging
+
+The October 5 diagnostics at committed minute 140546 recorded another memory-limit reset with 365,298 knowledge entries and 53,572 recent memories. The automatic scheduler was already running at 1 ms CPU per invocation, so incoming requests alone did not resolve this memory pressure.
+
+Private knowledge now uses immutable scratch pages in the existing Durable Object SQLite database. Logical Citizen arrays retain compact indexes, not decoded records. The shared decoded cache retains at most eight pages and 512 Ki code units; dirty records are batched at 512 Ki code units. Confidence, forgetting, source edits and nested references resolve through stable logical handles, including after eviction and flushing. Membership, counts, recent previews and entity queries use indexes. Observer projections contain ordinary data and do not retain private adapters.
+
+Scratch pages are disposable. Canonical gzip snapshots still stream every complete knowledge record and provenance source, and seals hash the complete standalone snapshot. Wake and rollback reconstruct scratch pages one Citizen at a time from the existing guarded snapshot. No new authoritative snapshot format, world identity, Durable Object name or knowledge retention rule is introduced. Scratch checksums detect accidental corruption; a missing or corrupt page fails the mutation and reloads the complete checkpoint. Large records remain complete; records exceeding the SQLite row capacity fail explicitly rather than truncating evidence.
+
+Scratch staging, compaction and deletion are charged before the operation, including failed attempts and the budget bookkeeping row. Normal work uses the 40,000-row soft budget; cold recovery can use the existing 60,000-row emergency allowance. Partially superseded pages are compacted before reclaiming unreferenced pages. Constructor recovery synchronizes each Citizen's writes before proceeding.
+
+The local 365,000-record synthetic benchmark runs under a 128 MiB V8 heap limit. Ordinary records retain about 177 MiB of JavaScript heap; paged indexes initially retain about 49 MiB. This is a local representation benchmark, not a Cloudflare CPU or total-memory measurement. Production acceptance still requires unattended durable advancement and real Citizen changes.
+
 ## Mature-world recovery
 
 On 2026-10-02 the committed snapshot at world minute 128901 contained 105,436,862 uncompressed bytes. Trimming old memories after loading the complete graph still left too little memory for the next checkpoint. Later, a growing world also reached the invocation CPU limit during perception.
