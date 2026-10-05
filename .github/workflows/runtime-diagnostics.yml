@@ -33,7 +33,7 @@ jobs:
               except ValueError:cursor=start+1;continue
               event=entry.get('event') or {}
               count+=1
-              print(json.dumps({'outcome':entry.get('outcome'),'cpuTime':entry.get('cpuTime'),'wallTime':entry.get('wallTime'),'kind':'fetch' if 'request' in event else 'alarm','exceptions':entry.get('exceptions',[]),'logs':[line for line in entry.get('logs',[]) if any(str(m).startswith('CYMONIA_') for m in line.get('message',[]))]}))
+              print(json.dumps({'outcome':entry.get('outcome'),'cpuTime':entry.get('cpuTime'),'wallTime':entry.get('wallTime'),'kind':'fetch' if 'request' in event else 'scheduled' if 'cron' in event else 'alarm','exceptions':entry.get('exceptions',[]),'logs':[line for line in entry.get('logs',[]) if any(str(m).startswith('CYMONIA_') for m in line.get('message',[]))]}))
           print(f'Runtime events: {count}')
           if not count:raise SystemExit('No runtime events observed')
           PY

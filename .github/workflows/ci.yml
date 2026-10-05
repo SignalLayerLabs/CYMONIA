@@ -167,3 +167,6 @@ jobs:
           if(!Array.isArray(b.world?.citizens)||!b.world.citizens.some(c=>c.alive&&c.currentAction))throw new Error('observer canonical citizens unavailable');
           console.log(`PASS: production Observer polling is canonical and monotonic (${am} -> ${bm})`);
           NODE
+
+      - name: Verify autonomous advancement without Observer requests
+        run: node scripts/verify_autonomous_world.mjs
