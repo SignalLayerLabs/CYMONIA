@@ -217,26 +217,16 @@ try {
 
   const after = second.citizens[0].x;
 
-  assert.ok(
-    after > before,
-    `expected fractional canonical movement: ${before} -> ${after}`
-  );
-
-  // The calendar plays confirmed minutes instead of freezing between saves.
-  const dateBefore = await page.locator('#worldDate').innerText();
+  assert.equal(after,before,'position must stay confirmed between snapshots');
+  const dateBefore=await page.locator('#worldDate').innerText();
   await page.waitForTimeout(1250);
-  const dateAfter = await page.locator('#worldDate').innerText();
-  assert.notEqual(
-    dateAfter,
-    dateBefore,
-    'confirmed calendar minutes must visibly advance between snapshots'
-  );
-  const dateParts=dateAfter.match(/^YEAR (\d+) · DAY (\d+) · (\d{2}):(\d{2})$/);
-  assert.ok(dateParts,'calendar must expose a valid world date');
-  const [,year,day,hour,minute]=dateParts.map(Number);
-  const visibleMinute=(year-1)*525600+(day-1)*1440+hour*60+minute;
-  assert.ok(visibleMinute<=liveWorld.clock.worldMinute,
-    'the calendar must not invent minutes beyond the committed snapshot');
+  assert.equal(await page.locator('#worldDate').innerText(),dateBefore,'wall time must not invent canonical minutes');
+  liveWorld.clock.worldMinute=11;
+  liveWorld.citizens[0].position={x:11,y:10};
+  await page.waitForFunction(()=>document.querySelector('#worldDate').textContent==='YEAR 1 · DAY 1 · 00:11',{timeout:15000});
+  const updated=JSON.parse(await page.evaluate(()=>window.render_game_to_text()));
+  assert.equal(updated.worldMinute,11);
+  assert.equal(updated.citizens[0].x,11);
 
   await page.locator('#historyOpen').click();
 

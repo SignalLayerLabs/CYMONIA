@@ -3,6 +3,19 @@ import {learn,knows,knowsEntity} from './epistemics.js';
 import {appendEvent} from './ledger.js';
 import {localVisibilityRadius,recordSpatialObservation} from './living-world.js';
 
+// Physical entity IDs are stable strings. Memoize the hash per entity and
+// namespace; this cache is weak, private and never grants personal knowledge.
+const conceptCaches={k:new WeakMap(),kstruct:new WeakMap(),kobject:new WeakMap()};
+function conceptId(prefix,entity){
+  const id=entity.id;
+  if(typeof id!=='string')return stableId(prefix,id);
+  const cache=conceptCaches[prefix],prior=cache.get(entity);
+  if(prior?.id===id)return prior.concept;
+  const concept=stableId(prefix,id);
+  cache.set(entity,{id,concept});
+  return concept;
+}
+
 const SENSORY={
   water:{appearance:'moving reflective fluid',touch:'cool fluid',odor:'low',affordance:'biological attraction under hydration deficit'},
   food:{appearance:'small soft organic bodies',touch:'soft',odor:'distinct organic',affordance:'biological attraction under caloric deficit'},
@@ -27,13 +40,13 @@ export function recordExplorationVisit(citizen,position,at=0){
   return current;
 }
 
-export function resourceConceptId(deposit){return stableId('k',deposit.id);}
-export function structureConceptId(entity){return stableId('kstruct',entity.id);}
+export function resourceConceptId(deposit){return conceptId('k',deposit);}
+export function structureConceptId(entity){return conceptId('kstruct',entity);}
 export function sensoryEvidence(deposit){return {...(SENSORY[deposit.type]||{appearance:'unclassified material'}),entityId:deposit.id,position:{...deposit.position}};}
 export function perceiveResources(world,citizen,at=world.clock.worldMinute,radius=null,position=citizen.position){const learned=[],senseRadius=radius??localVisibilityRadius(world,12);recordExplorationVisit(citizen,position,at);for(const d of world.resourceDeposits){if(Math.hypot(position.x-d.position.x,position.y-d.position.y)>senseRadius)continue;recordSpatialObservation(citizen,d.id,d.position,at,'resource');const concept=resourceConceptId(d);if(!knows(citizen,concept)){const evidence=sensoryEvidence(d);const ev=appendEvent(world,'OBSERVATION',citizen.id,{concept,entityId:d.id,sensory:evidence},[],at);learn(citizen,concept,{kind:'observation',eventId:ev.id,entityId:d.id,evidence},.9,at);learned.push(concept);}if(!knowsEntity(citizen,d.id))citizen.knownEntityIds.push(d.id);}return learned;}
 export function perceiveStructures(world,citizen,at=world.clock.worldMinute,radius=null,position=citizen.position){const learned=[],senseRadius=radius??localVisibilityRadius(world,12);const entities=[...(world.buildings||[]),...(world.objects||[]).filter(o=>o.kind==='temporary_shelter'&&o.quantity>0),...(world.projects||[]).filter(p=>p.status==='construction'&&p.site).map(p=>({...p,kind:'construction_site',position:p.site,protection:{thermal:0,precipitation:0}}))];for(const entity of entities){if(!entity.position||Math.hypot(position.x-entity.position.x,position.y-entity.position.y)>senseRadius)continue;recordSpatialObservation(citizen,entity.id,entity.position,at,entity.kind==='construction_site'?'project':'structure');const concept=structureConceptId(entity);if(!knows(citizen,concept)){const evidence={entityId:entity.id,position:{...entity.position},appearance:entity.kind==='construction_site'?'active material construction site':'bounded physical cover',thermalProtection:Number(entity.properties?.thermalProtection??entity.protection?.thermal??.5),precipitationProtection:Number(entity.properties?.precipitationProtection??entity.protection?.precipitation??.5)};const ev=appendEvent(world,'OBSERVATION',citizen.id,{concept,entityId:entity.id,sensory:evidence},[],at);learn(citizen,concept,{kind:'observation',eventId:ev.id,entityId:entity.id,evidence},.85,at);learned.push(concept);}if(!knowsEntity(citizen,entity.id))citizen.knownEntityIds.push(entity.id);}return learned;}
 
-export function objectConceptId(object){return stableId('kobject',object.id);}
+export function objectConceptId(object){return conceptId('kobject',object);}
 export function perceiveObjects(world,citizen,at=world.clock.worldMinute,radius=null,position=citizen.position){
   const learned=[],senseRadius=radius??localVisibilityRadius(world,12);
   for(const object of world.objects||[]){

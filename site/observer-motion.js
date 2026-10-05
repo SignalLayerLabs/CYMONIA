@@ -1,18 +1,10 @@
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const lerp=(a,b,t)=>a+(b-a)*t;
-
+// The checkpoint is the observation's time. Wall time cannot complete a
+// physical action or move a citizen beyond the latest confirmed position.
 export function worldMinute(state,nowMs=Date.now()){
-  if(!state?.clock)return 0;
-  const rawEpoch=state.clock.realEpochMs;
-  const epoch=Number(rawEpoch);
-  const canonical=Number(state.clock.worldMinute)||0;
-  if(rawEpoch===null||rawEpoch===undefined||!Number.isFinite(epoch))return canonical;
-  return Math.max(canonical,Math.min(canonical+60,(Number(nowMs)-epoch)/1000));
+  return Math.max(0,Number(state?.clock?.worldMinute)||0);
 }
 export function citizenPosition(c,state,nowMs=Date.now()){
-  const a=c?.currentAction;
-  if(!a||a.type!=='MOVE'||!a.targetPosition||!a.fromPosition)return {...c.position};
-  const now=worldMinute(state,nowMs),span=Math.max(.001,Number(a.endsWorldMinute)-Number(a.startedWorldMinute)),t=clamp((now-Number(a.startedWorldMinute))/span,0,1),path=Array.isArray(a.path)&&a.path.length>=2?a.path:[a.fromPosition,a.targetPosition];let total=0;const lengths=[];for(let i=0;i<path.length-1;i++){const d=Math.hypot(path[i+1].x-path[i].x,path[i+1].y-path[i].y);lengths.push(d);total+=d;}if(total<=0)return {...a.targetPosition};let remaining=t*total;for(let i=0;i<lengths.length;i++){if(remaining<=lengths[i]||i===lengths.length-1){const u=lengths[i]?clamp(remaining/lengths[i],0,1):1;return{x:lerp(Number(path[i].x),Number(path[i+1].x),u),y:lerp(Number(path[i].y),Number(path[i+1].y),u)};}remaining-=lengths[i];}return {...a.targetPosition};
+  return {...c.position};
 }
 
 // A display-only formation makes colocated people individually visible/selectable.

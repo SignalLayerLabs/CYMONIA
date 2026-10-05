@@ -58,8 +58,12 @@ The alarm handler now completes at most four simulation boundaries per invocatio
 
 Regression coverage checks partial lag accounting, deterministic segmented simulation, separate checkpoint invocations, failed-save retention and prompt alarm continuation. Production proof must include successful ticks and checkpoints after a fresh wake.
 
-## Observer calendar
+## Streaming cold recovery
 
-Durable checkpoints are separated by at least 60 world minutes to respect the write budget. Showing only the latest checkpoint minute left the visible clock frozen between saves, followed by an abrupt jump.
+On 2026-10-05 the world at minute 135782 woke from a 152,492,929-byte snapshot, advanced to 135783, then logged an isolate memory reset before its recovery checkpoint. Loading still collected all compressed SQLite rows, joined their strings and decoded the entire gzip payload into a byte array. Those complete compressed representations remained beside the mature canonical graph.
 
-The Observer now plays the last 120 confirmed world minutes at one world minute per real second. Two checkpoint intervals absorb alarm execution and delivery jitter, so a healthy world does not pause at the nominal 60-minute save boundary. This small display delay makes minutes visible between polls without extrapolating beyond durable state. Repeated snapshots do not restart playback, new checkpoints extend its upper bound, and a disconnected client stops at the last confirmed minute. Genesis replay remains frozen. The canonical world clock, motion model and persistence schedule are unchanged.
+Wake and rollback now read SQLite rows through an iterator and decode base64 in windows of at most 65,536 code units. Decompression applies stream backpressure; partial headers and quartets span row boundaries without building a joined snapshot. Missing rows, truncated gzip and invalid headers remain fatal, preserving snapshot selection and clock guards. Existing compressed snapshots remain compatible. Per-entity concept hashes also use weak caches keyed by namespace and current string ID; personal knowledge, forgetting and provenance remain separate.
+
+## Observer time and actions
+
+The Observer now uses the confirmed snapshot minute for its date, action progress and physical positions. The earlier 120-minute calendar playback and 60-minute motion forecast described different times and could visually advance while the canonical world was stalled. They have been removed from the live view. Checkpoint delivery updates the date and actions together; wall time never announces a completed action or a destination that the kernel has not confirmed. Polling an unchanged canonical clock for two minutes marks the world degraded even when HTTP responses succeed. A newer confirmed minute restores the live status.
