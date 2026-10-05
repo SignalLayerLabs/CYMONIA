@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 
-export function verifyAutonomousSamples(a,b,sa,sb,nowMs,{minAdvanceMinutes=120}={}){
+export function verifyAutonomousSamples(a,b,sa,sb,nowMs,{minAdvanceMinutes=120,quietEndedRealMs=nowMs}={}){
   assert.ok(a.ok&&b.ok,'canonical health unavailable');
   assert.equal(a.world_id,b.world_id,'canonical world identity changed');
   assert.equal(sa.worldId,a.world_id);assert.equal(sb.worldId,a.world_id);
   assert.ok(b.world_minute-a.world_minute>=minAdvanceMinutes,'unattended canonical clock did not keep advancing');
   assert.ok(b.clock_high_water_mark>a.clock_high_water_mark,'unattended advancement was not persisted');
+  assert.ok(Number.isFinite(b.last_checkpoint_real_ms)&&b.last_checkpoint_real_ms>a.last_checkpoint_real_ms&&
+    b.last_checkpoint_real_ms<=quietEndedRealMs,'checkpoint must be saved during the quiet interval before its final read');
   assert.equal(b.heartbeat?.tick_stalled,false,'unattended heartbeat stalled');
   assert.equal(b.heartbeat?.lastTickError,null,'unattended heartbeat failed');
   assert.ok(b.lag_world_minutes<120,'unattended simulation lag is excessive');
@@ -57,8 +59,9 @@ async function main(){
   const sa=(await read('state')).world;
   console.log('QUIET_BEGIN',JSON.stringify({worldId:a.world_id,minute:a.world_minute,quietMs}));
   await pause(quietMs);
+  const quietEndedRealMs=Date.now();
   const b=await read('health'),sb=(await read('state')).world;
-  const proof=verifyAutonomousSamples(a,b,sa,sb,Date.now(),{minAdvanceMinutes:Math.max(120,quietMs/1000-120)});
+  const proof=verifyAutonomousSamples(a,b,sa,sb,Date.now(),{quietEndedRealMs,minAdvanceMinutes:Math.max(120,quietMs/1000-120)});
   console.log('PASS_AUTONOMOUS_WORLD',JSON.stringify(proof));
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(error=>{console.error(error);process.exitCode=1;});

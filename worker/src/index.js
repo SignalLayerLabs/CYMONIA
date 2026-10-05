@@ -757,6 +757,7 @@ export class SovereignWorld {
     );
     this.snapshotRecoverySource=`persist:${canonical.generation}`;
     this.persistenceDeferredUntilRealMs=0;
+    console.log('CYMONIA_CHECKPOINT_COMMITTED',JSON.stringify({worldMinute,generation:canonical.generation}));
 
     try{
       // Private gzip/base64 buffers belonged to writeCanonicalSnapshot() and
@@ -1033,6 +1034,7 @@ export class SovereignWorld {
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
+        last_checkpoint_real_ms:checkpointRealMs,
         alarm_interval_ms:ALARM_PULSE_MS,
         heartbeat:{
           scheduledAlarmRealMs,

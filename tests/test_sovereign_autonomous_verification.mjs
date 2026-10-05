@@ -4,8 +4,8 @@ import {existsSync} from 'node:fs';
 const url=new URL('../scripts/verify_autonomous_world.mjs',import.meta.url);
 async function validator(){assert.ok(existsSync(url),'unattended production verification is missing');return (await import(url)).verifyAutonomousSamples;}
 function fixture(){
-  const a={ok:true,world_id:'preserved',world_minute:200,clock_high_water_mark:200};
-  const b={...a,world_minute:380,clock_high_water_mark:380,lag_world_minutes:20,heartbeat:{tick_stalled:false,lastTickError:null},scheduler:{last_received_real_ms:270000}};
+  const a={ok:true,world_id:'preserved',world_minute:200,clock_high_water_mark:200,last_checkpoint_real_ms:100000};
+  const b={...a,world_minute:380,clock_high_water_mark:380,last_checkpoint_real_ms:280000,lag_world_minutes:20,heartbeat:{tick_stalled:false,lastTickError:null},scheduler:{last_received_real_ms:270000}};
   const citizen={id:'existing',position:{x:1,y:1},body:{ageMinutes:200},currentAction:{id:'action-a'}};
   const sa={worldId:'preserved',clock:{worldMinute:200},citizens:[citizen]};
   const sb={worldId:'preserved',clock:{worldMinute:380},citizens:[{...citizen,position:{x:3,y:1},body:{ageMinutes:380},currentAction:{id:'action-b'}}]};
@@ -38,4 +38,10 @@ test('the CI command defaults to a genuine three-minute quiet interval',async()=
   assert.equal(quietIntervalMs(['--quiet-ms','600000']),600000);
   assert.throws(()=>quietIntervalMs(['--quiet-ms']));
   assert.throws(()=>quietIntervalMs(['--quiet-ms','1000']));
+});
+
+test('the final read cannot rescue a checkpoint and count it as unattended advancement',async()=>{
+  const verify=await validator(),{a,b,sa,sb}=fixture();
+  a.last_checkpoint_real_ms=100000;b.last_checkpoint_real_ms=295000;
+  assert.throws(()=>verify(a,b,sa,sb,300000,{quietEndedRealMs:290000}),/checkpoint.*quiet/);
 });
