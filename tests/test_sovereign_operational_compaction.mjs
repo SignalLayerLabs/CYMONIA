@@ -57,19 +57,18 @@ test('experiment compaction preserves learned evidence and uses monotonic IDs ac
   assert.equal(JSON.stringify(w.ledger),ledgerBefore);
 });
 
-test('an existing SQLite snapshot is compacted as it loads, before its first alarm',async()=>{
-  const {SovereignWorld,splitSnapshot}=await import('../worker/src/index.js');
+test('an existing SQLite snapshot is compacted as it loads, before its first alarm',async t=>{
+  const {splitSnapshot}=await import('../worker/src/index.js');
   const {encodeSnapshot}=await import('../worker/src/persistence.js');
+  const {sqliteStorage,wake}=await import('./helpers/sovereign-sqlite.mjs');
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
   const w=createSovereignGenesis({realEpochMs:0}),c=w.citizens[0];
   const action=startAction(w,c,{type:'OBSERVE',durationMinutes:10},0);
   w.actions.push(...Array.from({length:4000},(_,i)=>({id:`old:${i}`,status:'completed'})));
   const parts=splitSnapshot(await encodeSnapshot(JSON.stringify(w)));
-  const instance=Object.create(SovereignWorld.prototype);
-  instance.sql={exec(query){
-    if(query.startsWith('SELECT generation,chunk_count'))return [{generation:'slot-b',chunk_count:parts.length}];
-    if(query.startsWith('SELECT state_part FROM world_state_chunks_v2'))return parts.map(state_part=>({state_part}));
-    throw new Error(`unexpected SQL: ${query}`);
-  }};
+  for(let i=0;i<parts.length;i++)storage.sql.exec('INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?)',1_000_000+i,parts[i]);
+  storage.sql.exec('UPDATE world_state_manifest SET generation=?,chunk_count=?,ledger_head=? WHERE id=1','slot-b',parts.length,w.ledgerHead);
   const loaded=await instance.loadWorld();
   assert.ok(loaded.actions.length<=1024);
   assert.equal(loaded.citizens.length,100);

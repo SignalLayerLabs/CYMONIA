@@ -40,6 +40,8 @@ import {
   reserveNeurons,
 } from './neuron-governor.js';
 import {createEvidencePool} from '../../world/evidence-pool.js';
+import {KnowledgeArchive} from './knowledge-archive.js';
+import {knowledgeStorage,activeKnowledgeCount} from '../../world/knowledge-storage.js';
 
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=15_000;
@@ -216,7 +218,7 @@ export class SovereignWorld {
         worldMinute:this.world?.clock?.worldMinute??null,
         privateMemories:citizens.reduce((n,c)=>n+(c.memories?.length||0),0),
         knowledgeEntries:citizens.reduce((n,c)=>n+(c.knowledge?.length||0),0),
-        knowledgeSources:citizens.reduce((n,c)=>n+(c.knowledge||[]).reduce((m,k)=>m+(k.provenance?.length||0),0),0),
+        knowledgeSources:citizens.reduce((n,c)=>n+(knowledgeStorage(c.knowledge)?.sourceCount??(c.knowledge||[]).reduce((m,k)=>m+(k.provenance?.length||0),0)),0),
         objects:this.world?.objects?.length||0,
         ...(this.evidencePool?.stats()||{}),
       }));
@@ -348,8 +350,9 @@ export class SovereignWorld {
           assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
           if(Number(meta.world_minute)!==world.clock.worldMinute||meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
           const pool=createEvidencePool();
+          const archive=this.createKnowledgeArchive(pool,true);
           let trimmedMemories=0;
-          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);pool.hydrateCitizen(citizen);}
+          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);pool.hydrateCitizen(citizen);archive.attach(citizen);}
           this.evidencePool=pool;this.pendingTrimmedMemories=trimmedMemories;
           selected={world,generation,source:meta.source};
           break;
@@ -359,8 +362,10 @@ export class SovereignWorld {
         console.log('CYMONIA_SNAPSHOT_LOAD',JSON.stringify({generation:meta.generation,chunkCount:count,streamed:true}));
         let trimmedMemories=0;
         const pool=createEvidencePool();
+        const archive=this.createKnowledgeArchive(pool,true);
         const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
-          if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);}
+          if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);archive.attach(item);
+            const synced=this.ctx.storage.sync?.();if(synced)return synced.then(()=>item);}
           return item;
         }});
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
@@ -389,6 +394,7 @@ export class SovereignWorld {
       const selectedRuntime=ensureRuntime(selected.world);
       selectedRuntime.lastSealWorldMinute=Math.max(Number(selectedRuntime.lastSealWorldMinute||0),persistedSealMinute);
     }
+    if(this.knowledgeArchive)this.knowledgeArchive.recovering=false;
     compactOperationalState(selected.world);return selected.world;
   }
   *storedSnapshotParts(generation,count){
@@ -418,8 +424,10 @@ export class SovereignWorld {
     const count=Number(meta.chunk_count);
     let trimmedMemories=0;
     const pool=createEvidencePool();
+    const archive=this.createKnowledgeArchive(pool,true);
     const restored=await decodeWorldSnapshot(this.storedSnapshotParts(generation,count),{onArrayItem:(key,item)=>{
-      if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);}
+      if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);archive.attach(item);
+        const synced=this.ctx.storage.sync?.();if(synced)return synced.then(()=>item);}
       return item;
     }});
     assertMonotonicSnapshot(restored,{
@@ -442,11 +450,33 @@ export class SovereignWorld {
     this.snapshotRecoverySource=`rollback:${generation}`;
     this.pendingTrimmedMemories=trimmedMemories;
     this.evidencePool=pool;
+    archive.recovering=false;
     return restored;
   }
   registerCitizenEvidence(){
     this.evidencePool??=createEvidencePool();
-    for(const citizen of this.world?.citizens||[])this.evidencePool.hydrateCitizen(citizen);
+    if(this.ctx&&this.sql?.exec)this.knowledgeArchive??=this.createKnowledgeArchive(this.evidencePool);
+    for(const citizen of this.world?.citizens||[]){this.evidencePool.hydrateCitizen(citizen);this.knowledgeArchive?.attach(citizen);}
+  }
+  createKnowledgeArchive(pool,recovering=false){
+    const chargeRows=count=>{
+      const now=Date.now(),day=utcDay(now),budget=this.readPersistenceBudget(day,archive.recovering?EMERGENCY_ROW_WRITE_BUDGET:SAFE_ROW_WRITE_BUDGET);
+      const reservation=reserveWriteBudget(budget,count+1);
+      if(!reservation.allowed){this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);throw new Error('knowledge_write_budget_exhausted');}
+      // Charge before staging: interrupted migrations and failed inserts also
+      // consume the platform quota and may not roll back this accounting.
+      this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
+        day,reservation.budget.rowsWritten,now);
+    };
+    const archive=new KnowledgeArchive(this.sql,{chargeRows,hydrateEntry:entry=>{
+      for(const source of entry.provenance||[])if(source.evidence)source.evidence=pool.intern(source.evidence);
+    }});
+    archive.recovering=recovering;
+    const old=Number(this.sqlRows('SELECT COUNT(*) AS count FROM world_knowledge_scratch')[0]?.count||0);
+    if(old){chargeRows(old);this.sql.exec('DELETE FROM world_knowledge_scratch');}
+    this.knowledgeArchive=archive;
+    return archive;
   }
   establishClockGuardBaseline(){
     if(!this.world)return;
@@ -685,6 +715,7 @@ export class SovereignWorld {
   }
 
   async persistSnapshot({forceSeal=false}={}){
+    this.registerCitizenEvidence();
     const runtime=ensureRuntime(this.world);
     const now=Date.now(),day=utcDay(now);
     if(!forceSeal&&now<this.persistenceDeferredUntilRealMs){
@@ -919,7 +950,7 @@ export class SovereignWorld {
         const {strategy,usage}=await withTimeout(askAI(this.env,context),AI_CALL_TIMEOUT_MS,'ai_timeout');
         accounting=reconcileNeurons(budget,admission.reservation,usage,model,config.rates);
         acceptAIStrategy(this.world,c.id,strategy,this.world.clock.worldMinute);
-        appendEvent(this.world,'AI_COGNITION',c.id,{model,reason:item.reason,status:'accepted',knowledgeContextCount:c.knowledge.filter(k=>k.active!==false).length,chargedNeurons:accounting.charged,accountingWarning:accounting.warning||null},[],this.world.clock.worldMinute);
+        appendEvent(this.world,'AI_COGNITION',c.id,{model,reason:item.reason,status:'accepted',knowledgeContextCount:activeKnowledgeCount(c),chargedNeurons:accounting.charged,accountingWarning:accounting.warning||null},[],this.world.clock.worldMinute);
         budget.lastFailureRealMs=0;
       }catch(error){
         if(!admission.reservation.reconciled)accounting=reconcileNeurons(budget,admission.reservation,null,model,config.rates);
@@ -1041,6 +1072,7 @@ export class SovereignWorld {
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
+        knowledge_archive:this.knowledgeArchive?.stats()??null,
         last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
         alarm_interval_ms:ALARM_PULSE_MS,
         heartbeat:{

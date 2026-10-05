@@ -1,5 +1,6 @@
 import {shareLearnedEvidence} from './evidence-pool.js';
 import {recordMemory} from './memory.js';
+import {knowledgeStorage} from './knowledge-storage.js';
 const knowledgeIndexes=new WeakMap();
 const entityIndexes=new WeakMap();
 export function knowsEntity(citizen,entityId){
@@ -19,6 +20,8 @@ export function knowsEntity(citizen,entityId){
 export function knowledgeEntry(citizen,concept){
   if(concept!==concept)return null;
   const entries=citizen.knowledge;
+  const storage=knowledgeStorage(entries);
+  if(storage)return storage.lookup(concept);
   let index=knowledgeIndexes.get(entries);
   if(!index||entries.length<index.length){index={length:0,concepts:new Map()};knowledgeIndexes.set(entries,index);}
   // Canonical knowledge is appended by learn() and deactivated by forget().
@@ -37,7 +40,7 @@ export function knowledgeEntry(citizen,concept){
   if(replacement)index.concepts.set(concept,replacement);else index.concepts.delete(concept);
   return replacement;
 }
-export function knows(citizen,concept){return Boolean(knowledgeEntry(citizen,concept));}
-export function learn(citizen,concept,provenance,confidence=.7,worldMinute=0){if(!provenance?.kind)throw new Error('knowledge_provenance_required');shareLearnedEvidence(citizen,provenance);let k=knowledgeEntry(citizen,concept);if(k){k.confidence=Math.max(k.confidence,confidence);k.provenance.push(provenance);return k;}k={concept:String(concept),confidence:Math.max(0,Math.min(1,confidence)),provenance:[provenance],active:true,learnedWorldMinute:worldMinute};citizen.knowledge.push(k);recordMemory(citizen,{kind:'semantic',content:{concept},source:provenance,confidence,salience:.5,worldMinute});return k;}
+export function knows(citizen,concept){const storage=knowledgeStorage(citizen.knowledge);return storage?concept===concept&&storage.has(concept):Boolean(knowledgeEntry(citizen,concept));}
+export function learn(citizen,concept,provenance,confidence=.7,worldMinute=0){if(!provenance?.kind)throw new Error('knowledge_provenance_required');shareLearnedEvidence(citizen,provenance);let k=knowledgeEntry(citizen,concept);if(k){k.confidence=Math.max(k.confidence,confidence);k.provenance.push(provenance);return k;}k={concept:String(concept),confidence:Math.max(0,Math.min(1,confidence)),provenance:[provenance],active:true,learnedWorldMinute:worldMinute};citizen.knowledge.push(k);recordMemory(citizen,{kind:'semantic',content:{concept},source:provenance,confidence,salience:.5,worldMinute});return knowledgeStorage(citizen.knowledge)?citizen.knowledge[citizen.knowledge.length-1]:k;}
 export function forget(citizen,concept){const k=knowledgeEntry(citizen,concept);if(k)k.active=false;return Boolean(k);}
 export function validateProposalKnowledge(world,citizen,proposal){for(const concept of proposal?.concepts||[]){if(!knows(citizen,concept))return {ok:false,reason:`unknown_concept:${concept}`};}for(const a of proposal?.actions||[]){for(const concept of a.concepts||[]){if(!knows(citizen,concept))return {ok:false,reason:`unknown_concept:${concept}`};}}return {ok:true};}

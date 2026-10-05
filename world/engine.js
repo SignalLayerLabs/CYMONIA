@@ -1,4 +1,5 @@
 import {compactOperationalState} from './operational-state.js';
+import {activeKnowledgeCount,recentKnowledge,knowledgeSnapshotValue} from './knowledge-storage.js';
 import {worldMinuteAt} from './clock.js';
 import {advanceEnvironment} from './environment.js';
 import {advanceBody,killCitizen,restoreHydration,restoreCalories} from './biology.js';
@@ -71,7 +72,7 @@ function drop(world,c,a,at){
 }
 function genericTransform(world,c,a,at){const ids=a.payload?.inputObjectIds||[];if(!ids.length)return null;const quantities=a.payload?.quantities||[];const consume=[];let total=0;for(let i=0;i<ids.length;i++){const o=world.objects.find(x=>x.id===ids[i]&&x.holderId===c.id);if(!o)continue;const q=Math.max(.01,Math.min(Number(quantities[i])||o.quantity,o.quantity));consume.push({objectId:o.id,quantity:q});total+=q*o.massPerUnitKg;}if(!consume.length||total<=0)return null;return transformMaterials(world,c,{consume,output:{material:'composite',quantity:total,massPerUnitKg:1,kind:a.payload?.form||'artifact'},process:a.type.toLowerCase()},at);}
 function build(world,c,a,at){if(a.payload?.projectId)return applyConstructionWork(world,c,a.payload.projectId,a.payload?.workMinutes||a.endsWorldMinute-a.startedWorldMinute,at);const ids=a.payload?.inputObjectIds||[];if(!ids.length||!a.payload?.site||!(a.concepts||[]).length)return null;const evidence=a.payload?.demandEvidence||null;if(!constructionNeedStillOpen(world,evidence,at))throw new Error(evidence?'construction_demand_resolved':'construction_demand_evidence_required');const p=beginEmpiricalConstruction(world,c,{concepts:a.concepts,inputObjectIds:ids,workMinutes:a.payload.workMinutes||120,form:a.payload.form||'structure',site:a.payload.site,whySummary:a.payload?.reasonSummary||null,reasonConceptIds:a.payload?.reasonConceptIds||a.concepts,demandEvidence:evidence},at);a.payload.projectId=p.id;return applyConstructionWork(world,c,p.id,a.endsWorldMinute-a.startedWorldMinute,at);}
-function primitiveCommunicate(world,c,a,at){const t=world.citizens.find(x=>x.id===a.targetId&&x.alive);if(!t)return;const signal=a.payload?.primitiveSignal;if(signal&&c.language.primitiveSignals.includes(signal)){appendEvent(world,'COMMUNICATION',c.id,{receiverId:t.id,primitiveSignal:signal},[a.id],at);recordMemory(t,{kind:'episodic',content:{primitiveSignal:signal,from:c.id},source:{kind:'communication'},confidence:.9,salience:.7,worldMinute:at});updateRelationship(world,c,t.id,{familiarity:.015},at);updateRelationship(world,t,c.id,{familiarity:.02},at);return;}if(a.payload?.beliefId){shareBelief(world,c,t,a.payload.beliefId,at);updateRelationship(world,c,t.id,{familiarity:.025,trust:.005},at);updateRelationship(world,t,c.id,{familiarity:.03},at);return;}const concepts=(a.payload?.conceptIds?.length?a.payload.conceptIds:[a.payload?.concept]).filter(Boolean).filter(x=>knows(c,x));if(concepts.length){const before=t.knowledge.filter(k=>k.active!==false).length,tokens=concepts.map(x=>coinSignal(world,c,x,at));const result=communicate(world,c,t,{concepts,tokens},at);updateRelationship(world,c,t.id,{familiarity:.02},at);updateRelationship(world,t,c.id,{familiarity:.025},at);if(t.knowledge.filter(k=>k.active!==false).length>before)queueCognition(world,t,'new_concept',.72,at,result.receiverInterpretations.find(Boolean));}}
+function primitiveCommunicate(world,c,a,at){const t=world.citizens.find(x=>x.id===a.targetId&&x.alive);if(!t)return;const signal=a.payload?.primitiveSignal;if(signal&&c.language.primitiveSignals.includes(signal)){appendEvent(world,'COMMUNICATION',c.id,{receiverId:t.id,primitiveSignal:signal},[a.id],at);recordMemory(t,{kind:'episodic',content:{primitiveSignal:signal,from:c.id},source:{kind:'communication'},confidence:.9,salience:.7,worldMinute:at});updateRelationship(world,c,t.id,{familiarity:.015},at);updateRelationship(world,t,c.id,{familiarity:.02},at);return;}if(a.payload?.beliefId){shareBelief(world,c,t,a.payload.beliefId,at);updateRelationship(world,c,t.id,{familiarity:.025,trust:.005},at);updateRelationship(world,t,c.id,{familiarity:.03},at);return;}const concepts=(a.payload?.conceptIds?.length?a.payload.conceptIds:[a.payload?.concept]).filter(Boolean).filter(x=>knows(c,x));if(concepts.length){const before=activeKnowledgeCount(t),tokens=concepts.map(x=>coinSignal(world,c,x,at));const result=communicate(world,c,t,{concepts,tokens},at);updateRelationship(world,c,t.id,{familiarity:.02},at);updateRelationship(world,t,c.id,{familiarity:.025},at);if(activeKnowledgeCount(t)>before)queueCognition(world,t,'new_concept',.72,at,result.receiverInterpretations.find(Boolean));}}
 function resolvePhysicalAction(world,c,a,at){
   const p=a.payload;let procedure=p.procedureId?knownProcedure(world,c,p.procedureId):null;
   if(p.procedureId&&!procedure)throw new Error('procedure_not_known');
@@ -142,7 +143,7 @@ export function advanceWorldTo(world,nowMs=Date.now(),{maxSegments=Infinity}={})
 }
 export function createHumanAvatar(world,{externalId,displayName=null,massKg=70},at=world.clock.worldMinute){if(world.citizens.some(c=>c.externalId===externalId))return world.citizens.find(c=>c.externalId===externalId);if(world.reserves.observerEmbodimentKg<massKg)throw new Error('embodiment_reserve_depleted');world.reserves.observerEmbodimentKg-=massKg;const id=stableId('human',externalId),genome={metabolism:1,immuneResilience:1,physicalCapacity:1,sensorySensitivity:1,fertility:.75,lifespanYears:82,temperamentBias:0};const c={id,kind:'HUMAN_LINKED',selfName:null,observerDisplayName:displayName,externalId,birthWorldMinute:at,deathWorldMinute:null,alive:true,position:{x:50,y:50},genome,body:{massKg,hydration:92,calories:92,sleepPressure:5,temperatureC:36.6,health:100,injuries:[],diseases:[],fertility:.75,pregnancy:null,reproductiveRole:'non_gestating',ageMinutes:25*525600,alive:true},psychology:{curiosity:.6,riskTolerance:.5,socialDrive:.6,aggression:.2,empathy:.6,noveltySeeking:.6,stress:0,fear:0,attachment:.2,confidence:.5},knowledge:[],memories:[],knownEntityIds:[id],skills:{},language:{primitiveSignals:['attention','danger','need','point','accept','reject'],lexicon:{},heard:{},grammarPatterns:{}},relationships:{},beliefs:[],possessions:[],goals:[],activeGoal:null,plans:[],currentActionId:null,commitments:[],programs:[],cognition:{lastReflectionMinute:null,pending:true,reason:'arrival'}};world.citizens.push(c);const event=appendEvent(world,'HUMAN_AVATAR_EMBODIED',c.id,{massKg,source:'OBSERVER_EMBODIMENT_RESERVE'},[],at);queueCognition(world,c,'arrival',.95,at,event.id);return c;}
 export function submitHumanIntent(world,citizenId,intent,at=world.clock.worldMinute){const c=world.citizens.find(x=>x.id===citizenId&&x.kind==='HUMAN_LINKED');if(!c||!c.alive)throw new Error('human_avatar_unavailable');world.privateHumanIntents[c.id]={intent:String(intent||'').slice(0,2000),worldMinute:at};const event=appendEvent(world,'EXTERNAL_DIRECTION_RECEIVED',c.id,{hasDirection:true},[],at);queueCognition(world,c,'human_direction',1,at,event.id);return {citizenId:c.id,queued:true};}
-export function acceptCognitiveProposal(world,citizenId,proposal,at=world.clock.worldMinute){const c=world.citizens.find(x=>x.id===citizenId);if(!c||!c.alive)throw new Error('citizen_unavailable');const v=validateCognitiveProposal(world,c,proposal);if(!v.ok)throw new Error(v.reason);appendEvent(world,'COGNITIVE_PLAN_ACCEPTED',c.id,{conceptIds:proposal.concepts||[],actionTypes:(proposal.actions||[]).map(x=>x.type),contextKnowledgeCount:c.knowledge.filter(k=>k.active!==false).length},[],at);return applyAcceptedPlan(world,c,proposal,at);}
+export function acceptCognitiveProposal(world,citizenId,proposal,at=world.clock.worldMinute){const c=world.citizens.find(x=>x.id===citizenId);if(!c||!c.alive)throw new Error('citizen_unavailable');const v=validateCognitiveProposal(world,c,proposal);if(!v.ok)throw new Error(v.reason);appendEvent(world,'COGNITIVE_PLAN_ACCEPTED',c.id,{conceptIds:proposal.concepts||[],actionTypes:(proposal.actions||[]).map(x=>x.type),contextKnowledgeCount:activeKnowledgeCount(c)},[],at);return applyAcceptedPlan(world,c,proposal,at);}
 const PUBLIC_OBSERVER_LIMITS=Object.freeze({
   knowledge:28,
   lexicon:32,
@@ -151,17 +152,12 @@ const PUBLIC_OBSERVER_LIMITS=Object.freeze({
   possessions:64,
 });
 function publicKnowledgeView(citizen){
-  const knowledge=Array.isArray(citizen.knowledge)?citizen.knowledge:[];
-  let count=0;
-  for(const entry of knowledge)if(entry?.active!==false)count++;
+  const count=activeKnowledgeCount(citizen);
   if(citizen.kind==='HUMAN_LINKED')return {count};
-  const items=[];
-  for(let i=knowledge.length-1;i>=0&&items.length<PUBLIC_OBSERVER_LIMITS.knowledge;i--){
-    const entry=knowledge[i];
-    if(entry?.active===false)continue;
-    items.push({concept:entry.concept,confidence:entry.confidence,provenance:entry.provenance});
-  }
-  items.reverse();
+  const items=recentKnowledge(citizen,PUBLIC_OBSERVER_LIMITS.knowledge)
+    .map(view=>{const entry=knowledgeSnapshotValue(view);
+      return {concept:entry.concept,confidence:entry.confidence,
+        provenance:entry.provenance?.map(source=>({...source}))};});
   return count<=PUBLIC_OBSERVER_LIMITS.knowledge?items:{count,items};
 }
 function publicLexiconView(language){
