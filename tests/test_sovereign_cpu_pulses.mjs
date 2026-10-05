@@ -64,6 +64,21 @@ test('alarm drains a healthy backlog promptly after committing its fallback succ
   assert.ok(instance.world.clock.worldMinute<31,'alarm must use the segment bound');
 });
 
+test('a dense backlog drains six chronological boundaries with the same canonical result',async t=>{
+  const {instance,saved}=pulseRuntime(t),world=instance.world,start=world.clock.worldMinute;
+  world.actions=world.citizens.map((c,i)=>{
+    const action={id:`dense:${i}`,actorId:c.id,type:'REST',status:'active',startedWorldMinute:start,
+      endsWorldMinute:start+1+i%30,payload:{},concepts:[]};c.currentActionId=action.id;return action;
+  });
+  const expected=structuredClone(world);advanceWorldTo(expected,(start+6)*1000);
+  await instance.alarm();
+  assert.equal(world.clock.worldMinute,start+6,'backlog must leave headroom for expensive checkpoint invocations');
+  assert.equal(saved.length,0,'advancement must remain separate from compression');
+  // Runtime alarm diagnostics are distinct from the deterministic kernel.
+  delete world.runtime;
+  assert.deepEqual(world,expected);
+});
+
 test('caught-up uncommitted progress keeps the object warm before the ten-second hibernation window',async t=>{
   const {instance,alarms}=pulseRuntime(t);
   instance.world.clock.realEpochMs=60000; // target equals its existing minute
