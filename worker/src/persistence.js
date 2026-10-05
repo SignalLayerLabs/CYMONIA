@@ -363,11 +363,53 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
   finally{reader.releaseLock();}
 }
 
+function compressedSnapshotByteStream(encoded){
+  const marker=`${SNAPSHOT_ENCODING}:`;
+  const iterator=typeof encoded==='string'?[encoded][Symbol.iterator]():encoded[Symbol.iterator]();
+  let source='',offset=0,header='',carry='',ready=false,stopped=false;
+  const stop=()=>{if(stopped)return;stopped=true;source='';carry='';iterator.return?.();};
+  const stream=new ReadableStream({
+    pull(controller){
+      try{
+        if(stopped){controller.close();return;}
+        while(true){
+          if(offset>=source.length){
+            const next=iterator.next();
+            source='';offset=0;
+            if(next.done){
+              if(!ready||carry.length)throw new SyntaxError('Truncated compressed snapshot');
+              controller.close();return;
+            }
+            if(typeof next.value!=='string')throw new TypeError('Invalid snapshot chunk');
+            source=next.value;
+          }
+          if(!ready){
+            const take=Math.min(marker.length-header.length,source.length-offset);
+            header+=source.slice(offset,offset+take);offset+=take;
+            if(!marker.startsWith(header))throw new SyntaxError('Invalid compressed snapshot header');
+            if(header.length<marker.length)continue;
+            ready=true;
+          }
+          const take=Math.min(65536-carry.length,source.length-offset);
+          const text=carry+source.slice(offset,offset+take);offset+=take;
+          const aligned=text.length-text.length%4;
+          carry=text.slice(aligned);
+          if(aligned){controller.enqueue(base64ToBytes(text.slice(0,aligned)));return;}
+        }
+      }catch(error){stop();controller.error(error);}
+    },
+    cancel(){stop();}
+  });
+  return {stream,stop};
+}
+
 export function snapshotJsonStream(encoded,{prefix='',suffix=''}={}){
-  const source=String(encoded),marker=`${SNAPSHOT_ENCODING}:`;
-  const body=source.startsWith(marker)
-    ?new Response(base64ToBytes(source.slice(marker.length))).body.pipeThrough(new DecompressionStream('gzip'))
-    :snapshotByteStream(source);
+  const marker=`${SNAPSHOT_ENCODING}:`;
+  const compressed=typeof encoded!=='string'||encoded.startsWith(marker);
+  const input=compressed?compressedSnapshotByteStream(encoded):null;
+  const body=compressed
+    ?input.stream.pipeThrough(new DecompressionStream('gzip'))
+    :snapshotByteStream(encoded);
   const reader=body.getReader(),encoder=new TextEncoder();
   let started=false,ended=false;
   return new ReadableStream({
@@ -379,9 +421,9 @@ export function snapshotJsonStream(encoded,{prefix='',suffix=''}={}){
         ended=true;reader.releaseLock();
         if(suffix)controller.enqueue(encoder.encode(suffix));
         controller.close();
-      }catch(error){ended=true;reader.releaseLock();controller.error(error);}
+      }catch(error){ended=true;input?.stop();reader.releaseLock();controller.error(error);}
     },
-    cancel(reason){if(!ended){ended=true;return reader.cancel(reason).finally(()=>reader.releaseLock());}}
+    cancel(reason){if(!ended){ended=true;input?.stop();return reader.cancel(reason).finally(()=>reader.releaseLock());}}
   });
 }
 

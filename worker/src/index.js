@@ -23,7 +23,6 @@ import {
   EMERGENCY_ROW_WRITE_BUDGET,
   encodeWorldSnapshotParts,
   decodeWorldSnapshot,
-  snapshotGzipSize,
   snapshotJsonStream,
   estimateSnapshotRowWrites,
   createWriteBudget,
@@ -355,15 +354,9 @@ export class SovereignWorld {
           selected={world,generation,source:meta.source};
           break;
         }
-        const slotted=meta.generation==='slot-a'||meta.generation==='slot-b';
-        const base=meta.generation==='slot-b'?1_000_000:0;
         const count=Number(meta.chunk_count);
-        const parts=slotted
-          ?[...this.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',base,base+count)].map(r=>r.state_part)
-          :[...this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',meta.generation,count)].map(r=>r.state_part);
-        if(parts.length!==count)continue;
-        const encoded=joinSnapshot(parts);
-        console.log('CYMONIA_SNAPSHOT_LOAD',JSON.stringify({generation:meta.generation,compressedCodeUnits:encoded.length,uncompressedBytes:snapshotGzipSize(encoded)}));
+        const encoded=this.storedSnapshotParts(meta.generation,count);
+        console.log('CYMONIA_SNAPSHOT_LOAD',JSON.stringify({generation:meta.generation,chunkCount:count,streamed:true}));
         let trimmedMemories=0;
         const pool=createEvidencePool();
         const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
@@ -398,6 +391,21 @@ export class SovereignWorld {
     }
     compactOperationalState(selected.world);return selected.world;
   }
+  *storedSnapshotParts(generation,count){
+    // Only the current SQLite row and a 64 KiB base64 window need remain
+    // alive alongside the canonical graph during wake and rollback.
+    const slotted=generation==='slot-a'||generation==='slot-b';
+    const base=generation==='slot-b'?1_000_000:0;
+    const rows=slotted
+      ?this.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',base,base+count)
+      :this.sql.exec('SELECT state_part FROM world_state_chunks WHERE generation=? AND seq<? ORDER BY seq',generation,count);
+    let seen=0;
+    for(const row of rows){
+      if(++seen>count)throw new Error('sovereign_snapshot_chunk_count_mismatch');
+      yield row.state_part;
+    }
+    if(seen!==count)throw new Error('sovereign_snapshot_chunk_count_mismatch');
+  }
   async loadCommittedWorldFromStorage(){
     const meta=this.sqlRows('SELECT generation,chunk_count,world_minute,ledger_head FROM world_state_manifest WHERE id=1 LIMIT 1')[0]||null;
     if(!meta)throw new Error('sovereign_committed_manifest_unavailable');
@@ -407,15 +415,10 @@ export class SovereignWorld {
       if(!fallback)throw new Error('sovereign_committed_snapshot_unavailable');
       return fallback;
     }
-    const count=Number(meta.chunk_count),base=generation==='slot-b'?1_000_000:0;
-    const parts=[...this.sql.exec(
-      'SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',
-      base,base+count
-    )].map(row=>row.state_part);
-    if(parts.length!==count)throw new Error('sovereign_committed_snapshot_incomplete');
+    const count=Number(meta.chunk_count);
     let trimmedMemories=0;
     const pool=createEvidencePool();
-    const restored=await decodeWorldSnapshot(joinSnapshot(parts),{onArrayItem:(key,item)=>{
+    const restored=await decodeWorldSnapshot(this.storedSnapshotParts(generation,count),{onArrayItem:(key,item)=>{
       if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);}
       return item;
     }});
