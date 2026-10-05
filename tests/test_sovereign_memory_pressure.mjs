@@ -173,3 +173,18 @@ test('an interrupted staged snapshot cannot replace the committed world',async t
   assert.equal(restarted.world.privateCheckpointStress,undefined);
   assert.equal(restarted.clockHighWaterMark,committedMinute);
 });
+
+test('checkpoint timestamps reflect publication after encoding and staged storage I/O',async t=>{
+  const storage=sqliteStorage();t.after(()=>storage.db.close());
+  const {instance}=await wake(storage);
+  let now=1000;t.mock.method(Date,'now',()=>now);
+  // Cloudflare freezes time during pure computation; staged-write completion
+  // supplies the I/O boundary that makes a publication timestamp current.
+  storage.sync=async()=>{now=5000;};
+  instance.world.clock.worldMinute++;
+  await instance.persist({forceSeal:true});
+  const guard=[...storage.sql.exec('SELECT updated_at FROM world_clock_guard WHERE id=1')][0];
+  const manifest=[...storage.sql.exec('SELECT updated_at FROM world_state_manifest WHERE id=1')][0];
+  assert.equal(guard.updated_at,5000,'guard must record publication time, not the start of encoding');
+  assert.equal(manifest.updated_at,5000);
+});

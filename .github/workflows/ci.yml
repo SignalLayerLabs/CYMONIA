@@ -104,6 +104,8 @@ jobs:
         run: node scripts/build_sovereign_genesis.mjs
       - name: Deploy game-only Observer
         run: npx wrangler pages deploy site --project-name cymonia --branch main --commit-hash "$GITHUB_SHA"
+      - name: Verify autonomous advancement without Observer requests
+        run: node scripts/verify_autonomous_world.mjs
       - name: Verify canonical state advances in production
         run: |
           for i in $(seq 1 30); do

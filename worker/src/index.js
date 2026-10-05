@@ -616,15 +616,19 @@ export class SovereignWorld {
       return {persisted:false,reason:'write_budget_exhausted',rowWrites};
     }
 
+    // Workers clocks stay frozen during pure CPU work. Complete staged I/O
+    // before timestamping publication; encoding start is not commit time.
+    await this.ctx.storage.sync?.();
+    const committedAtRealMs=Date.now();
     this.ctx.storage.transactionSync(()=>{
       this.sql.exec(`INSERT INTO world_state_manifest(id,generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        generation,chunkCount,worldMinute,ledgerHead,now);
+        generation,chunkCount,worldMinute,ledgerHead,committedAtRealMs);
       this.sql.exec(`INSERT INTO world_snapshot_slots(generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(?,?,?,?,?)
         ON CONFLICT(generation) DO UPDATE SET chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
-        generation,chunkCount,worldMinute,ledgerHead,now);
+        generation,chunkCount,worldMinute,ledgerHead,committedAtRealMs);
       this.sql.exec(`INSERT INTO world_clock_guard(id,world_id,highest_world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET
@@ -632,11 +636,11 @@ export class SovereignWorld {
           highest_world_minute=CASE WHEN excluded.highest_world_minute>world_clock_guard.highest_world_minute THEN excluded.highest_world_minute ELSE world_clock_guard.highest_world_minute END,
           ledger_head=CASE WHEN excluded.highest_world_minute>=world_clock_guard.highest_world_minute THEN excluded.ledger_head ELSE world_clock_guard.ledger_head END,
           updated_at=excluded.updated_at`,
-        worldId,worldMinute,ledgerHead,now);
+        worldId,worldMinute,ledgerHead,committedAtRealMs);
       if(due){
         this.sql.exec(
           'INSERT INTO world_seals(world_minute,ledger_head,state_sha256,created_at) VALUES(?,?,?,?)',
-          worldMinute,ledgerHead,stateSha256,now
+          worldMinute,ledgerHead,stateSha256,committedAtRealMs
         );
         if(sealPruneRows)this.sql.exec(
           'DELETE FROM world_seals WHERE seq=(SELECT MIN(seq) FROM world_seals)'
@@ -644,12 +648,14 @@ export class SovereignWorld {
       }
       this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
         ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
-        day,reservation.budget.rowsWritten,now);
+        day,reservation.budget.rowsWritten,committedAtRealMs);
     });
+    await this.ctx.storage.sync?.();
 
     return {
       persisted:true,
       generation,
+      committedAtRealMs:Date.now(),
       rowWrites,
       rowsWritten:reservation.budget.rowsWritten,
     };
@@ -757,6 +763,8 @@ export class SovereignWorld {
     );
     this.snapshotRecoverySource=`persist:${canonical.generation}`;
     this.persistenceDeferredUntilRealMs=0;
+    this.lastCompletedCheckpointRealMs=canonical.committedAtRealMs;
+    console.log('CYMONIA_CHECKPOINT_COMMITTED',JSON.stringify({worldMinute,generation:canonical.generation,committedAtRealMs:canonical.committedAtRealMs}));
 
     try{
       // Private gzip/base64 buffers belonged to writeCanonicalSnapshot() and
@@ -774,8 +782,8 @@ export class SovereignWorld {
   async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES,{maxSegments=Infinity,deferCheckpoint=false}={}){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
-      // Encoding a mature checkpoint gets a separate CPU allowance from the
-      // simulation pulse. Failed commits leave this request pending.
+      // Separate phases bound the work per handler. Only an incoming request
+      // renews the platform's cumulative CPU window; alarms alone do not.
       if(deferCheckpoint&&this.pendingCheckpoint){
         await this.persist({forceSeal:Boolean(this.pendingForceSeal)});
         this.pendingCheckpoint=false;this.pendingForceSeal=false;
@@ -994,6 +1002,11 @@ export class SovereignWorld {
     const scheduledAlarmRealMs=await this.ensureAlarm();
     const world=this.readableWorld();
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
+    if(request.method==='GET'&&path==='/runtime-heartbeat'){
+      this.lastSchedulerHeartbeatRealMs=Date.now();
+      return json({ok:true,service:'cymonia-sovereign-world',world_minute:world.clock.worldMinute,
+        lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute)});
+    }
     if(request.method==='GET'&&path==='/health'){
       const runtime=ensureRuntime(this.world),budget=ensureNeuronBudget(this.world),persistenceBudget=this.readPersistenceBudget(),model=this.env.BRAIN_MODEL||MODEL,config=resolveNeuronConfig(this.env,model);
       const operational=world.operationalState;
@@ -1027,6 +1040,8 @@ export class SovereignWorld {
           backoff_until_real_ms:this.persistenceDeferredUntilRealMs||null
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
+        scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
+        last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
         alarm_interval_ms:ALARM_PULSE_MS,
         heartbeat:{
           scheduledAlarmRealMs,
@@ -1147,8 +1162,36 @@ export class SovereignWorld {
 }
 
 export default {
+  scheduled(controller,env,ctx){
+    // Alarms keep simulation phases warm but do not renew the DO CPU window.
+    // Supply genuine incoming requests even when every Observer is closed.
+    // Independent slots keep a slow/rejected request from blocking renewal.
+    ctx.waitUntil((async()=>{
+      const results=await Promise.allSettled([0,20_000,40_000].map(async delay=>{
+        if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+        try{
+          const id=env.WORLD.idFromName('canonical-v2'),stub=env.WORLD.get(id);
+          const response=await stub.fetch(new Request('https://cymonia.internal/world/runtime-heartbeat',{
+            signal:AbortSignal.timeout(45_000),
+          }));
+          if(!response.ok){await response.body?.cancel();throw new Error(`heartbeat_http_${response.status}`);}
+          const health=await response.json();
+          if(!health.ok||health.service!=='cymonia-sovereign-world')throw new Error('heartbeat_response_invalid');
+          console.log('CYMONIA_SCHEDULED_HEARTBEAT',JSON.stringify({
+            scheduledTime:controller.scheduledTime,slot:delay/20_000,
+            worldMinute:health.world_minute,lagWorldMinutes:health.lag_world_minutes,
+          }));
+        }catch(error){
+          console.error('CYMONIA_SCHEDULED_HEARTBEAT_FAILED',JSON.stringify({slot:delay/20_000,error:String(error?.message||error).slice(0,200)}));
+          throw error;
+        }
+      }));
+      if(results.every(result=>result.status==='rejected'))throw new Error('scheduled_world_heartbeat_unavailable');
+    })());
+  },
   async fetch(request,env){
     const url=new URL(request.url);
+    if(url.pathname==='/runtime-heartbeat')return json({ok:false,error:'not_found'},404);
     const id=env.WORLD.idFromName('canonical-v2'),stub=env.WORLD.get(id),routed=new URL(request.url);
     routed.pathname=`/world${url.pathname}`;
     return stub.fetch(new Request(routed,request));

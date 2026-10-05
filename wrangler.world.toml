@@ -2,6 +2,9 @@ name = "cymonia-sovereign-world"
 main = "worker/src/index.js"
 compatibility_date = "2026-09-01"
 
+[triggers]
+crons = ["* * * * *"]
+
 [ai]
 binding = "AI"
 
