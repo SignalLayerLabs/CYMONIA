@@ -126,8 +126,8 @@ test('public snapshot streaming propagates corrupt gzip errors and permits reade
 
 test('snapshot write estimate counts only rows actually mutated',()=>{
   assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:false}),8); // chunks + manifest + slot metadata + clock guard + budget
-  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true}),9);  // plus seal row
-  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true,sealPruneRows:1}),10);
+  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true}),12);  // table + index + count trigger + AUTOINCREMENT sequence
+  assert.equal(estimateSnapshotRowWrites({chunkCount:4,sealDue:true,sealPruneRows:1}),14);
 });
 
 test('snapshot slots alternate without unbounded generations',()=>{

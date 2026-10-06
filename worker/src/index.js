@@ -301,6 +301,41 @@ export class SovereignWorld {
       ledger_head TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     )`);
+    if(typeof this.ctx?.storage?.transactionSync==='function')this.ensureSealReadIndex();
+  }
+  ensureSealReadIndex(){
+    if(this.sealIndexReady)return true;
+    // The migration must never spend unreserved writes or prevent read recovery.
+    const schema=new Set(this.sqlRows(`SELECT name FROM sqlite_master
+      WHERE name IN ('world_seals_minute','world_seal_inventory','world_seals_count_insert','world_seals_count_delete')`).map(row=>row.name));
+    const index=schema.has('world_seals_minute'),table=schema.has('world_seal_inventory');
+    const inventory=table?this.sqlRows('SELECT row_count FROM world_seal_inventory WHERE id=1 LIMIT 1')[0]:null;
+    if(schema.size===4&&inventory){this.sealIndexReady=true;return true;}
+    const now=Date.now(),day=utcDay(now),budget=this.readPersistenceBudget(day);
+    if(!reserveWriteBudget(budget,4103).allowed)return false;
+    const count=Number(this.sqlRows('SELECT COUNT(*) AS count FROM world_seals')[0]?.count||0);
+    // workerd meters index backfill as count+1 (catalog), each table/trigger
+    // creation as two rows, each trigger as one, plus inventory and budget bookkeeping.
+    const cost=(index?0:count+1)+(table?0:2)+
+      (schema.has('world_seals_count_insert')?0:1)+(schema.has('world_seals_count_delete')?0:1)+2;
+    const reservation=reserveWriteBudget(budget,cost);
+    if(!reservation.allowed)return false;
+    // Charge before staging, including failed migrations; never reset burned quota.
+    this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
+      ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
+      day,reservation.budget.rowsWritten,now);
+    this.ctx.storage.transactionSync(()=>{
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS world_seal_inventory(
+        id INTEGER PRIMARY KEY CHECK(id=1),row_count INTEGER NOT NULL CHECK(row_count>=0))`);
+      this.sql.exec('CREATE INDEX IF NOT EXISTS world_seals_minute ON world_seals(world_minute)');
+      this.sql.exec('INSERT INTO world_seal_inventory(id,row_count) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET row_count=excluded.row_count',count);
+      // Keep the exact count even when sequence numbers contain gaps.
+      this.sql.exec(`CREATE TRIGGER IF NOT EXISTS world_seals_count_insert AFTER INSERT ON world_seals
+        BEGIN UPDATE world_seal_inventory SET row_count=row_count+1 WHERE id=1; END`);
+      this.sql.exec(`CREATE TRIGGER IF NOT EXISTS world_seals_count_delete AFTER DELETE ON world_seals
+        BEGIN UPDATE world_seal_inventory SET row_count=row_count-1 WHERE id=1; END`);
+    });
+    this.sealIndexReady=true;return true;
   }
   sqlRows(query,...args){
     if(typeof this.sql?.exec!=='function')return [];
@@ -461,22 +496,12 @@ export class SovereignWorld {
     for(const citizen of this.world?.citizens||[]){this.evidencePool.hydrateCitizen(citizen);this.knowledgeArchive?.attach(citizen);}
   }
   createKnowledgeArchive(pool,recovering=false){
-    const chargeRows=count=>{
-      const now=Date.now(),day=utcDay(now),budget=this.readPersistenceBudget(day,archive.recovering?EMERGENCY_ROW_WRITE_BUDGET:SAFE_ROW_WRITE_BUDGET);
-      const reservation=reserveWriteBudget(budget,count+1);
-      if(!reservation.allowed){this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);throw new Error('knowledge_write_budget_exhausted');}
-      // Charge before staging: interrupted migrations and failed inserts also
-      // consume the platform quota and may not roll back this accounting.
-      this.sql.exec(`INSERT INTO persistence_budget(id,day,rows_written,updated_at) VALUES(1,?,?,?)
-        ON CONFLICT(id) DO UPDATE SET day=excluded.day,rows_written=excluded.rows_written,updated_at=excluded.updated_at`,
-        day,reservation.budget.rowsWritten,now);
-    };
-    const archive=new KnowledgeArchive(this.sql,{chargeRows,hydrateEntry:entry=>{
+    this.knowledgeArchive?.dispose();
+    const archive=new KnowledgeArchive(null,{hydrateEntry:entry=>{
       for(const source of entry.provenance||[])if(source.evidence)source.evidence=pool.intern(source.evidence);
     }});
     archive.recovering=recovering;
-    const old=Number(this.sqlRows('SELECT COUNT(*) AS count FROM world_knowledge_scratch')[0]?.count||0);
-    if(old){chargeRows(old);this.sql.exec('DELETE FROM world_knowledge_scratch');}
+    // Leave obsolete scratch rows inert: deleting them during wake consumes quota.
     this.knowledgeArchive=archive;
     return archive;
   }
@@ -608,7 +633,7 @@ export class SovereignWorld {
   }){
     // Reserve enough headroom before staging: the exact chunk count is known
     // only after streaming, and an incomplete inactive slot still costs rows.
-    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS+6).allowed){
+    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS+10).allowed){
       return {persisted:false,reason:'write_budget_exhausted'};
     }
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
@@ -635,7 +660,7 @@ export class SovereignWorld {
     });
     console.log('CYMONIA_CHECKPOINT_ENCODED',JSON.stringify({worldMinute,elapsedMs:Date.now()-encodingStartedAt,parts:chunkCount}));
     const sealCount=due
-      ?Number([...this.sql.exec('SELECT COUNT(*) AS count FROM world_seals')][0]?.count||0)
+      ?Number([...this.sql.exec('SELECT row_count AS count FROM world_seal_inventory WHERE id=1 LIMIT 1')][0]?.count||0)
       :0;
     const sealPruneRows=due&&sealCount>=4096?1:0;
     const rowWrites=estimateSnapshotRowWrites({
@@ -720,6 +745,10 @@ export class SovereignWorld {
     this.registerCitizenEvidence();
     const runtime=ensureRuntime(this.world);
     const now=Date.now(),day=utcDay(now);
+    if(typeof this.ctx?.storage?.transactionSync==='function'&&!this.ensureSealReadIndex()){
+      this.persistenceDeferred++;this.persistenceDeferredUntilRealMs=nextUtcDayStart(now);
+      return {persisted:false,reason:'seal_index_migration_budget_exhausted'};
+    }
     if(!forceSeal&&now<this.persistenceDeferredUntilRealMs){
       return {persisted:false,reason:'write_budget_backoff'};
     }
@@ -1075,6 +1104,7 @@ export class SovereignWorld {
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
         knowledge_archive:this.knowledgeArchive?.stats()??null,
+        seal_read_index_ready:Boolean(this.sealIndexReady),
         last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
         alarm_interval_ms:ALARM_PULSE_MS,
         heartbeat:{

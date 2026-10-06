@@ -41,45 +41,51 @@ Canonical knowledge, its personal provenance, the world identity and the durable
 
 The October 5 diagnostics at committed minute 140546 recorded another memory-limit reset with 365,298 knowledge entries and 53,572 recent memories. The automatic scheduler was already running at 1 ms CPU per invocation, so incoming requests alone did not resolve this memory pressure.
 
-Private knowledge now uses immutable scratch pages in the existing Durable Object SQLite database. Logical Citizen arrays retain compact indexes, not decoded records. The shared decoded cache retains at most eight pages and 512 Ki code units; dirty records are batched at 512 Ki code units. Confidence, forgetting, source edits and nested references resolve through stable logical handles, including after eviction and flushing. Membership, counts, recent previews and entity queries use indexes. Observer projections contain ordinary data and do not retain private adapters.
+Private knowledge uses immutable compressed RAM pages, compact logical indexes,
+a decoded LRU bounded to eight pages and 512 Ki code units, and a dirty overlay
+flushed at 512 Ki code units. Compressed backing owns its buffers and is capped
+at 32 MiB including obsolete pages. The cap is a capacity boundary: it fails
+explicitly without trimming knowledge or replacing the canonical world.
 
-Scratch pages are disposable. Canonical gzip snapshots still stream every complete knowledge record and provenance source, and seals hash the complete standalone snapshot. Wake and rollback reconstruct scratch pages one Citizen at a time from the existing guarded snapshot. No new authoritative snapshot format, world identity, Durable Object name or knowledge retention rule is introduced. Scratch checksums detect accidental corruption; a missing or corrupt page fails the mutation and reloads the complete checkpoint. Large records remain complete; records exceeding the SQLite row capacity fail explicitly rather than truncating evidence.
+The previous SQLite scratch adapter amplified reads when pages were fragmented,
+and cold recovery repeatedly deleted and rebuilt those pages. Production reached
+the account read quota and then the internal emergency write budget during wake.
+The RAM adapter performs **zero scratch SQL reads or writes**, including cold
+recovery. Old scratch rows are left inert; cleanup must never gate loading.
 
-Scratch staging, compaction and deletion are charged before the operation, including failed attempts and the budget bookkeeping row. Normal work uses the 40,000-row soft budget; cold recovery can use the existing 60,000-row emergency allowance. Partially superseded pages are compacted before reclaiming unreferenced pages. Constructor recovery synchronizes each Citizen's writes before proceeding.
+The complete guarded gzip remains authoritative. It includes all ordinary
+knowledge arrays and every provenance source, with unchanged world identity,
+clock guard, slot publication and seal semantics. Recovery reconstructs the RAM
+pages one Citizen at a time. Corrupt pages fail the mutation and reload this
+checkpoint. Records over the existing 1.5 MB transient limit fail explicitly.
 
-The local 365,000-record synthetic benchmark runs under a 128 MiB V8 heap limit. Ordinary records retain about 177 MiB of JavaScript heap; paged indexes initially retain about 49 MiB. This is a local representation benchmark, not a Cloudflare CPU or total-memory measurement. Production acceptance still requires unattended durable advancement and real Citizen changes.
+Entity counts and concept access use compact indexes without decompression.
+Checkpoint serialization groups bounded logical windows by page, then emits
+records in original order. Each window retains at most 2,048 record strings and
+1 Mi code units (one oversized record can exceed the text target), limiting
+fragmentation costs without retaining the entire decoded private graph.
 
-## Mature-world recovery
+The synchronous codec is the MIT-licensed fflate 0.8.2 subset documented in
+`worker/src/vendor/fflate.NOTICE.md`. `/health.knowledge_archive` reports compressed
+bytes, cache sizes, page decompressions and the adapter's zero scratch SQL cost.
+These counters exclude canonical SQL, alarms and other account workloads.
 
-On 2026-10-02 the committed snapshot at world minute 128901 contained 105,436,862 uncompressed bytes. Trimming old memories after loading the complete graph still left too little memory for the next checkpoint. Later, a growing world also reached the invocation CPU limit during perception.
+Previously consumed quota remains consumed. This migration does not reset the
+persisted daily write counter, bypass its limits or upgrade the Cloudflare plan.
+If the existing counter exceeds the normal allowance, canonical writes remain
+in backoff until the next UTC day. A Free account also resumes blocked platform
+operations only after its daily quota resets. The confirmed quota-cost fix and
+production restart status must be reported separately.
 
-The runtime now applies these bounds while loading and advancing the existing world:
+## Seal history read budget
 
-- The decoder trims each Citizen's recent memories before adding that Citizen to the root graph. The next checkpoint phase persists a pending trim even if no further world time advances.
-- Identical sensory evidence is represented by one deeply immutable object. Every Citizen keeps separate knowledge entries, confidence, source event IDs and access checks. Sharing storage grants no new knowledge. New `learn()` evidence uses the same pool.
-- The evidence pool's lookup keys are bounded to 4 Mi code units and 16,384 entries. Eviction removes only an index entry; evidence still referenced by a Citizen remains intact.
-- Known-entity membership uses an index over the canonical append-only array. New IDs are indexed once, while snapshot replacements and truncation rebuild the index.
-- Spatial memory retains the same 64 highest timestamps and stable tie order. Cached minima discard dense, equal-time overflow without repeatedly scanning or allocating rejected observations.
-- Compressed checkpoint chunks are staged individually into the inactive slot. A small final transaction publishes the manifest, clock guard, seal and row budget together. An interrupted stage cannot publish a partial world.
-
-Regression coverage checks personal knowledge isolation, immutable sharing, bounded pool retention, entity-index updates, spatial tie ordering and interruption during snapshot staging. Recovery must also be verified against production alarms and consecutive durable clock advances; HTTP health alone does not prove that the simulation is running.
-
-At world minute 133578 a later production invocation exhausted the default 30-second CPU limit (32,500 ms recorded), causing resets and queued-request overload despite successful snapshot hydration. The snapshot was then 137,341,255 uncompressed bytes with 257,653 personal knowledge entries. Cloudflare rejected custom CPU limits on the Free plan with error 100328.
-
-The alarm handler now completes at most six simulation boundaries per invocation, retaining the remaining lag. Checkpoint compression runs in a separate invocation without another simulation step. Each alarm flushes its successor before risky work: 2.5 seconds for normal work and 15 seconds during write-budget backoff or a caught exception. Even a caught-up tick can change private cognition, so its next checkpoint phase must remain warm. Keeping uncommitted work warm prevents the ten-second hibernation window from discarding every pulse before the 60-minute checkpoint. Healthy pulses leave that successor unchanged, bounding alarm writes to 34,560 per day. Healthy status writes are throttled to the normal heartbeat interval, with immediate writes for commits and error changes. Failures keep the fallback and durable committed readers. Recovery and memory trims request a forced checkpoint; its pending flags clear after a successful save or a rollback to the previous committed world. Partial pulses retain their original catch-up target so reflection cannot drift or starve while draining a backlog. Outage rebasing, memory bounds, row budgets and atomic durable commits remain in effect. No paid-plan CPU setting is required.
-
-Regression coverage checks partial lag accounting, deterministic segmented simulation, separate checkpoint invocations, failed-save retention and prompt alarm continuation. Production proof must include successful ticks and checkpoints after a fresh wake.
-
-## Streaming cold recovery
-
-On 2026-10-05 the world at minute 135782 woke from a 152,492,929-byte snapshot, advanced to 135783, then logged an isolate memory reset before its recovery checkpoint. Loading still collected all compressed SQLite rows, joined their strings and decoded the entire gzip payload into a byte array. Those complete compressed representations remained beside the mature canonical graph.
-
-Wake and rollback now read SQLite rows through an iterator and decode base64 in windows of at most 65,536 code units. Decompression applies stream backpressure; partial headers and quartets span row boundaries without building a joined snapshot. Missing rows, truncated gzip and invalid headers remain fatal, preserving snapshot selection and clock guards. Existing compressed snapshots remain compatible. Per-entity concept hashes also use weak caches keyed by namespace and current string ID; personal knowledge, forgetting and provenance remain separate.
-
-## Observer time and actions
-
-The Observer now uses the confirmed snapshot minute for its date, action progress and physical positions. The earlier 120-minute calendar playback and 60-minute motion forecast described different times and could visually advance while the canonical world was stalled. They have been removed from the live view. Checkpoint delivery updates the date and actions together; wall time never announces a completed action or a destination that the kernel has not confirmed. Polling an unchanged canonical clock for two minutes marks the world degraded even when HTTP responses succeed. A newer confirmed minute restores the live status.
-
-An Observer state request has a 20-second deadline across headers and body parsing. Expiration aborts its transport, releases the polling lock, retains the last confirmed world and retries automatically. Late responses cannot replace a newer snapshot. Bootstrap JSON requests also expire so a stalled avatar request cannot prevent observation from starting. Cancellation prevents late canonical or replay delivery. A healthy server can still appear frozen when an unbounded browser request stops all subsequent polls; page reload used to clear that lock.
-
-The later October 5 trace showed four-boundary pulses still accumulating lag: 31 pulses advanced 116 minutes, while each checkpoint took about 15 seconds wall time. Four boundaries needed 16 pulses to drain 60 dense action minutes because of the retained 30-minute target. Six boundaries divide that target evenly and need ten pulses, leaving more time for checkpoints at the same 2.5-second alarm interval. The 30-minute advance cap, chronological action boundaries, separate checkpoint phase and write frequency remain intact. Live AI admission still occurs once per pulse; exact live model decisions may differ. Production acceptance requires declining lag and sustained durable progression after a cold wake.
+A covering index serves `MAX(world_minute)` without scanning all seal rows.
+A trigger-maintained inventory supplies the exact retained row count, including
+sequence gaps, so checkpoint pruning never counts the whole history. Workerd measurements reserve four writes per insertion (table, index,
+inventory trigger, AUTOINCREMENT sequence) and two per deletion (table and
+inventory trigger). A 100-row index backfill writes 101 rows; creating the
+inventory table writes two rows, and each trigger writes one catalog row.
+The index backfill and inventory initialization are reserved and charged before
+staging. If the old daily budget is exhausted, read recovery remains available
+and migration retries on a later checkpoint after the UTC reset. The health
+field `seal_read_index_ready` distinguishes this remaining migration condition.

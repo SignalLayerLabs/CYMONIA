@@ -27,7 +27,7 @@ test('private knowledge survives restart while resident records stay bounded',as
   const {instance}=await wake(storage);const citizen=instance.world.citizens[0];
   citizen.knowledge=entries();await instance.persist({forceSeal:true});
   const {instance:restarted}=await wake(storage),c=restarted.world.citizens[0];
-  assert.ok(restarted.knowledgeArchive,'knowledge must be backed by SQLite pages');
+  assert.ok(restarted.knowledgeArchive,'knowledge must use bounded compressed pages');
   assert.equal(c.knowledge.length,2400);
   for(let i=0;i<2400;i++)assert.equal(c.knowledge[i].provenance[0].eventId,`event:${i}`);
   assert.ok(restarted.knowledgeArchive.stats().cachedCodeUnits<=524288);
@@ -90,16 +90,16 @@ test('previous nested references keep changing the logical record after page evi
   assert.equal(c.knowledge[0].provenance[1].eventId,'second-source');
 });
 
-test('failed scratch inserts are charged and leave dirty knowledge readable',async t=>{
+test('compressed capacity failure leaves dirty knowledge readable and quota untouched',async t=>{
   const storage=sqliteStorage();t.after(()=>storage.db.close());
   const {instance}=await wake(storage),c=instance.world.citizens[0];
   learn(c,'pending',{kind:'observation',eventId:'pending-proof'},.9,1);
-  const before=instance.readPersistenceBudget().rowsWritten,exec=storage.sql.exec;
-  storage.sql.exec=function(query,...args){if(query.includes('INSERT INTO world_knowledge_scratch'))throw new Error('scratch-write-interrupted');return exec.call(this,query,...args);};
-  assert.throws(()=>instance.knowledgeArchive.flush(),/scratch-write-interrupted/);
-  storage.sql.exec=exec;
-  assert.ok(instance.readPersistenceBudget().rowsWritten>before);
+  const before=instance.readPersistenceBudget().rowsWritten;
+  instance.knowledgeArchive.maxBackingBytes=0;
+  assert.throws(()=>instance.knowledgeArchive.flush(),/knowledge_compressed_capacity_exceeded/);
+  assert.equal(instance.readPersistenceBudget().rowsWritten,before);
   assert.equal(c.knowledge[0].provenance[0].eventId,'pending-proof');
+  instance.knowledgeArchive.maxBackingBytes=32*1024*1024;
   instance.knowledgeArchive.flush();assert.equal(knows(c,'pending'),true);
 });
 
@@ -114,13 +114,14 @@ test('oversized ordinary page records are preserved without retaining an oversiz
   assert.equal(restarted.world.citizens[0].knowledge[0].provenance[0].evidence.text.length,700_000);
 });
 
-test('scratch corruption is detected and recovery uses the intact complete checkpoint',async t=>{
+test('compressed page corruption is detected and recovery uses the intact complete checkpoint',async t=>{
   const storage=sqliteStorage();t.after(()=>storage.db.close());
   const {instance}=await wake(storage),c=instance.world.citizens[0];c.knowledge=entries();
   instance.world.citizens[1].knowledge=entries();
   await instance.persist({forceSeal:true});
-  storage.sql.exec("UPDATE world_knowledge_scratch SET state_json=json_replace(state_json,'$[0].provenance[0].eventId','damaged') WHERE id=(SELECT MIN(id) FROM world_knowledge_scratch)");
-  await assert.rejects(instance.mutateWorld(()=>c.knowledge[0].provenance[0].eventId),/knowledge_scratch_checksum/);
+  const archive=instance.knowledgeArchive;archive.cache.clear();archive.cachedCodeUnits=0;
+  archive.pages.values().next().value.checksum^=1;
+  await assert.rejects(instance.mutateWorld(()=>c.knowledge[0].provenance[0].eventId),/knowledge_page_checksum/);
   assert.equal(instance.world.citizens[0].knowledge[0].provenance[0].eventId,'event:0');
   assert.equal(instance.world.citizens[0].knowledge.length,2400);
 });
@@ -131,7 +132,7 @@ test('partial immutable pages are compacted without keeping obsolete private rec
   await instance.persist({forceSeal:true});
   for(let i=0;i<2400;i++)if(i%5)c.knowledge[i].confidence=.9;
   instance.knowledgeArchive.flush();instance.knowledgeArchive.reclaim();
-  const retained=[...storage.sql.exec('SELECT SUM(json_array_length(state_json)) AS count FROM world_knowledge_scratch')][0].count;
+  const retained=[...instance.knowledgeArchive.pageCounts.values()].reduce((a,b)=>a+b,0);
   assert.ok(retained<3000,'scratch pages must not retain thousands of superseded records');
   for(let i=0;i<2400;i++)assert.equal(c.knowledge[i].confidence,i%5?.9:.7);
 });
@@ -145,33 +146,31 @@ test('paging preserves opaque concepts including unpaired UTF-16 surrogates',asy
   assert.equal(c.knowledge[0].concept,'\uD800:private');
 });
 
-test('scratch quota exhaustion does not publish or lose pending knowledge',async t=>{
+test('exhausted persistence quota does not prevent compressed page flushing',async t=>{
   const storage=sqliteStorage();t.after(()=>storage.db.close());
   const {instance}=await wake(storage),c=instance.world.citizens[0];
   learn(c,'pending',{kind:'observation',eventId:'pending-proof'},.8,1);
   const guard=instance.clockHighWaterMark;
   storage.sql.exec('UPDATE persistence_budget SET rows_written=40000 WHERE id=1');
-  assert.throws(()=>instance.knowledgeArchive.flush(),/knowledge_write_budget_exhausted/);
+  instance.knowledgeArchive.flush();
+  assert.equal(instance.readPersistenceBudget().rowsWritten,40000);
   assert.equal(instance.clockHighWaterMark,guard);
   assert.equal(c.knowledge[0].provenance[0].eventId,'pending-proof');
-  storage.sql.exec('UPDATE persistence_budget SET rows_written=100 WHERE id=1');
   instance.knowledgeArchive.flush();assert.equal(knows(c,'pending'),true);
 });
 
-test('GC failures remain charged and do not delete a live logical record',async t=>{
+test('compressed garbage collection needs no SQL writes and does not delete live records',async t=>{
   const storage=sqliteStorage();t.after(()=>storage.db.close());
   const {instance}=await wake(storage),c=instance.world.citizens[0];c.knowledge=entries();
   await instance.persist({forceSeal:true});
   for(let i=0;i<2400;i++)c.knowledge[i].confidence=.9;
   instance.knowledgeArchive.flush();
-  const before=instance.readPersistenceBudget().rowsWritten,exec=storage.sql.exec;
-  storage.sql.exec=function(query,...args){if(query.startsWith('DELETE FROM world_knowledge_scratch'))throw new Error('gc-interrupted');return exec.call(this,query,...args);};
-  assert.throws(()=>instance.knowledgeArchive.reclaim(),/gc-interrupted/);
-  storage.sql.exec=exec;
-  assert.ok(instance.readPersistenceBudget().rowsWritten>before);
-  assert.equal(c.knowledge[0].confidence,.9);
+  const before=instance.readPersistenceBudget().rowsWritten;
   instance.knowledgeArchive.reclaim();
+  assert.equal(instance.readPersistenceBudget().rowsWritten,before);
+  assert.equal(c.knowledge[0].confidence,.9);
   assert.equal(c.knowledge[2399].provenance[0].eventId,'event:2399');
+  assert.equal(instance.knowledgeArchive.pages.size,instance.knowledgeArchive.pageRefs.size);
 });
 
 test('Observer previews contain ordinary data without retaining private runtime adapters',async t=>{
