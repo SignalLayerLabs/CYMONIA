@@ -65,8 +65,8 @@ function isSmallJsonRecord(value){
 
 function* worldJsonRecords(value,ancestors=new Set(),key=''){
   const archive=knowledgeStorage(value);
-  if(archive){yield '[';let first=true;for(const entry of archive.records()){
-    if(!first)yield ',';first=false;yield JSON.stringify(entry);
+  if(archive){yield '[';let first=true;for(const text of archive.serializedRecords()){
+    if(!first)yield ',';first=false;yield text;
   }yield ']';return;}
   value=knowledgeSnapshotValue(value);
   if(value&&typeof value.toJSON==='function')value=value.toJSON(key);
@@ -437,8 +437,8 @@ export function snapshotJsonStream(encoded,{prefix='',suffix=''}={}){
 
 export function estimateSnapshotRowWrites({chunkCount,sealDue=false,sealPruneRows=0}){
   const chunks=Math.max(0,Math.floor(Number(chunkCount)||0));
-  const pruned=Math.max(0,Math.floor(Number(sealPruneRows)||0));
-  return chunks+1+1+1+1+(sealDue?1:0)+pruned; // chunks + manifest + slot metadata + clock guard + budget + optional seal/prune
+  const pruned=2*Math.max(0,Math.floor(Number(sealPruneRows)||0));
+  return chunks+1+1+1+1+(sealDue?4:0)+pruned; // measured workerd costs: seal table/index/count-trigger/sequence=4, delete+count-trigger=2
 }
 
 export function selectNewestSnapshot(candidates){

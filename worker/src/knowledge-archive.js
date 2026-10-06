@@ -1,33 +1,46 @@
 import {bindKnowledgeStorage,bindKnowledgeView} from '../../world/knowledge-storage.js';
 import {hash32} from '../../world/rng.js';
+import {deflateSync,inflateSync} from './vendor/fflate.js';
 
 const PAGE_UNITS=65536,CACHE_UNITS=524288,DIRTY_UNITS=524288;
+const BACKING_BYTES=32*1024*1024;
+const encoder=new TextEncoder(),decoder=new TextDecoder();
 const numeric=key=>typeof key==='string'&&/^(0|[1-9][0-9]*)$/.test(key);
 // Parsed strings can retain their large Citizen JSON backing buffer in V8.
 // Logical indexes must own small strings independently of evicted records.
 const ownedString=value=>typeof value==='string'?JSON.parse(JSON.stringify(value)):value;
 
-// Disposable immutable SQLite pages back the live graph. They never appear
-// in the canonical snapshot: a reset reconstructs them from the guarded gzip.
+// Disposable compressed RAM pages back the live graph. The full guarded gzip
+// checkpoint remains the only durable authority; cold recovery incurs no scratch SQL.
 export class KnowledgeArchive {
-  constructor(sql,{chargeRows,hydrateEntry=()=>{}}){
-    this.sql=sql;this.chargeRows=chargeRows;this.hydrateEntry=hydrateEntry;
+  constructor(_sql,{hydrateEntry=()=>{},maxBackingBytes=BACKING_BYTES}={}){
+    this.hydrateEntry=hydrateEntry;this.maxBackingBytes=maxBackingBytes;
+    this.pages=new Map();this.backingBytes=0;this.nextPageId=1;this.citizenStores=new WeakMap();
     this.cache=new Map();this.cachedCodeUnits=0;this.stores=new Set();
     this.dirtyCodeUnits=0;this.pageRefs=new Map();this.pageCounts=new Map();this.pageReads=0;
-    sql.exec('CREATE TABLE IF NOT EXISTS world_knowledge_scratch(id INTEGER PRIMARY KEY AUTOINCREMENT,state_json TEXT NOT NULL,state_checksum INTEGER NOT NULL)');
+  }
+  dispose(){
+    this.pages.clear();this.cache.clear();this.stores.clear();this.citizenStores=new WeakMap();
+    this.pageRefs.clear();this.pageCounts.clear();
+    this.backingBytes=0;this.cachedCodeUnits=0;this.dirtyCodeUnits=0;
+    this.hydrateEntry=()=>{};
   }
   stats(){return {cachedCodeUnits:this.cachedCodeUnits,dirtyCodeUnits:this.dirtyCodeUnits,
-    cachedPages:this.cache.size,pageReads:this.pageReads,livePages:this.pageRefs.size};}
+    cachedPages:this.cache.size,pageReads:this.pageReads,livePages:this.pageRefs.size,
+    compressedBytes:this.backingBytes,maxCompressedBytes:this.maxBackingBytes,storage:'compressed-ram',sqlRowsRead:0,sqlRowsWritten:0};}
   readPage(id){
     let page=this.cache.get(id);
     if(page){this.cache.delete(id);this.cache.set(id,page);return page.records;}
-    const row=[...this.sql.exec('SELECT state_json,state_checksum FROM world_knowledge_scratch WHERE id=?',id)][0];
-    if(!row)throw new Error('knowledge_scratch_page_missing');
-    if(hash32(row.state_json)!==Number(row.state_checksum))throw new Error('knowledge_scratch_checksum');
-    const records=JSON.parse(row.state_json);
-    if(!Array.isArray(records))throw new Error('knowledge_scratch_page_invalid');
+    const encoded=this.pages.get(id);
+    if(!encoded)throw new Error('knowledge_page_missing');
+    // Supply a bounded output buffer: malformed data cannot inflate unboundedly.
+    const bytes=inflateSync(encoded.bytes,{out:new Uint8Array(encoded.rawBytes)});
+    const text=decoder.decode(bytes);
+    if(hash32(text)!==encoded.checksum)throw new Error('knowledge_page_checksum');
+    const records=JSON.parse(text);
+    if(!Array.isArray(records))throw new Error('knowledge_page_invalid');
     for(const entry of records)this.hydrateEntry(entry);
-    page={records,units:row.state_json.length};this.pageReads++;
+    page={records,units:text.length};this.pageReads++;
     // A single exceptionally large record is read without retaining its page.
     if(page.units<=CACHE_UNITS){
       this.cache.set(id,page);this.cachedCodeUnits+=page.units;
@@ -38,15 +51,18 @@ export class KnowledgeArchive {
   }
   write(records,handles){
     const text=`[${records.join(',')}]`;
-    this.chargeRows(1);
-    const row=[...this.sql.exec('INSERT INTO world_knowledge_scratch(state_json,state_checksum) VALUES(?,?) RETURNING id',text,hash32(text))][0];
-    const id=Number(row.id);
+    const input=encoder.encode(text),bytes=deflateSync(input,{level:1}).slice();
+    this.releaseDeadPages();
+    if(this.backingBytes+bytes.byteLength>this.maxBackingBytes)throw new Error('knowledge_compressed_capacity_exceeded');
+    const id=this.nextPageId++;
+    this.pages.set(id,{bytes,rawBytes:input.byteLength,checksum:hash32(text)});
+    this.backingBytes+=bytes.byteLength;
     this.pageRefs.set(id,handles.length);
     this.pageCounts.set(id,handles.length);
     for(let offset=0;offset<handles.length;offset++){
       const {store,index}=handles[offset],old=store.rows[index];
       if(old)this.pageRefs.set(old,this.pageRefs.get(old)-1);
-      store.rows[index]=id;store.offsets[index]=offset;
+      store.rows[index]=id;store.offsets[index]=offset;store.recordUnits[index]=records[offset].length;
       const pending=store.dirty.get(index);
       if(pending){this.dirtyCodeUnits-=pending.units;store.dirty.delete(index);}
     }
@@ -55,9 +71,9 @@ export class KnowledgeArchive {
     let records=[],handles=[],units=2;
     const flush=()=>{if(records.length)this.write(records,handles);records=[];handles=[];units=2;};
     for(const item of items){const text=JSON.stringify(item.entry);
-      // SQLite rows are bounded at 2 MiB. Rejecting an oversized record rolls
-      // back to the intact full checkpoint; private evidence is never trimmed.
-      if(new TextEncoder().encode(text).length>1_500_000)throw new Error('knowledge_record_exceeds_sqlite_row');
+      // Bound transient inflation per record. Oversized records fail closed;
+      // private evidence is never trimmed and the full checkpoint stays intact.
+      if(new TextEncoder().encode(text).length>1_500_000)throw new Error('knowledge_record_exceeds_page_limit');
       if(units+text.length+1>PAGE_UNITS)flush();
       records.push(text);handles.push(item);units+=text.length+1;
       if(units>=PAGE_UNITS)flush();
@@ -68,10 +84,20 @@ export class KnowledgeArchive {
     if(citizen.knowledge?.runtimeKnowledgeArchive===this)return citizen.knowledge;
     const source=citizen.knowledge||[],store=new ArchivedKnowledge(this);
     this.stores.add(store);
-    this.appendBatch((function*(){for(let index=0;index<source.length;index++){
-      const entry=source[index];store.indexEntry(index,entry);yield {store,index,entry};
-    }})());
-    citizen.knowledge=store.array;return store.array;
+    try{
+      this.appendBatch((function*(){for(let index=0;index<source.length;index++){
+        const entry=source[index];store.indexEntry(index,entry);yield {store,index,entry};
+      }})());
+    }catch(error){this.releaseStore(store);throw error;}
+    const old=this.citizenStores.get(citizen);
+    citizen.knowledge=store.array;this.citizenStores.set(citizen,store);
+    if(old)this.releaseStore(old);
+    return store.array;
+  }
+  releaseStore(store){
+    for(const id of store.rows)if(id)this.pageRefs.set(id,this.pageRefs.get(id)-1);
+    for(const pending of store.dirty.values())this.dirtyCodeUnits-=pending.units;
+    this.stores.delete(store);this.releaseDeadPages();
   }
   flush(){
     const archive=this;
@@ -88,10 +114,12 @@ export class KnowledgeArchive {
         for(let index=0;index<store.rows.length;index++)if(fragmented.has(store.rows[index]))
           yield {store,index,entry:store.raw(index)};})());
     }
+    this.releaseDeadPages();
+  }
+  releaseDeadPages(){
     const dead=[...this.pageRefs].filter(([,count])=>count===0).map(([id])=>id);
     if(!dead.length)return;
-    this.chargeRows(dead.length);
-    for(const id of dead){this.sql.exec('DELETE FROM world_knowledge_scratch WHERE id=?',id);
+    for(const id of dead){this.backingBytes-=this.pages.get(id).bytes.byteLength;this.pages.delete(id);
       const page=this.cache.get(id);if(page){this.cachedCodeUnits-=page.units;this.cache.delete(id);}
       this.pageRefs.delete(id);this.pageCounts.delete(id);}
   }
@@ -100,7 +128,7 @@ export class KnowledgeArchive {
 class ArchivedKnowledge {
   constructor(archive){
     this.archive=archive;this.concepts=[];this.active=[];this.entities=[];
-    this.rows=[];this.offsets=[];this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
+    this.rows=[];this.offsets=[];this.recordUnits=[];this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
     this.activeCount=0;this.sourceCount=0;this.sourceCounts=[];this.views=new Map();
     const store=this;
     this.array=bindKnowledgeStorage(new Proxy([],{
@@ -145,7 +173,7 @@ class ArchivedKnowledge {
     const pending=this.dirty.get(index);if(pending)return pending.entry;
     const entry=this.archive.readPage(this.rows[index])[this.offsets[index]];
     if(!entry||entry.concept!==this.concepts[index]||(entry.active!==false)!==this.active[index])
-      throw new Error('knowledge_scratch_record_mismatch');
+      throw new Error('knowledge_page_record_mismatch');
     return entry;
   }
   lookup(concept){
@@ -176,10 +204,11 @@ class ArchivedKnowledge {
     const store=this;
     function facade(path){
       const read=()=>{let value=store.raw(index);for(const part of path)value=value[part];return value;};
-      const value=read();if(!value||typeof value!=='object'||Object.isFrozen(value))return value;
+      const value=path.length?read():{};if(!value||typeof value!=='object'||Object.isFrozen(value))return value;
       const target=Array.isArray(value)?[]:{};
       return bindKnowledgeView(new Proxy(target,{
-        get(_target,key){const object=read(),item=object[key];
+        get(_target,key){if(!path.length&&key==='concept')return store.concepts[index];
+          const object=read(),item=object[key];
           if(typeof item==='function')return item;
           if(item&&typeof item==='object')return facade([...path,key]);return item;},
         set(_target,key,value){store.change(index,path,key,value);return true;},
@@ -200,5 +229,33 @@ class ArchivedKnowledge {
   activeConcepts(){return this.concepts.filter((_,i)=>this.active[i]);}
   forEntity(id){const entries=[];for(let i=0;i<this.entities.length;i++)if(this.active[i]&&
     (this.entities[i]===id||Array.isArray(this.entities[i])&&this.entities[i].includes(id)))entries.push(this.view(i));return entries;}
+  *serializedRecords(){
+    // Group a bounded logical window by physical page, then emit original order.
+    // Cross-Citizen dirty flushes otherwise cause repeated inflation on every record.
+    for(let start=0;start<this.concepts.length;){
+      let end=start,units=0;
+      while(end<this.concepts.length&&end-start<2048){
+        const size=this.dirty.get(end)?.units??this.recordUnits[end];
+        if(end>start&&units+size>1048576)break;
+        units+=size;end++;
+      }
+      const strings=new Array(end-start),groups=new Map();
+      for(let i=start;i<end;i++){
+        const pending=this.dirty.get(i);
+        if(pending){strings[i-start]=JSON.stringify(pending.entry);continue;}
+        const id=this.rows[i];let indexes=groups.get(id);
+        if(!indexes)groups.set(id,indexes=[]);indexes.push(i);
+      }
+      for(const [id,indexes] of groups){
+        const page=this.archive.readPage(id);
+        for(const i of indexes){
+          const entry=page[this.offsets[i]];
+          if(!entry||entry.concept!==this.concepts[i]||(entry.active!==false)!==this.active[i])throw new Error('knowledge_page_record_mismatch');
+          strings[i-start]=JSON.stringify(entry);
+        }
+      }
+      yield* strings;start=end;
+    }
+  }
   *records(){for(let i=0;i<this.concepts.length;i++)yield this.raw(i);}
 }
