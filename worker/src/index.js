@@ -209,11 +209,14 @@ export class SovereignWorld {
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
-    // A constructor also runs before an alarm wakeup; repair alarms from fetch.
-    ctx.blockConcurrencyWhile(async()=>{
+    // Only synchronous schema setup belongs behind the platform input gate.
+    // Canonical readers/mutations await ready; internal heartbeats stay callable
+    // during streamed recovery so genuine arrivals can renew the CPU window.
+    this.initializing=true;
+    const schemaReady=ctx.blockConcurrencyWhile(async()=>this.initializeSQLite());
+    this.ready=Promise.resolve(schemaReady).then(async()=>{
       const wakeStartedAt=Date.now();
       console.log('CYMONIA_WAKE_BEGIN');
-      this.initializeSQLite();
       this.world=await this.loadWorld();
       if(this.world)this.registerCitizenEvidence();
       const citizens=this.world?.citizens||[];
@@ -248,7 +251,15 @@ export class SovereignWorld {
       }catch(error){
         console.error('CYMONIA_HEARTBEAT_STATUS_LOAD_FAILED',String(error?.message||error).slice(0,300));
       }
+      this.initializing=false;
+    }).catch(error=>{
+      this.initializing=false;
+      console.error('CYMONIA_WAKE_FAILED',String(error?.message||error).slice(0,300));
+      ctx.abort?.('canonical recovery failed');
+      throw error;
     });
+    this.ready.catch(()=>{});
+    ctx.waitUntil?.(this.ready);
   }
   initializeSQLite(){
     this.sql.exec(`CREATE TABLE IF NOT EXISTS world_state(
@@ -891,6 +902,7 @@ export class SovereignWorld {
     });
   }
   async alarm(alarmInfo){
+    await this.ready;
     if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
     const startedAt=Date.now();
     // Even a caught-up tick can change private cognition or trim memories.
@@ -1065,8 +1077,13 @@ export class SovereignWorld {
     }));
   }
   async fetch(request){
-    if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
+    if(request.method==='GET'&&path==='/runtime-heartbeat'&&(this.initializing||!this.world)){
+      this.lastSchedulerHeartbeatRealMs=Date.now();
+      return json({ok:true,service:'cymonia-sovereign-world',initializing:true,world_minute:null,lag_world_minutes:null});
+    }
+    await this.ready;
+    if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
     const scheduledAlarmRealMs=await this.ensureAlarm();
     const world=this.readableWorld();
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();

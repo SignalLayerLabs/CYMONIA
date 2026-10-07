@@ -32,10 +32,11 @@ export async function wake(storage,env={}){
   const messages=[];
   const instance=new SovereignWorld({
     storage,
-    blockConcurrencyWhile:callback=>{ready=callback();},
+    blockConcurrencyWhile:callback=>{return ready=callback();},
     getWebSockets:()=>[{send:text=>messages.push(JSON.parse(text))}],
   },env);
   await ready;
+  await instance.ready;
   return {instance,messages};
 }
 

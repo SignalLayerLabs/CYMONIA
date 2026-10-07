@@ -36,10 +36,11 @@ async function wakeWorld(storage,persistedWorld=createSovereignGenesis({realEpoc
   const ctx={
     storage:{sql:{},get:async()=>null,...storage},
     getWebSockets:()=>[],
-    blockConcurrencyWhile:callback=>{initialized=callback();},
+    blockConcurrencyWhile:callback=>{return initialized=callback();},
   };
   const instance=new WakingWorld(ctx,{});
   await initialized;
+  await instance.ready;
   return instance;
 }
 
