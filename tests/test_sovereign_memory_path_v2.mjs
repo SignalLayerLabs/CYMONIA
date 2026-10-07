@@ -6,6 +6,7 @@ import {
   decodeSnapshot,
   decodeWorldSnapshot,
   snapshotGzipSize,
+  sha256Snapshot,
 } from '../worker/src/persistence.js';
 import {sqliteStorage,wake} from './helpers/sovereign-sqlite.mjs';
 import {recordMemory} from '../world/memory.js';
@@ -210,4 +211,24 @@ test('bounded checkpoint records use native JSON serialization for small evidenc
   const {parts}=await encodeWorldSnapshotParts(world);
   assert.equal(await decodeSnapshot(parts.join('')),expected);
   assert.ok(calls<2000,`private evidence processed field by field: ${calls} stringify calls`);
+});
+
+test('checkpoint encoding awaits cooperative I/O progress without changing canonical bytes',async()=>{
+ const world={clock:{worldMinute:42},ledgerHead:'head',citizens:[{id:'retained',knowledge:[],memories:[{text:'🌍 observed \\"'.repeat(10000)}]}]};
+ let calls=0;const {parts,stateSha256}=await encodeWorldSnapshotParts(world,{sealDue:true,onProgress:async()=>{calls++;await new Promise(r=>setTimeout(r,1));}});
+ assert.ok(calls>0,'the encoder must let pending network and storage events run');
+ assert.deepEqual(await decodeWorldSnapshot(parts.join('')),world);
+ assert.equal(stateSha256,await sha256Snapshot(JSON.stringify(world)));
+ await assert.rejects(encodeWorldSnapshotParts(world,{onProgress:async()=>{throw new Error('storage-progress-failed');}}),/storage-progress-failed/);
+});
+
+test('highly compressible checkpoints yield before final publication output',async()=>{
+  const world={clock:{worldMinute:7},ledgerHead:'same',records:Array(100).fill('x'.repeat(65536))};
+  let progressBeforeOutput=0,outputs=0;const parts=[];
+  await encodeWorldSnapshotParts(world,{
+    onProgress:async()=>{if(!outputs)progressBeforeOutput++;await new Promise(resolve=>setTimeout(resolve,1));},
+    onPart:part=>{outputs++;parts.push(part);},
+  });
+  assert.ok(progressBeforeOutput>0,'cooperative progress must depend on input work rather than gzip output size');
+  assert.deepEqual(await decodeWorldSnapshot(parts.join('')),world);
 });

@@ -132,6 +132,7 @@ export async function encodeWorldSnapshotParts(world,{
   ledgerHead=world.ledgerHead,
   maxCodeUnits=256*1024,
   onPart=null,
+  onProgress=null,
 }={}){
   const limit=Math.max(1024,Math.floor(Number(maxCodeUnits)||256*1024));
   const snapshot={...world,clock:{...clock},ledgerHead};
@@ -150,10 +151,15 @@ export async function encodeWorldSnapshotParts(world,{
   writer?.closed.catch(()=>{});
   const fallback=[];
 
-  if(sealDue)input=input.pipeThrough(new TransformStream({
+  let progressBytes=0;
+  if(sealDue||onProgress)input=input.pipeThrough(new TransformStream({
     async transform(chunk,controller){
       if(writer)await writer.write(chunk);
-      else fallback.push(chunk);
+      else if(sealDue)fallback.push(chunk);
+      progressBytes+=chunk.byteLength;
+      // Bound uninterrupted work by input size, even for highly compressible
+      // worlds. Native gzip may otherwise emit no output for many records.
+      if(onProgress&&progressBytes>=4*1024*1024){await onProgress();progressBytes=0;}
       controller.enqueue(chunk);
     },
     async flush(){if(writer)await writer.close();}
@@ -199,6 +205,7 @@ export async function encodeWorldSnapshotParts(world,{
   }
 
   if(state.value||!partCount)emitPart(state.value);
+  if(onProgress)await onProgress();
 
   let stateSha256=null;
   if(sealDue){

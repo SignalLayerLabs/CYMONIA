@@ -112,6 +112,22 @@ wake, with internal heartbeat responses available during recovery and canonical
 readers waiting for completion. See Cloudflare's
 [input-gate and timeout contract](https://developers.cloudflare.com/durable-objects/api/state/).
 
+Production then recorded storage-operation timeouts despite limited native CPU,
+and application elapsed time remained zero across long decode work. Resolved
+stream promises can continuously queue microtasks even outside the input gate.
+Recovery now flushes storage and yields a timer after each decoded Citizen;
+checkpoint encoding does the same after each 4 MiB batch of serialized input and
+at completion. Input batching also yields for highly compressible data and avoids a timer for
+every tiny native gzip emission.
+Writers remain serialized, and the manifest/clock guard still publish only after
+all inactive-slot parts complete. Progress-hook failures retain the previous
+canonical generation. A real local workerd recovery of 675,000 records completed
+in 5.82 seconds while an incoming heartbeat returned initializing status in
+53 ms. The same 675k fixture encoded its fragmented checkpoint in 4.14 seconds,
+with a concurrent heartbeat completing in 1.92 seconds before encoding finished.
+Knowledge counts and the checked first/last evidence remained intact. These
+local measurements do not replace unattended production validation.
+
 The synchronous codec is the MIT-licensed fflate 0.8.2 subset documented in
 `worker/src/vendor/fflate.NOTICE.md`. `/health.knowledge_archive` reports compressed
 bytes, cache sizes, page decompressions and the adapter's zero scratch SQL cost.
