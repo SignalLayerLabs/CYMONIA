@@ -402,7 +402,7 @@ export class SovereignWorld {
           const pool=createEvidencePool();
           const archive=this.createKnowledgeArchive(pool,true);
           let trimmedMemories=0;
-          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);archive.attach(citizen);pool.hydrateCitizen(citizen);}
+          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);archive.attach(citizen);pool.hydrateCitizen(citizen);await this.yieldRuntime();}
           this.evidencePool=pool;this.pendingTrimmedMemories=trimmedMemories;
           selected={world,generation,source:meta.source};
           break;
@@ -415,7 +415,7 @@ export class SovereignWorld {
         const archive=this.createKnowledgeArchive(pool,true);
         const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
           if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);archive.attach(item);pool.hydrateCitizen(item);
-            const synced=this.ctx.storage.sync?.();if(synced)return synced.then(()=>item);}
+            return this.yieldRuntime().then(()=>item);}
           return item;
         }});
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
@@ -477,7 +477,7 @@ export class SovereignWorld {
     const archive=this.createKnowledgeArchive(pool,true);
     const restored=await decodeWorldSnapshot(this.storedSnapshotParts(generation,count),{onArrayItem:(key,item)=>{
       if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);archive.attach(item);pool.hydrateCitizen(item);
-        const synced=this.ctx.storage.sync?.();if(synced)return synced.then(()=>item);}
+        return this.yieldRuntime().then(()=>item);}
       return item;
     }});
     assertMonotonicSnapshot(restored,{
@@ -507,6 +507,12 @@ export class SovereignWorld {
     this.evidencePool??=createEvidencePool();
     if(this.ctx&&this.sql?.exec)this.knowledgeArchive??=this.createKnowledgeArchive(this.evidencePool);
     for(const citizen of this.world?.citizens||[]){this.evidencePool.hydrateCitizen(citizen);this.knowledgeArchive?.attach(citizen);}
+  }
+  async yieldRuntime(){
+    await this.ctx.storage.sync?.();
+    // Resolved stream/storage promises can form a continuous microtask chain.
+    // A timer yields to incoming heartbeats and buffered storage completions.
+    await new Promise(resolve=>setTimeout(resolve,1));
   }
   createKnowledgeArchive(pool,recovering=false){
     this.knowledgeArchive?.dispose();
@@ -660,6 +666,7 @@ export class SovereignWorld {
       clock:snapshotClock,
       ledgerHead,
       maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
+      onProgress:()=>this.yieldRuntime(),
       onPart:part=>{
         if(chunkCount>=MAX_STAGED_SNAPSHOT_PARTS)throw new Error('sovereign_snapshot_exceeds_staging_limit');
         // The active generation and its manifest remain intact until the
