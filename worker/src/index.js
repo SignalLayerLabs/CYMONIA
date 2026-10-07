@@ -204,6 +204,7 @@ export class SovereignWorld {
     this.pendingForceSeal=false;
     this.pendingAdvanceTarget=null;
     this.evidencePool=null;
+    this.awaitingColdCpuRenewal=true;
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
@@ -389,7 +390,7 @@ export class SovereignWorld {
           const pool=createEvidencePool();
           const archive=this.createKnowledgeArchive(pool,true);
           let trimmedMemories=0;
-          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);pool.hydrateCitizen(citizen);archive.attach(citizen);}
+          for(const citizen of world.citizens){trimmedMemories+=trimCitizenMemories(citizen);archive.attach(citizen);pool.hydrateCitizen(citizen);}
           this.evidencePool=pool;this.pendingTrimmedMemories=trimmedMemories;
           selected={world,generation,source:meta.source};
           break;
@@ -401,7 +402,7 @@ export class SovereignWorld {
         const pool=createEvidencePool();
         const archive=this.createKnowledgeArchive(pool,true);
         const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
-          if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);archive.attach(item);
+          if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);archive.attach(item);pool.hydrateCitizen(item);
             const synced=this.ctx.storage.sync?.();if(synced)return synced.then(()=>item);}
           return item;
         }});
@@ -463,7 +464,7 @@ export class SovereignWorld {
     const pool=createEvidencePool();
     const archive=this.createKnowledgeArchive(pool,true);
     const restored=await decodeWorldSnapshot(this.storedSnapshotParts(generation,count),{onArrayItem:(key,item)=>{
-      if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);pool.hydrateCitizen(item);archive.attach(item);
+      if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);archive.attach(item);pool.hydrateCitizen(item);
         const synced=this.ctx.storage.sync?.();if(synced)return synced.then(()=>item);}
       return item;
     }});
@@ -898,6 +899,9 @@ export class SovereignWorld {
     // setAlarm can resolve while its write is still buffered. Flush it before
     // synchronous simulation can keep storage completion events waiting.
     await this.ctx.storage.sync?.();
+    // Cold decode already spent CPU in this alarm's platform window. Keep
+    // its successor warm until the autonomous incoming heartbeat renews it.
+    if(this.awaitingColdCpuRenewal)return;
     let runtime=ensureRuntime(this.world);
     runtime.nextAlarmRealMs=nextAlarm;
 
@@ -1060,6 +1064,7 @@ export class SovereignWorld {
   }
   async fetch(request){
     if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
+    this.awaitingColdCpuRenewal=false;
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     const scheduledAlarmRealMs=await this.ensureAlarm();
     const world=this.readableWorld();

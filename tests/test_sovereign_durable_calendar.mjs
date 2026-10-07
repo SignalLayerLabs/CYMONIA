@@ -174,6 +174,7 @@ test('several world days and repeated evictions retain the year and ledger',asyn
 
 test('a failed SQLite checkpoint never leaks advanced time through REST or broadcast',async t=>{
   const {storage,instance,messages,advance}=await nearYearBoundary(t);
+  await instance.fetch(new Request('https://internal/world/runtime-heartbeat'));
   t.mock.method(console,'error',()=>{});
   const transaction=storage.transactionSync;
   storage.transactionSync=()=>{throw new Error('injected storage failure');};
