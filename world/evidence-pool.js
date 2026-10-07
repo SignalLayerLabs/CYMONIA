@@ -38,8 +38,7 @@ export function createEvidencePool({maxCodeUnits=4*1024*1024,maxEntries=16384}={
     hydrateCitizen(citizen){
       if(citizenPools.get(citizen)===pool)return citizen;
       citizenPools.set(citizen,pool);
-      if(knowledgeStorage(citizen.knowledge))return citizen;
-      for(const entry of citizen.knowledge||[]){
+      for(const entry of knowledgeStorage(citizen.knowledge)?[]:citizen.knowledge||[]){
         for(const source of entry.provenance||[])shareLearnedEvidence(citizen,source);
       }
       for(const memory of citizen.memories||[])shareLearnedEvidence(citizen,memory.source);

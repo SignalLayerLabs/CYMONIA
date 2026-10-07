@@ -107,6 +107,8 @@ test('quiet production alarms retain unsaved minutes until a durable checkpoint'
   await instance.persist({forceSeal:true});
   await instance.ensureAlarm();
   const initialId=instance.world.worldId;
+  let lastRenewal=-Infinity;
+  let renewalToken=null;
   for(let i=0;i<40;i++){
     const next=await storage.getAlarm();
     if(next-now>=10000){
@@ -114,6 +116,11 @@ test('quiet production alarms retain unsaved minutes until a durable checkpoint'
       instance.ctx.getWebSockets=()=>[];
     }
     now=next;
+    if(now-lastRenewal>=20000){
+      const response=await instance.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:renewalToken?{'x-cymonia-cpu-renewal':renewalToken}:{}}));
+      renewalToken=(await response.json()).cpu_renewal_token;
+      lastRenewal=now;
+    }
     await instance.alarm();
     if(instance.lastPersistedWorldMinute>=60)break;
   }

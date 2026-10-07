@@ -181,3 +181,16 @@ test('Observer previews contain ordinary data without retaining private runtime 
   assert.equal(view.citizens[0].knowledge.count,2400);
   assert.equal(view.citizens[0].knowledge.items[0].provenance[0].eventId,'event:2372');
 });
+
+test('cold recovery leaves historical evidence compressed and hydrates it only on access',async t=>{
+ const storage=sqliteStorage();t.after(()=>storage.db.close());const {instance}=await wake(storage);
+ const c=instance.world.citizens[0];c.knowledge=entries();
+ c.memories=[{kind:'episodic',source:{kind:'observation',evidence:{entityId:'memory-only',position:{x:1,y:2}}}}];
+ await instance.persist({forceSeal:true});
+ const {instance:restored}=await wake(storage),r=restored.world.citizens[0];
+ assert.equal(restored.evidencePool.stats().pooledEvidence,1,'cold recovery must not intern the entire knowledge archive');
+ assert.ok(Object.isFrozen(r.memories[0].source.evidence.position));
+ assert.equal(r.knowledge[0].provenance[0].evidence.entityId,'object:0');
+ assert.ok(Object.isFrozen(r.knowledge[0].provenance[0].evidence.position)||Object.isFrozen(r.knowledge[0].provenance[0].evidence));
+ assert.ok(restored.evidencePool.stats().pooledEvidence>1,'accessed evidence must still enter the immutable runtime pool');
+});

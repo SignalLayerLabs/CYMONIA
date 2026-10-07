@@ -80,6 +80,21 @@ updates in 3.87 seconds and committed it successfully. These fixtures establish
 local behavior; production CPU and unattended durable progression still require
 verification after deployment.
 
+The subsequent production trace exposed cumulative CPU coupling: a cold alarm
+spent 24.9–29.6 seconds recovering the archive, then its successor exceeded the
+CPU limit while attempting a checkpoint. Cold alarms now retain their warm
+successor but wait for a subsequent internal heartbeat to echo a per-recovery
+challenge before running another phase. The challenge is returned only after
+decode, so a queued wake request cannot release the gate. Rollback rotates it;
+late responses cannot replace a newer scheduler slot's challenge.
+The existing autonomous cron supplies these requests even with no Observers.
+Cold recovery also archives knowledge before attaching the evidence pool, so
+historical sources are interned and frozen on access rather than all at wake.
+Recent memory sources remain eagerly frozen. Recovery uses this order for
+slotted checkpoints, legacy snapshots and rollback. The 675k fixture recovered
+in 5.43 seconds under Node and 6.96 seconds in fresh workerd, with its knowledge
+counts and checked records preserved.
+
 The synchronous codec is the MIT-licensed fflate 0.8.2 subset documented in
 `worker/src/vendor/fflate.NOTICE.md`. `/health.knowledge_archive` reports compressed
 bytes, cache sizes, page decompressions and the adapter's zero scratch SQL cost.
