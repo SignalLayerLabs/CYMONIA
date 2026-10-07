@@ -53,6 +53,7 @@ function isSmallJsonRecord(value){
     if(++nodes>64)return false;
     if(typeof item==='string'){units+=item.length;if(units>8192)return false;}
     else if(item&&typeof item==='object'){
+      if(knowledgeStorage(item))return false;
       if(typeof item.toJSON==='function')return false;
       const keys=Object.keys(item);
       if(keys.length>32)return false;

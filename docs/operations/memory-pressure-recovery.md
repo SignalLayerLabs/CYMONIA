@@ -65,6 +65,21 @@ records in original order. Each window retains at most 2,048 record strings and
 1 Mi code units (one oversized record can exceed the text target), limiting
 fragmentation costs without retaining the entire decoded private graph.
 
+October 7 production logs showed checkpoint encoding exceeding the 30-second
+CPU window with 672,634 knowledge records. Checkpoints now emit detached JSON
+spans from immutable pages directly, avoiding evidence hydration and object
+reserialization. Per-page UTF-16 offsets carry an integrity checksum; exact
+concept and active-state metadata validate each emitted record. The raw text
+cache shares the decoded cache's eight-page/512 Ki code-unit bounds, and the
+two cache forms are cleared when switching between runtime reads and encoding.
+Small native JSON shortcuts also reject nested private archive adapters.
+
+A 675,000-record Node comparison reduced checkpoint wall time from 8.26 to
+3.85 seconds. Local workerd encoded a 30.4 MB compressed archive with fragmented
+updates in 3.87 seconds and committed it successfully. These fixtures establish
+local behavior; production CPU and unattended durable progression still require
+verification after deployment.
+
 The synchronous codec is the MIT-licensed fflate 0.8.2 subset documented in
 `worker/src/vendor/fflate.NOTICE.md`. `/health.knowledge_archive` reports compressed
 bytes, cache sizes, page decompressions and the adapter's zero scratch SQL cost.

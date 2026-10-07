@@ -17,26 +17,23 @@ export class KnowledgeArchive {
     this.hydrateEntry=hydrateEntry;this.maxBackingBytes=maxBackingBytes;
     this.pages=new Map();this.backingBytes=0;this.nextPageId=1;this.citizenStores=new WeakMap();
     this.cache=new Map();this.cachedCodeUnits=0;this.stores=new Set();
+    this.serializedCache=new Map();this.serializedCodeUnits=0;
     this.dirtyCodeUnits=0;this.pageRefs=new Map();this.pageCounts=new Map();this.pageReads=0;
   }
   dispose(){
-    this.pages.clear();this.cache.clear();this.stores.clear();this.citizenStores=new WeakMap();
+    this.pages.clear();this.cache.clear();this.serializedCache.clear();this.stores.clear();this.citizenStores=new WeakMap();
     this.pageRefs.clear();this.pageCounts.clear();
-    this.backingBytes=0;this.cachedCodeUnits=0;this.dirtyCodeUnits=0;
+    this.backingBytes=0;this.cachedCodeUnits=0;this.serializedCodeUnits=0;this.dirtyCodeUnits=0;
     this.hydrateEntry=()=>{};
   }
   stats(){return {cachedCodeUnits:this.cachedCodeUnits,dirtyCodeUnits:this.dirtyCodeUnits,
     cachedPages:this.cache.size,pageReads:this.pageReads,livePages:this.pageRefs.size,
-    compressedBytes:this.backingBytes,maxCompressedBytes:this.maxBackingBytes,storage:'compressed-ram',sqlRowsRead:0,sqlRowsWritten:0};}
+    serializedCodeUnits:this.serializedCodeUnits,compressedBytes:this.backingBytes,maxCompressedBytes:this.maxBackingBytes,storage:'compressed-ram',sqlRowsRead:0,sqlRowsWritten:0};}
   readPage(id){
+    if(this.serializedCache.size){this.serializedCache.clear();this.serializedCodeUnits=0;}
     let page=this.cache.get(id);
     if(page){this.cache.delete(id);this.cache.set(id,page);return page.records;}
-    const encoded=this.pages.get(id);
-    if(!encoded)throw new Error('knowledge_page_missing');
-    // Supply a bounded output buffer: malformed data cannot inflate unboundedly.
-    const bytes=inflateSync(encoded.bytes,{out:new Uint8Array(encoded.rawBytes)});
-    const text=decoder.decode(bytes);
-    if(hash32(text)!==encoded.checksum)throw new Error('knowledge_page_checksum');
+    const text=this.pageText(id);
     const records=JSON.parse(text);
     if(!Array.isArray(records))throw new Error('knowledge_page_invalid');
     for(const entry of records)this.hydrateEntry(entry);
@@ -49,20 +46,64 @@ export class KnowledgeArchive {
     }
     return records;
   }
+  pageText(id){
+    const encoded=this.pages.get(id);
+    if(!encoded)throw new Error('knowledge_page_missing');
+    // Supply a bounded output buffer: malformed data cannot inflate unboundedly.
+    const bytes=inflateSync(encoded.bytes,{out:new Uint8Array(encoded.rawBytes)});
+    const text=decoder.decode(bytes);
+    if(hash32(text)!==encoded.checksum)throw new Error('knowledge_page_checksum');
+    return text;
+  }
+  readSerializedPage(id){
+    let text=this.serializedCache.get(id);
+    const page=this.pages.get(id);
+    if(!page)throw new Error('knowledge_page_missing');
+    const cached=text!==undefined;
+    if(cached){this.serializedCache.delete(id);this.serializedCache.set(id,text);}
+    else{text=this.pageText(id);this.pageReads++;}
+    const ends=page.ends;
+    if(hash32(ends.join(','))!==page.endsChecksum||ends.length!==page.concepts.length||page.activeBits.length!==Math.ceil(ends.length/8)||
+      !ends.length||ends[ends.length-1]!==text.length-1||text[0]!=='['||text.at(-1)!==']')throw new Error('knowledge_page_offsets_invalid');
+    let start=1;
+    for(const end of ends){if(end<=start||end>=text.length)throw new Error('knowledge_page_offsets_invalid');start=end+1;}
+    if(!cached&&text.length<=CACHE_UNITS){
+      this.serializedCache.set(id,text);this.serializedCodeUnits+=text.length;
+      while(this.serializedCodeUnits>CACHE_UNITS||this.serializedCache.size>8){const first=this.serializedCache.keys().next().value;
+        this.serializedCodeUnits-=this.serializedCache.get(first).length;this.serializedCache.delete(first);}
+    }
+    return text;
+  }
+  beginSerialization(){
+    // A checkpoint needs the immutable text, not a second graph of decoded evidence.
+    this.cache.clear();this.cachedCodeUnits=0;
+  }
+  recordUnits(id,offset){
+    const ends=this.pages.get(id)?.ends;
+    if(!ends||!Number.isInteger(offset)||offset<0||offset>=ends.length)throw new Error('knowledge_page_offsets_invalid');
+    return ends[offset]-(offset?ends[offset-1]+1:1);
+  }
   write(records,handles){
     const text=`[${records.join(',')}]`;
     const input=encoder.encode(text),bytes=deflateSync(input,{level:1}).slice();
     this.releaseDeadPages();
     if(this.backingBytes+bytes.byteLength>this.maxBackingBytes)throw new Error('knowledge_compressed_capacity_exceeded');
     const id=this.nextPageId++;
-    this.pages.set(id,{bytes,rawBytes:input.byteLength,checksum:hash32(text)});
+    const ends=new Uint32Array(records.length),activeBits=new Uint8Array(Math.ceil(records.length/8));
+    let end=1;
+    const concepts=handles.map(({store,index},offset)=>{
+      end+=records[offset].length;ends[offset]=end;end++;
+      if(store.active[index])activeBits[offset>>3]|=1<<(offset&7);
+      return store.concepts[index];
+    });
+    this.pages.set(id,{bytes,rawBytes:input.byteLength,checksum:hash32(text),ends,endsChecksum:hash32(ends.join(',')),concepts,activeBits});
     this.backingBytes+=bytes.byteLength;
     this.pageRefs.set(id,handles.length);
     this.pageCounts.set(id,handles.length);
     for(let offset=0;offset<handles.length;offset++){
       const {store,index}=handles[offset],old=store.rows[index];
       if(old)this.pageRefs.set(old,this.pageRefs.get(old)-1);
-      store.rows[index]=id;store.offsets[index]=offset;store.recordUnits[index]=records[offset].length;
+      store.rows[index]=id;store.offsets[index]=offset;
       const pending=store.dirty.get(index);
       if(pending){this.dirtyCodeUnits-=pending.units;store.dirty.delete(index);}
     }
@@ -73,7 +114,7 @@ export class KnowledgeArchive {
     for(const item of items){const text=JSON.stringify(item.entry);
       // Bound transient inflation per record. Oversized records fail closed;
       // private evidence is never trimmed and the full checkpoint stays intact.
-      if(new TextEncoder().encode(text).length>1_500_000)throw new Error('knowledge_record_exceeds_page_limit');
+      if(text.length>500_000&&encoder.encode(text).length>1_500_000)throw new Error('knowledge_record_exceeds_page_limit');
       if(units+text.length+1>PAGE_UNITS)flush();
       records.push(text);handles.push(item);units+=text.length+1;
       if(units>=PAGE_UNITS)flush();
@@ -119,7 +160,10 @@ export class KnowledgeArchive {
   releaseDeadPages(){
     const dead=[...this.pageRefs].filter(([,count])=>count===0).map(([id])=>id);
     if(!dead.length)return;
-    for(const id of dead){this.backingBytes-=this.pages.get(id).bytes.byteLength;this.pages.delete(id);
+    for(const id of dead){
+      const serialized=this.serializedCache.get(id);
+      if(serialized!==undefined){this.serializedCodeUnits-=serialized.length;this.serializedCache.delete(id);}
+      this.backingBytes-=this.pages.get(id).bytes.byteLength;this.pages.delete(id);
       const page=this.cache.get(id);if(page){this.cachedCodeUnits-=page.units;this.cache.delete(id);}
       this.pageRefs.delete(id);this.pageCounts.delete(id);}
   }
@@ -128,7 +172,7 @@ export class KnowledgeArchive {
 class ArchivedKnowledge {
   constructor(archive){
     this.archive=archive;this.concepts=[];this.active=[];this.entities=[];
-    this.rows=[];this.offsets=[];this.recordUnits=[];this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
+    this.rows=[];this.offsets=[];this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
     this.activeCount=0;this.sourceCount=0;this.sourceCounts=[];this.views=new Map();
     const store=this;
     this.array=bindKnowledgeStorage(new Proxy([],{
@@ -232,10 +276,11 @@ class ArchivedKnowledge {
   *serializedRecords(){
     // Group a bounded logical window by physical page, then emit original order.
     // Cross-Citizen dirty flushes otherwise cause repeated inflation on every record.
+    this.archive.beginSerialization();
     for(let start=0;start<this.concepts.length;){
       let end=start,units=0;
       while(end<this.concepts.length&&end-start<2048){
-        const size=this.dirty.get(end)?.units??this.recordUnits[end];
+        const size=this.dirty.get(end)?.units??this.archive.recordUnits(this.rows[end],this.offsets[end]);
         if(end>start&&units+size>1048576)break;
         units+=size;end++;
       }
@@ -247,11 +292,13 @@ class ArchivedKnowledge {
         if(!indexes)groups.set(id,indexes=[]);indexes.push(i);
       }
       for(const [id,indexes] of groups){
-        const page=this.archive.readPage(id);
+        const text=this.archive.readSerializedPage(id),page=this.archive.pages.get(id);
         for(const i of indexes){
-          const entry=page[this.offsets[i]];
-          if(!entry||entry.concept!==this.concepts[i]||(entry.active!==false)!==this.active[i])throw new Error('knowledge_page_record_mismatch');
-          strings[i-start]=JSON.stringify(entry);
+          const offset=this.offsets[i],end=page.ends[offset],begin=offset?page.ends[offset-1]+1:1;
+          const active=Boolean(page.activeBits[offset>>3]&(1<<(offset&7)));
+          if(page.concepts[offset]!==this.concepts[i]||active!==this.active[i])throw new Error('knowledge_page_record_mismatch');
+          // V8 slices otherwise pin every inflated page touched by a sparse window.
+          strings[i-start]=ownedString(text.slice(begin,end));
         }
       }
       yield* strings;start=end;
