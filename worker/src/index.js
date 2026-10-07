@@ -423,6 +423,7 @@ export class SovereignWorld {
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
         assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
         selected={world,generation:meta.generation,source:meta.source};
+        this.lastSnapshotChunkCount=count;
         this.pendingTrimmedMemories=trimmedMemories;
         this.evidencePool=pool;
         this.committedSnapshot=null;
@@ -487,6 +488,7 @@ export class SovereignWorld {
     if(Number(meta.world_minute)!==Number(restored.clock.worldMinute)||String(meta.ledger_head)!==String(restored.ledgerHead)){
       throw new Error('sovereign_committed_snapshot_metadata_mismatch');
     }
+    this.lastSnapshotChunkCount=count;
     const seal=this.sqlRows('SELECT MAX(world_minute) AS world_minute FROM world_seals')[0]||null;
     const persistedSealMinute=Number(seal?.world_minute);
     if(Number.isFinite(persistedSealMinute)){
@@ -733,6 +735,7 @@ export class SovereignWorld {
     return {
       persisted:true,
       generation,
+      chunkCount,
       committedAtRealMs:Date.now(),
       rowWrites,
       rowsWritten:reservation.budget.rowsWritten,
@@ -835,6 +838,7 @@ export class SovereignWorld {
     this.committedStats=committedStats(this.world,snapshotClock,ledgerHead);
     this.committedCausalWorld=committedCausalReader(this.world);
     this.lastPersistedGeneration=canonical.generation;
+    this.lastSnapshotChunkCount=canonical.chunkCount;
     this.lastPersistedWorldMinute=worldMinute;
     this.clockHighWaterMark=Math.max(
       Number(this.clockHighWaterMark??worldMinute),
@@ -862,12 +866,22 @@ export class SovereignWorld {
 
     return canonical;
   }
+  checkpointIntervalWorldMinutes(){
+    // Reserve 2k of the normal 40k allowance for recovery/retries. Chunk size
+    // growth changes cadence without raising the persisted admission limit.
+    const rows=estimateSnapshotRowWrites({chunkCount:this.lastSnapshotChunkCount||1,sealDue:true,sealPruneRows:1});
+    const minutesPerRealDay=86400000/REAL_MS_PER_WORLD_MINUTE;
+    return Math.max(PERSIST_INTERVAL_WORLD_MINUTES,Math.ceil(minutesPerRealDay*rows/(SAFE_ROW_WRITE_BUDGET-2000)));
+  }
   async tick(maxCatchup=MAX_CATCHUP_WORLD_MINUTES,maxOutage=MAX_OUTAGE_WORLD_MINUTES,{maxSegments=Infinity,deferCheckpoint=false}={}){
     return this.mutateWorld(async()=>{
       if(Date.now()<this.persistenceDeferredUntilRealMs)return;
       // Separate phases bound the work per handler. Only an incoming request
       // renews the platform's cumulative CPU window; alarms alone do not.
       if(deferCheckpoint&&this.pendingCheckpoint){
+        // AI decisions share the planned save, rather than forcing a full
+        // mature-world checkpoint after every short simulation boundary.
+        if(!this.pendingForceSeal)await this.processCognition(1);
         await this.persist({forceSeal:Boolean(this.pendingForceSeal)});
         this.pendingCheckpoint=false;this.pendingForceSeal=false;
         this.pendingTrimmedMemories=0;
@@ -890,10 +904,10 @@ export class SovereignWorld {
 
       const checkpointDue=
         this.world.clock.worldMinute-lastPersisted >=
-        PERSIST_INTERVAL_WORLD_MINUTES;
+        this.checkpointIntervalWorldMinutes();
 
       const forceSeal=Boolean(progress.recovered||progress.trimmedMemories);
-      const cognitionChanged=!forceSeal&&await this.processCognition(1);
+      const cognitionChanged=!deferCheckpoint&&!forceSeal&&await this.processCognition(1);
       if(forceSeal||checkpointDue||cognitionChanged){
         if(deferCheckpoint){
           this.pendingCheckpoint=true;
@@ -1141,6 +1155,7 @@ export class SovereignWorld {
         seal_read_index_ready:Boolean(this.sealIndexReady),
         last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
         alarm_interval_ms:ALARM_PULSE_MS,
+        checkpoint_interval_world_minutes:this.checkpointIntervalWorldMinutes(),
         heartbeat:{
           scheduledAlarmRealMs,
           nextAlarmRealMs:runtime.nextAlarmRealMs??null,

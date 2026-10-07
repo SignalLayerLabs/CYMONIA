@@ -128,6 +128,20 @@ with a concurrent heartbeat completing in 1.92 seconds before encoding finished.
 Knowledge counts and the checked first/last evidence remained intact. These
 local measurements do not replace unattended production validation.
 
+Production subsequently passed the unattended gate (124 saved minutes, 36 moved
+Citizens, 89 changed actions and 100 changed bodies), but short physics pulses
+could still force a full checkpoint whenever an AI strategy changed. AI now runs
+once inside the planned checkpoint phase, immediately before its serialized save;
+forced recovery/trim checkpoints skip it. Physics pulses keep advancing locally
+while the cognition queue retains its ordering and admission/accounting rules.
+The save interval uses the last verified snapshot part count and its measured
+worst-case row cost, targeting 38,000 normal canonical rows per real UTC day
+without raising the persisted 40,000/60,000 admission caps. The current 25-part
+world therefore uses an 80-minute interval (35 rows × 1,080 saves = 37,800).
+Forced saves, retries and other account workloads still consume their allowances.
+CI read deadlines are bounded at 60 seconds to cover the observed 26–51-second
+cold loads; advancement, physical-state, identity and quiet-window assertions remain.
+
 The synchronous codec is the MIT-licensed fflate 0.8.2 subset documented in
 `worker/src/vendor/fflate.NOTICE.md`. `/health.knowledge_archive` reports compressed
 bytes, cache sizes, page decompressions and the adapter's zero scratch SQL cost.

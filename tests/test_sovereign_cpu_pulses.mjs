@@ -134,8 +134,28 @@ test('cognition at a committed clock still has a warm successor for its pending 
   const {instance,alarms}=pulseRuntime(t);
   instance.world.clock.realEpochMs=60000;
   instance.lastPersistedWorldMinute=instance.world.clock.worldMinute;
+  instance.pendingCheckpoint=true;
   instance.processCognition=async()=>true;
   await instance.alarm();
-  assert.equal(instance.pendingCheckpoint,true);
+  assert.equal(instance.pendingCheckpoint,false);
   assert.ok(alarms.at(-1)<71000,'new private mutations must be saved before hibernation');
+});
+
+test('successful cognition shares a planned checkpoint instead of forcing a save on every physics pulse',async t=>{
+  const {instance,saved}=pulseRuntime(t);let cognition=0;
+  instance.lastSnapshotChunkCount=25;
+  instance.processCognition=async()=>{cognition++;return true;};
+  await instance.tick(30,360,{maxSegments:6,deferCheckpoint:true});
+  assert.equal(cognition,0,'physics pulses must not enter expensive AI/checkpoint feedback');
+  assert.equal(instance.pendingCheckpoint,undefined);
+  assert.equal(saved.length,0);
+  t.mock.method(Date,'now',()=>120000);
+  for(let i=0;i<50&&!instance.pendingCheckpoint;i++)await instance.tick(30,360,{maxSegments:6,deferCheckpoint:true});
+  assert.equal(cognition,0);
+  assert.ok(instance.world.clock.worldMinute>=80,'large checkpoints must fit the daily normal write budget');
+  const minute=instance.world.clock.worldMinute;
+  await instance.tick(30,360,{maxSegments:6,deferCheckpoint:true});
+  assert.equal(cognition,1);assert.equal(saved.length,1);
+  assert.equal(saved[0].minute,minute);assert.equal(instance.world.clock.worldMinute,minute);
+  assert.equal(instance.pendingCheckpoint,false);
 });
