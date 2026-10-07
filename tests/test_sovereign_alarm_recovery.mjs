@@ -260,6 +260,8 @@ test('failed tick is diagnosed and the next alarm can recover',async t=>{
   const logs=[];
   t.mock.method(console,'error',(...args)=>logs.push(args));
   const original=instance.processCognition;
+  instance.pendingCheckpoint=true;
+  instance.persist=async()=>({persisted:true});
   instance.processCognition=async()=>{throw new Error('injected cognition outage');};
   await assert.doesNotReject(instance.alarm({retryCount:2,isRetry:true}));
   assert.match(instance.world.runtime.lastTickError,/injected cognition outage/);

@@ -40,7 +40,7 @@ async function main(){
   const quietMs=quietIntervalMs(process.argv.slice(2));
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const read=async path=>{
-    const response=await fetch(`https://cymonia.pages.dev/api/v2/${path}`,{signal:AbortSignal.timeout(30_000)});
+    const response=await fetch(`https://cymonia.pages.dev/api/v2/${path}`,{signal:AbortSignal.timeout(60_000)});
     assert.equal(response.status,200,`${path} HTTP ${response.status}`);return response.json();
   };
   let a;
