@@ -7,8 +7,14 @@ import {publicWorld} from '../world/index.js';
 
 const YEAR=525600;
 
+async function renewCpuWindow(instance){
+  const response=await (await instance.fetch(new Request('https://internal/world/runtime-heartbeat'))).json();
+  await instance.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:{'x-cymonia-cpu-renewal':response.cpu_renewal_token}}));
+}
+
 async function drainPulses(instance){
   for(let i=0;i<100;i++){
+    if(instance.awaitingColdCpuRenewal)await renewCpuWindow(instance);
     await instance.alarm();
     if(!instance.pendingCheckpoint&&instance.world.clock.worldMinute>=worldMinuteAt(instance.world,Date.now()))return;
   }
@@ -136,6 +142,7 @@ async function nearYearBoundary(t){
 
 test('budget deferral cannot publish a new year that disappears after eviction',async t=>{
   const {storage,instance,messages,advance}=await nearYearBoundary(t);
+  await renewCpuWindow(instance);
   t.mock.method(console,'error',()=>{});
   storage.sql.exec('UPDATE persistence_budget SET rows_written=60000');
   advance(60_000);
@@ -174,7 +181,8 @@ test('several world days and repeated evictions retain the year and ledger',asyn
 
 test('a failed SQLite checkpoint never leaks advanced time through REST or broadcast',async t=>{
   const {storage,instance,messages,advance}=await nearYearBoundary(t);
-  await instance.fetch(new Request('https://internal/world/runtime-heartbeat'));
+  const renewal=await (await instance.fetch(new Request('https://internal/world/runtime-heartbeat'))).json();
+  await instance.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:{'x-cymonia-cpu-renewal':renewal.cpu_renewal_token}}));
   t.mock.method(console,'error',()=>{});
   const transaction=storage.transactionSync;
   storage.transactionSync=()=>{throw new Error('injected storage failure');};

@@ -205,6 +205,7 @@ export class SovereignWorld {
     this.pendingAdvanceTarget=null;
     this.evidencePool=null;
     this.awaitingColdCpuRenewal=true;
+    this.coldCpuRenewalToken=crypto.randomUUID();
     if(typeof WebSocketRequestResponsePair==='function'&&this.ctx.setWebSocketAutoResponse){
       this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
     }
@@ -498,6 +499,7 @@ export class SovereignWorld {
   }
   createKnowledgeArchive(pool,recovering=false){
     this.knowledgeArchive?.dispose();
+    if(recovering){this.awaitingColdCpuRenewal=true;this.coldCpuRenewalToken=crypto.randomUUID();}
     const archive=new KnowledgeArchive(null,{hydrateEntry:entry=>{
       for(const source of entry.provenance||[])if(source.evidence)source.evidence=pool.intern(source.evidence);
     }});
@@ -1064,14 +1066,17 @@ export class SovereignWorld {
   }
   async fetch(request){
     if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
-    this.awaitingColdCpuRenewal=false;
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     const scheduledAlarmRealMs=await this.ensureAlarm();
     const world=this.readableWorld();
     if(request.headers.get('upgrade')==='websocket'&&path==='/stream')return this.webSocket();
     if(request.method==='GET'&&path==='/runtime-heartbeat'){
+      // A request echoing this token was dispatched after a previous response
+      // from this recovered object. Queued cold-wake requests cannot release it.
+      if(request.headers.get('x-cymonia-cpu-renewal')===this.coldCpuRenewalToken)this.awaitingColdCpuRenewal=false;
       this.lastSchedulerHeartbeatRealMs=Date.now();
       return json({ok:true,service:'cymonia-sovereign-world',world_minute:world.clock.worldMinute,
+        cpu_renewal_token:this.coldCpuRenewalToken,
         lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute)});
     }
     if(request.method==='GET'&&path==='/health'){
@@ -1236,16 +1241,19 @@ export default {
     // Supply genuine incoming requests even when every Observer is closed.
     // Independent slots keep a slow/rejected request from blocking renewal.
     ctx.waitUntil((async()=>{
+      let cpuRenewalToken=null,lastTokenSlot=-1;
       const results=await Promise.allSettled([0,20_000,40_000].map(async delay=>{
         if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
         try{
           const id=env.WORLD.idFromName('canonical-v2'),stub=env.WORLD.get(id);
           const response=await stub.fetch(new Request('https://cymonia.internal/world/runtime-heartbeat',{
             signal:AbortSignal.timeout(45_000),
+            headers:cpuRenewalToken?{'x-cymonia-cpu-renewal':cpuRenewalToken}:{},
           }));
           if(!response.ok){await response.body?.cancel();throw new Error(`heartbeat_http_${response.status}`);}
           const health=await response.json();
           if(!health.ok||health.service!=='cymonia-sovereign-world')throw new Error('heartbeat_response_invalid');
+          if(typeof health.cpu_renewal_token==='string'&&delay>=lastTokenSlot){cpuRenewalToken=health.cpu_renewal_token;lastTokenSlot=delay;}
           console.log('CYMONIA_SCHEDULED_HEARTBEAT',JSON.stringify({
             scheduledTime:controller.scheduledTime,slot:delay/20_000,
             worldMinute:health.world_minute,lagWorldMinutes:health.lag_world_minutes,

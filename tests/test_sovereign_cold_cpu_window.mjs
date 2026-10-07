@@ -8,6 +8,19 @@ test('a cold alarm waits for an incoming request before consuming another CPU ph
  let ticks=0;instance.tick=async()=>{ticks++;};
  await instance.alarm();assert.equal(ticks,0,'cold decode must not share its CPU window with simulation or compression');
  assert.ok(await storage.getAlarm());
- await instance.fetch(new Request('https://internal/world/runtime-heartbeat'));
+ await instance.fetch(new Request('https://internal/world/health'));await instance.alarm();assert.equal(ticks,0);
+ const first=await (await instance.fetch(new Request('https://internal/world/runtime-heartbeat'))).json();
+ await instance.alarm();assert.equal(ticks,0,'the request causing or queued during cold recovery cannot release the gate');
+ await instance.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:{'x-cymonia-cpu-renewal':first.cpu_renewal_token}}));
  await instance.alarm();assert.equal(ticks,1,'a genuine incoming heartbeat releases the waiting phase');
+});
+
+test('a renewal token from an evicted object cannot release its recovered replacement',async t=>{
+ const storage=sqliteStorage();t.after(()=>storage.db.close());const {instance}=await wake(storage);
+ const old=await (await instance.fetch(new Request('https://internal/world/runtime-heartbeat'))).json();
+ const {instance:restored}=await wake(storage);
+ const response=await (await restored.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:{'x-cymonia-cpu-renewal':old.cpu_renewal_token}}))).json();
+ assert.equal(restored.awaitingColdCpuRenewal,true);assert.notEqual(response.cpu_renewal_token,old.cpu_renewal_token);
+ await restored.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:{'x-cymonia-cpu-renewal':response.cpu_renewal_token}}));
+ assert.equal(restored.awaitingColdCpuRenewal,false);
 });

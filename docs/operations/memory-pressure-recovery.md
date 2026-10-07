@@ -83,7 +83,10 @@ verification after deployment.
 The subsequent production trace exposed cumulative CPU coupling: a cold alarm
 spent 24.9–29.6 seconds recovering the archive, then its successor exceeded the
 CPU limit while attempting a checkpoint. Cold alarms now retain their warm
-successor but wait for a genuine incoming request before running another phase.
+successor but wait for a subsequent internal heartbeat to echo a per-recovery
+challenge before running another phase. The challenge is returned only after
+decode, so a queued wake request cannot release the gate. Rollback rotates it;
+late responses cannot replace a newer scheduler slot's challenge.
 The existing autonomous cron supplies these requests even with no Observers.
 Cold recovery also archives knowledge before attaching the evidence pool, so
 historical sources are interned and frozen on access rather than all at wake.
