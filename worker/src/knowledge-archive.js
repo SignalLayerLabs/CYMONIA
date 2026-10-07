@@ -19,10 +19,12 @@ export class KnowledgeArchive {
     this.cache=new Map();this.cachedCodeUnits=0;this.stores=new Set();
     this.serializedCache=new Map();this.serializedCodeUnits=0;
     this.dirtyCodeUnits=0;this.pageRefs=new Map();this.pageCounts=new Map();this.pageReads=0;
+    this.deadPages=new Set();
   }
   dispose(){
     this.pages.clear();this.cache.clear();this.serializedCache.clear();this.stores.clear();this.citizenStores=new WeakMap();
     this.pageRefs.clear();this.pageCounts.clear();
+    this.deadPages.clear();
     this.backingBytes=0;this.cachedCodeUnits=0;this.serializedCodeUnits=0;this.dirtyCodeUnits=0;
     this.hydrateEntry=()=>{};
   }
@@ -102,7 +104,7 @@ export class KnowledgeArchive {
     this.pageCounts.set(id,handles.length);
     for(let offset=0;offset<handles.length;offset++){
       const {store,index}=handles[offset],old=store.rows[index];
-      if(old)this.pageRefs.set(old,this.pageRefs.get(old)-1);
+      if(old)this.releasePage(old);
       store.rows[index]=id;store.offsets[index]=offset;
       const pending=store.dirty.get(index);
       if(pending){this.dirtyCodeUnits-=pending.units;store.dirty.delete(index);}
@@ -136,7 +138,7 @@ export class KnowledgeArchive {
     return store.array;
   }
   releaseStore(store){
-    for(const id of store.rows)if(id)this.pageRefs.set(id,this.pageRefs.get(id)-1);
+    for(const id of store.rows)if(id)this.releasePage(id);
     for(const pending of store.dirty.values())this.dirtyCodeUnits-=pending.units;
     this.stores.delete(store);this.releaseDeadPages();
   }
@@ -158,14 +160,19 @@ export class KnowledgeArchive {
     this.releaseDeadPages();
   }
   releaseDeadPages(){
-    const dead=[...this.pageRefs].filter(([,count])=>count===0).map(([id])=>id);
-    if(!dead.length)return;
+    const dead=this.deadPages;
+    if(!dead.size)return;
     for(const id of dead){
       const serialized=this.serializedCache.get(id);
       if(serialized!==undefined){this.serializedCodeUnits-=serialized.length;this.serializedCache.delete(id);}
       this.backingBytes-=this.pages.get(id).bytes.byteLength;this.pages.delete(id);
       const page=this.cache.get(id);if(page){this.cachedCodeUnits-=page.units;this.cache.delete(id);}
       this.pageRefs.delete(id);this.pageCounts.delete(id);}
+    dead.clear();
+  }
+  releasePage(id){
+    const remaining=this.pageRefs.get(id)-1;this.pageRefs.set(id,remaining);
+    if(remaining===0)this.deadPages.add(id);
   }
 }
 

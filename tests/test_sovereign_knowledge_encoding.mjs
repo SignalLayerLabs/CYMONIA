@@ -41,3 +41,10 @@ test('serialized page spans count UTF-16 units and preserve oversized evidence a
  assert.deepEqual((await decodeWorldSnapshot(encoded)).citizens[0].knowledge,records);
  assert.equal(archive.serializedCodeUnits,0,'an oversized immutable page must not enter the text cache');
 });
+
+test('loading new immutable pages does not repeatedly scan the entire existing archive',()=>{
+ const archive=new KnowledgeArchive(null);let visited=0;const iterate=archive.pageRefs[Symbol.iterator].bind(archive.pageRefs);
+ archive.pageRefs[Symbol.iterator]=function*(){for(const row of iterate()){visited++;yield row;}};
+ archive.attach({knowledge:Array.from({length:24000},(_,i)=>({concept:`linear:${i}`,active:true,provenance:[{evidence:{entityId:`object:${i}`,text:'observed'.repeat(10)}}]}))});
+ assert.ok(archive.pages.size>20);assert.ok(visited<=archive.pages.size*2,`archive startup scanned ${visited} existing pages for ${archive.pages.size} writes`);
+});

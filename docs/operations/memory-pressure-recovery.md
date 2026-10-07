@@ -95,6 +95,23 @@ slotted checkpoints, legacy snapshots and rollback. The 675k fixture recovered
 in 5.43 seconds under Node and 6.96 seconds in fresh workerd, with its knowledge
 counts and checked records preserved.
 
+The next production trace still hit the CPU limit before decode completed.
+Full recovery was inside `blockConcurrencyWhile`, which blocks all incoming
+events and has its own 30-second deadline. Only synchronous schema setup now
+uses that gate. A shared readiness promise protects every canonical HTTP reader
+and alarm; the internal scheduler can return bounded `initializing` status
+while recovery continues. This response exposes no canonical minute or renewal
+challenge. Genuine scheduler arrivals can therefore renew CPU during recovery,
+and the post-decode challenge still separates it from the next simulation phase.
+Recovery errors abort the instance without creating a replacement world.
+
+Page reclamation now tracks reference counts reaching zero, rather than scanning
+the full page map on every new page (the previous startup path was quadratic).
+Local workerd recovered 675,000 records after a deliberately delayed 40.63-second
+wake, with internal heartbeat responses available during recovery and canonical
+readers waiting for completion. See Cloudflare's
+[input-gate and timeout contract](https://developers.cloudflare.com/durable-objects/api/state/).
+
 The synchronous codec is the MIT-licensed fflate 0.8.2 subset documented in
 `worker/src/vendor/fflate.NOTICE.md`. `/health.knowledge_archive` reports compressed
 bytes, cache sizes, page decompressions and the adapter's zero scratch SQL cost.

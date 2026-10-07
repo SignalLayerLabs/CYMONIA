@@ -24,3 +24,16 @@ test('a renewal token from an evicted object cannot release its recovered replac
  await restored.fetch(new Request('https://internal/world/runtime-heartbeat',{headers:{'x-cymonia-cpu-renewal':response.cpu_renewal_token}}));
  assert.equal(restored.awaitingColdCpuRenewal,false);
 });
+
+test('incoming scheduler requests can renew CPU while canonical recovery is still pending',async t=>{
+ const {SovereignWorld}=await import('../worker/src/index.js'),storage=sqliteStorage();t.after(()=>storage.db.close());
+ let release;const delayed=new Promise(r=>{release=r;});let schemaReady;
+ class SlowRecovery extends SovereignWorld{async loadWorld(){await delayed;return super.loadWorld();}}
+ const instance=new SlowRecovery({storage,blockConcurrencyWhile:fn=>(schemaReady=fn()),getWebSockets:()=>[],waitUntil:()=>{}},{});
+ await schemaReady;
+ const heartbeat=await (await instance.fetch(new Request('https://internal/world/runtime-heartbeat'))).json();
+ assert.equal(heartbeat.initializing,true);assert.equal(heartbeat.world_minute,null);assert.equal(heartbeat.cpu_renewal_token,undefined);
+ let published=false;const publicRead=instance.fetch(new Request('https://internal/world/health')).then(r=>{published=true;return r;});
+ await Promise.resolve();assert.equal(published,false,'canonical readers must wait for verified complete recovery');
+ release();await instance.ready;assert.equal((await (await publicRead).json()).ok,true);
+});
