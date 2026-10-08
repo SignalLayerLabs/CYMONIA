@@ -145,3 +145,37 @@ chronological boundaries, allowing genuinely incoming scheduler requests to
 renew the platform CPU window. The original target remains fixed through these
 yields. The kernel, complete private history, separate checkpoint phase and
 strict quiet verification remain unchanged.
+
+## Bounded physical attention
+
+Concentrating all 108 Citizens in the same dense inventory scene reproduced a
+remaining throughput failure: thirty world minutes took 60.32 seconds, and new
+uncommitted knowledge occupied 31.4 MB. Each Citizen now examines at most 256
+object candidates and records at most 32 visible object observations per physical
+boundary. A persisted rotating cursor visits later objects on subsequent passes,
+including after restart and appends. Visibility, ownership and personal evidence
+checks still apply. This deliberately spreads new object discovery over time;
+existing objects, private knowledge, provenance and history remain intact.
+Resource/structure observation, chronological physics and animations are retained.
+
+The identical dense native fixture takes 14.24 seconds for thirty minutes after
+this bound, with 2.07 MB pending compressed knowledge. A separate durable save
+takes 4.59 seconds and charges its measured 43 row writes. Cold recovery preserves
+1,083,471 knowledge records, 55,296 memories and all 108 Citizens. These are local
+measurements; production still requires the autonomous quiet gate.
+
+## Observer delivery and sample timing
+
+The ephemeral public gzip cache includes the complete `{ok:true,world:...}`
+response envelope. Clients accepting gzip receive its bounded compressed stream
+directly, using Cloudflare's
+[`encodeBody: "manual"`](https://developers.cloudflare.com/workers/runtime-apis/response/).
+Other clients, including `gzip;q=0`, receive ordinary JSON. Native HTTP automatic
+decompression reproduces the exact previous 8.29 MB public JSON for the saved
+dense fixture. Canonical checkpoint encoding and seals keep their default format.
+
+Quiet verification samples scheduler freshness immediately after reading health,
+before downloading the public state. Its sixty-second freshness threshold is
+unchanged. The starting health baseline is read after the initial state download,
+so pre-quiet progress cannot satisfy the advancement gate. Minimum saved progress,
+checkpoint cutoff before the final read, lag and physical Citizen checks remain.

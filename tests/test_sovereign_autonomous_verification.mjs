@@ -45,3 +45,14 @@ test('the final read cannot rescue a checkpoint and count it as unattended advan
   a.last_checkpoint_real_ms=100000;b.last_checkpoint_real_ms=295000;
   assert.throws(()=>verify(a,b,sa,sb,300000,{quietEndedRealMs:290000}),/checkpoint.*quiet/);
 });
+
+test('scheduler freshness is measured when health is sampled before a slow state download',async t=>{
+  const {verifyAutonomousEnd}=await import('../scripts/verify_autonomous_world.mjs');
+  assert.equal(typeof verifyAutonomousEnd,'function');
+  const {a,b,sa,sb}=fixture();let now=300000;t.mock.method(Date,'now',()=>now);
+  const read=async path=>{if(path==='health')return b;now+=55000;return {world:sb};};
+  const proof=await verifyAutonomousEnd(read,a,sa,{quietEndedRealMs:300000,minAdvanceMinutes:120});
+  assert.equal(proof.advancedMinutes,180);
+  b.scheduler.last_received_real_ms=100000;
+  await assert.rejects(verifyAutonomousEnd(read,a,sa,{quietEndedRealMs:300000,minAdvanceMinutes:120}),/scheduler/);
+});

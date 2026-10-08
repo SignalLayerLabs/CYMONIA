@@ -49,9 +49,17 @@ export function perceiveStructures(world,citizen,at=world.clock.worldMinute,radi
 export function objectConceptId(object){return conceptId('kobject',object);}
 export function perceiveObjects(world,citizen,at=world.clock.worldMinute,radius=null,position=citizen.position){
   const learned=[],senseRadius=radius??localVisibilityRadius(world,12);
-  for(const object of world.objects||[]){
+  const objects=world.objects||[],count=objects.length;
+  if(!count)return learned;
+  // Finite sensory attention bounds dense and sparse scenes alike. Persisted
+  // rotation gives later objects a turn rather than always selecting a prefix.
+  let cursor=Number.isSafeInteger(citizen.objectAttentionCursor)&&citizen.objectAttentionCursor>=0
+    ?citizen.objectAttentionCursor%count:0,observed=0;
+  for(let scanned=0;scanned<Math.min(count,256)&&observed<32;scanned++){
+    const object=objects[cursor];cursor=(cursor+1)%count;
     if(!(object.quantity>0)||!object.position||object.holderId===citizen.id)continue;
     if(Math.hypot(position.x-object.position.x,position.y-object.position.y)>senseRadius)continue;
+    observed++;
     recordSpatialObservation(citizen,object.id,object.position,at,'object');
     const concept=objectConceptId(object);
     if(!knows(citizen,concept)){
@@ -62,5 +70,6 @@ export function perceiveObjects(world,citizen,at=world.clock.worldMinute,radius=
     }
     if(!knowsEntity(citizen,object.id))citizen.knownEntityIds.push(object.id);
   }
+  citizen.objectAttentionCursor=cursor;
   return learned;
 }
