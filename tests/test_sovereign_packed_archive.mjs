@@ -48,6 +48,39 @@ test('malformed packed envelopes cannot fall back to an older private state at t
  await assert.rejects(wake(storage),/sovereign_world_snapshot_unavailable_below_clock_guard/);
 });
 
+test('packed checkpoints store each logical concept once and recover page identities from its index',async t=>{
+ const storage=sqliteStorage();t.after(()=>storage.db.close());const {instance}=await wake(storage);
+ instance.world.citizens[0].knowledge=entries(3000).map((entry,i)=>({...entry,concept:`long:${i}:`+'private-meaning:'.repeat(16)}));
+ await instance.persist({forceSeal:true});
+ const meta=storage.sql.exec('SELECT generation,chunk_count FROM world_state_manifest')[0];
+ const encoded=await decodeWorldSnapshot(instance.storedSnapshotParts(meta.generation,meta.chunk_count));
+ const saved=encoded.citizens[0].knowledge;
+ assert.ok(saved.pages.every(page=>!Object.hasOwn(page,'concepts')),'page directories must not duplicate the entire logical concept index');
+ const expected=JSON.stringify(instance.world.citizens[0].knowledge);
+ const {instance:restored}=await wake(storage);
+ assert.equal(JSON.stringify(restored.world.citizens[0].knowledge),expected);
+});
+
+test('packed v1 directories remain readable while compact indices grow after restart',async t=>{
+ const storage=sqliteStorage();t.after(()=>storage.db.close());const {instance}=await wake(storage);
+ instance.world.citizens[0].knowledge=entries(1000);await instance.persist({forceSeal:true});
+ const meta=storage.sql.exec('SELECT generation,chunk_count FROM world_state_manifest')[0];
+ const saved=await decodeWorldSnapshot(instance.storedSnapshotParts(meta.generation,meta.chunk_count));
+ for(const c of saved.citizens){const k=c.knowledge;k.format='knowledge-packed-v1';
+  for(const p of k.pages){p.concepts=new Array(p.ends.length).fill(null);p.undefinedConcepts=[];}
+  const pages=new Map(k.pages.map(p=>[p.id,p]));
+  for(let i=0;i<k.rows.length;i++)pages.get(k.rows[i]).concepts[k.offsets[i]]=k.concepts[i];
+ }
+ const encoded=await encodeWorldSnapshotParts(saved),base=meta.generation==='slot-b'?1000000:0;
+ encoded.parts.forEach((part,i)=>storage.sql.exec('UPDATE world_state_chunks_v2 SET state_part=? WHERE id=?',part,base+i));
+ storage.sql.exec('UPDATE world_state_manifest SET chunk_count=? WHERE id=1',encoded.parts.length);
+ const {instance:r}=await wake(storage),c=r.world.citizens[0];
+ assert.equal(c.knowledge.length,1000);assert.equal(c.knowledge[999].provenance[0].eventId,'private:999');
+ for(let i=1000;i<2200;i++)c.knowledge.push({concept:`append:${i}`,confidence:.8,active:true,provenance:[{kind:'teaching',eventId:`new:${i}`} ]});
+ await r.persist({forceSeal:true});const {instance:again}=await wake(storage);
+ assert.equal(again.world.citizens[0].knowledge.length,2200);assert.equal(again.world.citizens[0].knowledge[2199].provenance[0].eventId,'new:2199');
+});
+
 test('persisted history exceeds a small resident backing limit without losing sources or scanning rows per record',async t=>{
  const storage=sqliteStorage();t.after(()=>storage.db.close());const {instance}=await wake(storage);
  instance.world.citizens[0].knowledge=entries(5000);await instance.persist({forceSeal:true});
