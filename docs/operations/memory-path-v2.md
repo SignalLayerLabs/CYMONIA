@@ -1,5 +1,7 @@
 # Memory Path V2
 
+The current private knowledge format is [Packed canonical knowledge checkpoints](packed-knowledge-checkpoints.md). The sections below record the earlier memory-path fixes.
+
 ## Production reason
 
 Cloudflare production evidence showed repeated Durable Object isolate resets while

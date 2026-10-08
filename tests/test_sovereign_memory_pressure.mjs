@@ -83,27 +83,30 @@ test('Durable Object retains one full canonical graph and keeps public/diagnosti
   assert.equal(restarted.committedSnapshot,null);
 });
 
-test('checkpoint writes inactive chunks outside the metadata transaction',async t=>{
+test('checkpoint stages one charged chunk per transaction separately from manifest publication',async t=>{
   const storage=sqliteStorage();
   t.after(()=>storage.db.close());
   const {instance}=await wake(storage);
   const originalExec=storage.sql.exec;
   const originalTransaction=storage.transactionSync;
-  let insideTransaction=false,chunkWrites=0,manifestWrites=0;
+  let insideTransaction=false,chunkWrites=0,manifestWrites=0,transactionChunks=0;
   storage.sql.exec=function(query,...args){
     if(query.includes('INSERT INTO world_state_chunks_v2')){
       chunkWrites++;
-      assert.equal(insideTransaction,false,'large chunks must be staged individually');
+      assert.equal(insideTransaction,true,'each staged chunk has an atomic quota charge');
+      transactionChunks++;
+      assert.equal(transactionChunks,1,'large chunks must never accumulate in one transaction');
     }
     if(query.includes('INSERT INTO world_state_manifest')){
       manifestWrites++;
       assert.equal(insideTransaction,true,'manifest must commit atomically with the clock guard');
+      assert.equal(transactionChunks,0,'manifest publication is separate from staged chunks');
     }
     return originalExec.call(this,query,...args);
   };
   storage.transactionSync=function(callback){
     return originalTransaction.call(this,()=>{
-      insideTransaction=true;
+      insideTransaction=true;transactionChunks=0;
       try{return callback();}finally{insideTransaction=false;}
     });
   };
