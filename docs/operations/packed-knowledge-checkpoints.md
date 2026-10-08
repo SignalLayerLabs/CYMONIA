@@ -96,3 +96,34 @@ encoding took 3.1 seconds and produced seven hot parts. With compact cold
 allocation, growth recovery took 3.7 seconds and a 30-minute physical pulse
 used 259 ms with zero SQL operations. These remain local measurements, with
 the production unattended gate required before clearance.
+
+## Alarm delivery and quiet verification
+
+The requested 2.5-second alarm interval is not a delivery guarantee. Production
+reported alarms 6–8 seconds overdue while active actions introduced one-minute
+boundaries. Six boundaries per invocation could advance less simulated time
+than elapsed real time, even after the packed archive eliminated history
+re-encoding. An alarm now finishes at most 30 chronological boundaries within
+the existing 30-world-minute catch-up target. Physics is unchanged and checkpoint
+compression still gets a separate invocation. Recovery, clock guards and daily
+quota admission remain unchanged.
+
+Regression tests compare the dense thirty-minute pulse with the unsegmented
+canonical kernel and run a sequence of alarms delivered fifteen seconds apart,
+including separate checkpoint phases, real biology changes and no outage rebase.
+The native workerd fixture also exercises fifteen delayed alarm invocations
+against 961,200 historical records, 108 Citizens, 55,296 memories and 11,158
+objects. Physical time advanced 210 minutes; committed time advanced from 90 to
+300, with real biology changes and a final physical lag of 15 minutes. The
+longest invocation took 4.22 seconds, including the separate durable save;
+ordinary saves used 39 SQL row writes. These are local measurements; the
+unchanged production quiet gate remains mandatory.
+
+Enabling `wrangler tail` or dashboard real-time logs requires a platform software
+update and can replace the Durable Object, as described in Cloudflare's
+[known issues](https://developers.cloudflare.com/durable-objects/platform/known-issues/).
+Repeated bounded tail sessions are therefore not passive during an autonomous
+soak: they can repeatedly discard unsaved in-memory progress and force recovery.
+Stop diagnostic tail sessions before starting quiet advancement verification;
+inspect completed GitHub logs while it runs. A live quiet proof must not overlap
+deployments, tail activation or Observer requests.

@@ -61,22 +61,38 @@ test('alarm drains a healthy backlog promptly after committing its fallback succ
   await instance.alarm();
   assert.deepEqual(alarms,[63500],'one healthy pulse must write exactly one alarm');
   assert.equal(instance.world.runtime.nextAlarmRealMs,alarms[0]);
-  assert.ok(instance.world.clock.worldMinute<31,'alarm must use the segment bound');
+  assert.ok(instance.world.clock.worldMinute<=31,'alarm must retain the thirty-minute catch-up bound');
 });
 
-test('a dense backlog drains six chronological boundaries with the same canonical result',async t=>{
+test('a delayed alarm completes its bounded thirty-minute target across dense action boundaries',async t=>{
   const {instance,saved}=pulseRuntime(t),world=instance.world,start=world.clock.worldMinute;
   world.actions=world.citizens.map((c,i)=>{
     const action={id:`dense:${i}`,actorId:c.id,type:'REST',status:'active',startedWorldMinute:start,
       endsWorldMinute:start+1+i%30,payload:{},concepts:[]};c.currentActionId=action.id;return action;
   });
-  const expected=structuredClone(world);advanceWorldTo(expected,(start+6)*1000);
+  const expected=structuredClone(world);advanceWorldTo(expected,(start+30)*1000);
   await instance.alarm();
-  assert.equal(world.clock.worldMinute,start+6,'backlog must leave headroom for expensive checkpoint invocations');
+  assert.equal(world.clock.worldMinute,start+30,'delayed delivery must not limit a mature world to six one-minute action boundaries');
   assert.equal(saved.length,0,'advancement must remain separate from compression');
   // Runtime alarm diagnostics are distinct from the deterministic kernel.
   delete world.runtime;
   assert.deepEqual(world,expected);
+});
+
+test('dense actions keep pace and save real progress when alarms arrive fifteen seconds apart',async t=>{
+  const {instance,saved}=pulseRuntime(t),world=instance.world;
+  let now=61000;t.mock.method(Date,'now',()=>now);
+  world.actions=world.citizens.map((c,i)=>{
+    const action={id:`delayed:${i}`,actorId:c.id,type:'REST',status:'active',startedWorldMinute:1,
+      endsWorldMinute:2+i%30,payload:{},concepts:[]};c.currentActionId=action.id;return action;
+  });
+  const initial=structuredClone(world.citizens.map(c=>c.body));
+  instance.persist=async options=>{saved.push({minute:world.clock.worldMinute,options});instance.lastPersistedWorldMinute=world.clock.worldMinute;return {persisted:true};};
+  for(let i=0;i<12;i++){await instance.alarm();now+=15000;}
+  assert.ok(now/1000-world.clock.worldMinute<30,'physical time must keep up despite delivery jitter and separate saves');
+  assert.ok(instance.lastPersistedWorldMinute>=120,'unattended progress must reach a durable checkpoint');
+  assert.notDeepEqual(world.citizens.map(c=>c.body),initial,'actual biology must advance with the clock');
+  assert.ok(!world.ledger.some(e=>e.type==='RUNTIME_LAG_REBASED'),'healthy delayed alarms must not discard time as an outage');
 });
 
 test('caught-up uncommitted progress keeps the object warm before the ten-second hibernation window',async t=>{
