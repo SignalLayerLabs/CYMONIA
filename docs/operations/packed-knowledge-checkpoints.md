@@ -28,7 +28,8 @@ manifest remains authoritative until publication. Missing or corrupt archive
 data at the clock guard fails closed; it never causes a new Genesis, an older
 world, or omission of private history.
 
-Bin staging and each hot snapshot part have separate atomic quota charges.
+Bin staging and bounded batches of up to four hot snapshot parts have separate
+atomic quota charges. Each part batch charges its rows and one shared budget row.
 Failed publication retains those charges. The manifest, slot metadata, clock
 guard and slot-level bin inventory publish in one transaction. Collection retains
 both snapshot inventories and live/in-flight references; it visits at most 16
@@ -179,3 +180,57 @@ before downloading the public state. Its sixty-second freshness threshold is
 unchanged. The starting health baseline is read after the initial state download,
 so pre-quiet progress cannot satisfy the advancement gate. Minimum saved progress,
 checkpoint cutoff before the final read, lag and physical Citizen checks remain.
+
+## Warm autonomous runtime
+
+The production three-minute quiet gate passed after bounded attention, but its
+following canonical-progress gate failed: scheduler arrivals remained fresh
+while storage alarms were over a minute late. A bounded post-failure diagnostic
+recorded scheduler requests and no delivered alarms. Between those arrivals an
+otherwise idle Durable Object can hibernate, discarding unsaved in-memory work.
+
+A single pending local timer now keeps the active simulation warm. Each callback
+registers its asynchronous work with `ctx.waitUntil`; it rearms only after that
+phase completes. Timer and alarm callbacks share one in-flight phase, so they
+cannot queue extra writers. Storage alarms remain a durable restart mechanism
+and commit their successor before recovery or physical work. Private scheduled
+heartbeats activate the loop; public Observer reads do not activate or advance it.
+This follows Cloudflare's documented
+[Durable Object lifecycle](https://developers.cloudflare.com/durable-objects/concepts/durable-object-lifecycle/).
+
+Timers do not renew Cloudflare's cumulative CPU window. A stale incoming request
+pauses physical work until a genuine request arrives; encoding and cold recovery
+require twelve seconds of remaining window. The post-decode challenge is retained.
+Failed cold reloads retain a fifteen-second timer backoff even when no world graph
+is resident. A skipped recovery alarm still leaves its successor and timer armed.
+
+Checkpoint part staging shares one quota update per bounded four-part transaction,
+retaining at most 6 MiB of ASCII parts before flush. Final partial batches flush
+before manifest publication. Atomic charges, UTC rollover, incomplete staging and
+the previous authoritative slot retain their existing semantics. Cadence and
+reservation estimates include the actual shared charges. Twenty hot parts now
+permit a 96-world-minute cadence, leaving room inside the unchanged 120-second
+saved-state freshness window without raising the 40k/60k admission budgets.
+
+A five-minute local native run with all storage alarm callbacks suppressed saved
+289 world minutes, with lag 16, all 108 Citizen IDs, 37 moved Citizens, 108 changed
+actions and 108 changed biological states. It retained 55,296 memories and grew
+from 1,083,471 to 1,880,342 knowledge records; the original private source remained
+readable. This verifies the timer driver with mature history; production must
+still pass the unchanged CI gates and a separate ten-minute quiet proof.
+
+The final batched native run cold-loaded 1,880,342 records and retained 2,016,419
+by its end. Five alarm-free minutes saved another 225 world minutes, with lag 87,
+all 108 IDs, 11 moved Citizens and 108 changed actions/biological states. The two
+checkpoint commit gaps were 117.94 and 116.50 seconds. Incoming private scheduler
+samples saw at most 103.06 seconds of checkpoint age and 118 committed lag.
+Cadence ended at 110 minutes, without deferral, missing sources or memory failure.
+The compressed durable archive held 61.8 MB while the bounded bin cache held
+8.18 MB. This includes the four-part staging buffer in native workerd.
+
+Keeping one 128 MB Durable Object warm for 24 hours costs approximately 11,059
+GB-s, within the 13,000 GB-s Free daily account allowance before other usage.
+See [Cloudflare pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/).
+Account request, CPU, storage and row limits still apply. This change neither
+upgrades the plan nor promises unlimited retention or availability on a finite
+Free account.

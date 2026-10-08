@@ -63,6 +63,7 @@ const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1536*1024;
 const MAX_STAGED_SNAPSHOT_PARTS=64;
+const SNAPSHOT_PARTS_PER_TRANSACTION=4;
 const MAX_CATCHUP_WORLD_MINUTES=90;
 const ALARM_MAX_ADVANCE_WORLD_MINUTES=30;
 const MAX_OUTAGE_WORLD_MINUTES=360;
@@ -206,6 +207,10 @@ export class SovereignWorld {
     this.pendingCheckpoint=false;
     this.pendingForceSeal=false;
     this.pendingAdvanceTarget=null;
+    this.runtimeTimer=null;
+    this.runtimeLoopRunning=false;
+    this.runtimePulsePromise=null;
+    this.runtimeLoopError=null;
     this.evidencePool=null;
     this.awaitingColdCpuRenewal=true;
     this.coldCpuRenewalToken=crypto.randomUUID();
@@ -669,7 +674,8 @@ export class SovereignWorld {
     // Reserve enough headroom before staging: the exact chunk count is known
     // only after streaming, and an incomplete inactive slot still costs rows.
     const stagedBins=this.knowledgeArchive?.stagedBinCount()||0;
-    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS*2+15+stagedBins*2).allowed){
+    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS+
+      Math.ceil(MAX_STAGED_SNAPSHOT_PARTS/SNAPSHOT_PARTS_PER_TRANSACTION)+15+stagedBins*2).allowed){
       return {persisted:false,reason:'write_budget_exhausted'};
     }
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
@@ -687,7 +693,25 @@ export class SovereignWorld {
       return id;
     },()=>this.yieldRuntime());
     const slotBase=generation==='slot-b'?1_000_000:0;
-    let chunkCount=0;
+    let chunkCount=0,stagedPartBatches=0;
+    const stagedParts=[];
+    const flushParts=()=>{
+      if(!stagedParts.length)return;
+      // At most four 1.5 MiB ASCII parts, rather than the entire checkpoint.
+      // Their writes and one shared quota charge commit or roll back together.
+      this.ctx.storage.transactionSync(()=>{
+        const chargeDay=utcDay();
+        const budget=this.readPersistenceBudget(chargeDay,currentBudget.limit);
+        const admission=reserveWriteBudget(budget,stagedParts.length+1);
+        if(!admission.allowed)throw new Error('sovereign_snapshot_staging_budget_exhausted');
+        for(let i=0;i<stagedParts.length;i++)this.sql.exec(
+          'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
+          slotBase+chunkCount-stagedParts.length+i,stagedParts[i]
+        );
+        this.sql.exec('UPDATE persistence_budget SET day=?,rows_written=?,updated_at=? WHERE id=1',chargeDay,admission.budget.rowsWritten,Date.now());
+      });
+      stagedParts.length=0;stagedPartBatches++;
+    };
     const encodingStartedAt=Date.now();
     console.log('CYMONIA_CHECKPOINT_BEGIN',JSON.stringify({worldMinute,streamingDigest:typeof crypto.DigestStream==='function'}));
     const {stateSha256}=await encodeWorldSnapshotParts(this.world,{
@@ -699,22 +723,12 @@ export class SovereignWorld {
       packedKnowledge:true,
       onPart:part=>{
         if(chunkCount>=MAX_STAGED_SNAPSHOT_PARTS)throw new Error('sovereign_snapshot_exceeds_staging_limit');
-        // The active generation and its manifest remain intact until the
-        // final metadata transaction. No large SQLite transaction accumulates
-        // all of the compressed chunks in the isolate.
-        this.ctx.storage.transactionSync(()=>{
-          const chargeDay=utcDay();
-          const budget=this.readPersistenceBudget(chargeDay,currentBudget.limit),admission=reserveWriteBudget(budget,2);
-          if(!admission.allowed)throw new Error('sovereign_snapshot_staging_budget_exhausted');
-          this.sql.exec(
-            'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
-            slotBase+chunkCount,part
-          );
-          this.sql.exec('UPDATE persistence_budget SET day=?,rows_written=?,updated_at=? WHERE id=1',chargeDay,admission.budget.rowsWritten,Date.now());
-        });
-        chunkCount++;
+        // The active slot remains authoritative until final publication.
+        stagedParts.push(part);chunkCount++;
+        if(stagedParts.length===SNAPSHOT_PARTS_PER_TRANSACTION)flushParts();
       },
     });
+    flushParts();
     console.log('CYMONIA_CHECKPOINT_ENCODED',JSON.stringify({worldMinute,elapsedMs:Date.now()-encodingStartedAt,parts:chunkCount}));
     const sealCount=due
       ?Number([...this.sql.exec('SELECT row_count AS count FROM world_seal_inventory WHERE id=1 LIMIT 1')][0]?.count||0)
@@ -774,7 +788,7 @@ export class SovereignWorld {
       generation,
       chunkCount,
       committedAtRealMs:Date.now(),
-      rowWrites:rowWrites+(stagedBins+chunkCount)*2,
+      rowWrites:rowWrites+stagedBins*2+chunkCount+stagedPartBatches,
       rowsWritten:this.readPersistenceBudget(day,currentBudget.limit).rowsWritten,
     };
   }
@@ -939,7 +953,9 @@ export class SovereignWorld {
     // growth changes cadence without raising the persisted admission limit.
     const pending=(this.knowledgeArchive?.backingBytes||0)+3*(this.knowledgeArchive?.dirtyCodeUnits||0);
     const bins=Math.ceil(pending/(1024*1024));
-    const rows=7+2*bins+2*(this.lastSnapshotChunkCount||1)+estimateSnapshotRowWrites({chunkCount:0,sealDue:true,sealPruneRows:1});
+    const chunks=this.lastSnapshotChunkCount||1;
+    const rows=7+2*bins+chunks+Math.ceil(chunks/SNAPSHOT_PARTS_PER_TRANSACTION)+
+      estimateSnapshotRowWrites({chunkCount:0,sealDue:true,sealPruneRows:1});
     const minutesPerRealDay=86400000/REAL_MS_PER_WORLD_MINUTE;
     return Math.max(PERSIST_INTERVAL_WORLD_MINUTES,Math.ceil(minutesPerRealDay*rows/(SAFE_ROW_WRITE_BUDGET-2000)));
   }
@@ -969,6 +985,7 @@ export class SovereignWorld {
         // cumulative CPU window; storage completions alone do not renew it.
         for(let segment=1;segment<maxSegments&&this.world.clock.worldMinute<target;segment++){
           await this.yieldRuntime();
+          if(this.runtimeCpuWindowExpired())break;
           const step=advanceWorldBounded(this.world,this.world.clock.realEpochMs+target*REAL_MS_PER_WORLD_MINUTE,
             maxCatchup,maxOutage,{maxSegments:1,targetWorldMinute:target});
           progress.trimmedMemories+=step.trimmedMemories;
@@ -1007,7 +1024,6 @@ export class SovereignWorld {
   }
   async alarm(alarmInfo){
     await this.ready;
-    if(!this.world)await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
     const startedAt=Date.now();
     // Even a caught-up tick can change private cognition or trim memories.
     // Keep every mutation-capable invocation warm until its next phase.
@@ -1017,11 +1033,52 @@ export class SovereignWorld {
     // setAlarm can resolve while its write is still buffered. Flush it before
     // synchronous simulation can keep storage completion events waiting.
     await this.ctx.storage.sync?.();
-    // Cold decode already spent CPU in this alarm's platform window. Keep
-    // its successor warm until the autonomous incoming heartbeat renews it.
-    if(this.awaitingColdCpuRenewal)return;
+    if(this.world)ensureRuntime(this.world).nextAlarmRealMs=nextAlarm;
+    this.startRuntimeLoop();
+    await this.runRuntimePulse(alarmInfo);
+  }
+  startRuntimeLoop(){
+    if(typeof this.ctx.waitUntil!=='function'||this.runtimeTimer!=null||this.runtimeLoopRunning)return;
+    const delay=Date.now()<this.persistenceDeferredUntilRealMs||this.runtimeLoopError||this.world?.runtime?.lastTickError
+      ?ALARM_MS:ALARM_PULSE_MS;
+    this.runtimeTimer=setTimeout(()=>{
+      this.runtimeTimer=null;this.runtimeLoopRunning=true;
+      const work=this.runRuntimePulse().then(completed=>{
+        if(completed)this.runtimeLoopError=null;
+      }).catch(error=>{
+        this.runtimeLoopError=String(error?.message||error).slice(0,300);
+        console.error('CYMONIA_RUNTIME_LOOP_FAILED',this.runtimeLoopError);
+      }).finally(()=>{
+        this.runtimeLoopRunning=false;this.startRuntimeLoop();
+      });
+      this.ctx.waitUntil(work);
+    },delay);
+  }
+  async runRuntimePulse(alarmInfo){
+    // Alarms and the local timer share one phase. Incoming events coalesce;
+    // they cannot build a backlog of writers while compression is yielding.
+    if(this.runtimePulsePromise)return this.runtimePulsePromise;
+    const pending=this.advanceRuntimePulse(alarmInfo);
+    this.runtimePulsePromise=pending;
+    try{return await pending;}
+    finally{if(this.runtimePulsePromise===pending)this.runtimePulsePromise=null;}
+  }
+  runtimeCpuWindowExpired(reserveMs=0){
+    return typeof this.lastIncomingRequestRealMs==='number'&&
+      Date.now()-this.lastIncomingRequestRealMs>=25_000-reserveMs;
+  }
+  async advanceRuntimePulse(alarmInfo){
+    await this.ready;
+    if(!this.world){
+      if(this.runtimeCpuWindowExpired(12_000))return false;
+      await this.restoreCommittedWorld(this.pendingRecoveryNeuronBudget);
+    }
+    // Cold decode retains its post-decode incoming-request challenge. Timers
+    // keep memory warm but do not themselves renew the platform CPU window.
+    if(this.awaitingColdCpuRenewal)return false;
+    if(this.runtimeCpuWindowExpired(this.pendingCheckpoint?12_000:0))return false;
+    const startedAt=Date.now();
     let runtime=ensureRuntime(this.world);
-    runtime.nextAlarmRealMs=nextAlarm;
 
     const savingCheckpoint=Boolean(this.pendingCheckpoint);
     try{
@@ -1056,10 +1113,9 @@ export class SovereignWorld {
       // Back off failed pulses; the precommitted successor also survives a
       // CPU reset that cannot run this catch block.
       const retryAt=Date.now()+ALARM_MS;
-      try{await this.ctx.storage.setAlarm(retryAt);nextAlarm=retryAt;}
+      try{await this.ctx.storage.setAlarm(retryAt);runtime.nextAlarmRealMs=retryAt;}
       catch(scheduleError){console.error('CYMONIA_ALARM_BACKOFF_FAILED',String(scheduleError?.message||scheduleError).slice(0,300));}
     }
-    runtime.nextAlarmRealMs=nextAlarm;
     try{
       // Rapid simulation pulses must not consume the Free daily write quota
       // just to repeat healthy diagnostics. Failures and commits flush at once.
@@ -1072,6 +1128,7 @@ export class SovereignWorld {
     }catch(error){
       console.error('CYMONIA_HEARTBEAT_STATUS_SAVE_FAILED',String(error?.message||error).slice(0,300));
     }
+    return !runtime.lastTickError;
   }
   async processCognition(limit){
     if(!this.env.AI?.run)return false;
@@ -1181,6 +1238,7 @@ export class SovereignWorld {
     }));
   }
   async fetch(request){
+    this.lastIncomingRequestRealMs=Date.now();
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
     if(request.method==='GET'&&path==='/runtime-heartbeat'&&(this.initializing||!this.world)){
       this.lastSchedulerHeartbeatRealMs=Date.now();
@@ -1196,6 +1254,7 @@ export class SovereignWorld {
       // from this recovered object. Queued cold-wake requests cannot release it.
       if(request.headers.get('x-cymonia-cpu-renewal')===this.coldCpuRenewalToken)this.awaitingColdCpuRenewal=false;
       this.lastSchedulerHeartbeatRealMs=Date.now();
+      this.startRuntimeLoop();
       return json({ok:true,service:'cymonia-sovereign-world',world_minute:world.clock.worldMinute,
         cpu_renewal_token:this.coldCpuRenewalToken,
         lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute)});
@@ -1234,6 +1293,7 @@ export class SovereignWorld {
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
+        runtime_driver:{timer_active:this.runtimeTimer!=null||Boolean(this.runtimeLoopRunning),pulse_running:Boolean(this.runtimePulsePromise)},
         knowledge_archive:this.knowledgeArchive?.stats()??null,
         seal_read_index_ready:Boolean(this.sealIndexReady),
         last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
