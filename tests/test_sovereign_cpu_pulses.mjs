@@ -79,6 +79,21 @@ test('a delayed alarm completes its bounded thirty-minute target across dense ac
   assert.deepEqual(world,expected);
 });
 
+test('dense alarm work yields between physical boundaries without extending its target',async t=>{
+  const {instance}=pulseRuntime(t),world=instance.world,start=world.clock.worldMinute;
+  world.actions=world.citizens.map((c,i)=>{
+    const action={id:`cooperative:${i}`,actorId:c.id,type:'REST',status:'active',startedWorldMinute:start,
+      endsWorldMinute:start+1+i%30,payload:{},concepts:[]};c.currentActionId=action.id;return action;
+  });
+  const expected=structuredClone(world);advanceWorldTo(expected,(start+30)*1000);
+  const yielded=[];
+  instance.yieldRuntime=async()=>{yielded.push(world.clock.worldMinute);};
+  await instance.alarm();
+  assert.ok(yielded.length>=29,'incoming autonomous heartbeats must be dispatchable between CPU boundaries');
+  assert.ok(yielded.every(minute=>minute>start&&minute<start+30));
+  delete world.runtime;assert.deepEqual(world,expected);
+});
+
 test('dense actions keep pace and save real progress when alarms arrive fifteen seconds apart',async t=>{
   const {instance,saved}=pulseRuntime(t),world=instance.world;
   let now=61000;t.mock.method(Date,'now',()=>now);

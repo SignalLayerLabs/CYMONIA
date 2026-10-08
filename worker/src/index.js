@@ -958,7 +958,20 @@ export class SovereignWorld {
       this.registerCitizenEvidence();
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
-      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage,{maxSegments,targetWorldMinute:this.pendingAdvanceTarget??Infinity});
+      const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage,{maxSegments:deferCheckpoint?Math.min(1,maxSegments):maxSegments,targetWorldMinute:this.pendingAdvanceTarget??Infinity});
+      if(deferCheckpoint){
+        const target=progress.advanceTargetWorldMinute;
+        // Preserve one chronological target while yielding between boundaries.
+        // Genuine incoming scheduler requests must be able to renew Cloudflare's
+        // cumulative CPU window; storage completions alone do not renew it.
+        for(let segment=1;segment<maxSegments&&this.world.clock.worldMinute<target;segment++){
+          await this.yieldRuntime();
+          const step=advanceWorldBounded(this.world,this.world.clock.realEpochMs+target*REAL_MS_PER_WORLD_MINUTE,
+            maxCatchup,maxOutage,{maxSegments:1,targetWorldMinute:target});
+          progress.trimmedMemories+=step.trimmedMemories;
+        }
+        progress.lagWorldMinutes=Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute);
+      }
       this.pendingAdvanceTarget=this.world.clock.worldMinute<progress.advanceTargetWorldMinute?progress.advanceTargetWorldMinute:null;
       this.registerCitizenEvidence();
       progress.trimmedMemories+=this.pendingTrimmedMemories||0;

@@ -58,11 +58,13 @@ export class KnowledgeArchive {
     this.serializedCache=new Map();this.serializedCodeUnits=0;
     this.dirtyCodeUnits=0;this.pageRefs=new Map();this.pageCounts=new Map();this.pageReads=0;
     this.deadPages=new Set();
+    this.entityMatchCache=new Map();this.entityMatchIndices=0;
   }
   dispose(){
     this.pages.clear();this.cache.clear();this.serializedCache.clear();this.stores.clear();this.citizenStores=new WeakMap();
     this.pageRefs.clear();this.pageCounts.clear();
     this.deadPages.clear();
+    this.entityMatchCache.clear();this.entityMatchIndices=0;
     this.bins.clear();this.binCache.clear();this.binCacheBytes=0;
     this.backingBytes=0;this.cachedCodeUnits=0;this.serializedCodeUnits=0;this.dirtyCodeUnits=0;
     this.hydrateEntry=()=>{};
@@ -72,6 +74,22 @@ export class KnowledgeArchive {
     serializedCodeUnits:this.serializedCodeUnits,compressedBytes:this.backingBytes+this.binCacheBytes,
     pendingCompressedBytes:this.backingBytes,cachedBinBytes:this.binCacheBytes,archivedCompressedBytes:[...this.bins.values()].reduce((n,b)=>n+b.size,0),
     maxCompressedBytes:this.maxBackingBytes,storage:this.sql?'packed-sqlite':'compressed-ram',sqlRowsRead:this.sqlRowsRead,sqlRowsWritten:this.sqlRowsWritten};}
+  dropEntityMatches(entry){
+    this.entityMatchCache.delete(entry);this.entityMatchIndices-=entry.indices.length;
+    entry.store.entityCache.delete(entry.id);entry.store.entityCacheIndices-=entry.indices.length;
+  }
+  retainEntityMatches(store,id,indices,length){
+    const prior=store.entityCache.get(id);
+    if(prior)this.dropEntityMatches(prior);
+    // Both per-Citizen and whole-isolate bounds apply, including empty matches.
+    // Large queries still return every record; only cache admission is limited.
+    if(indices.length>8192)return;
+    const entry={store,id,indices,length};
+    store.entityCache.set(id,entry);store.entityCacheIndices+=indices.length;
+    this.entityMatchCache.set(entry,entry);this.entityMatchIndices+=indices.length;
+    while(store.entityCache.size>128||store.entityCacheIndices>8192)this.dropEntityMatches(store.entityCache.values().next().value);
+    while(this.entityMatchCache.size>16384||this.entityMatchIndices>65536)this.dropEntityMatches(this.entityMatchCache.keys().next().value);
+  }
   readBin(id){
     let bytes=this.binCache.get(id);
     if(bytes){this.binCache.delete(id);this.binCache.set(id,bytes);return bytes;}
@@ -275,6 +293,7 @@ export class KnowledgeArchive {
     this.stores.add(store);this.citizenStores.set(citizen,store);citizen.knowledge=store.array;return store.array;
   }
   releaseStore(store){
+    for(const entry of store.entityCache.values())this.dropEntityMatches(entry);
     for(const id of store.rows)if(id)this.releasePage(id);
     for(const pending of store.dirty.values())this.dirtyCodeUnits-=pending.units;
     this.stores.delete(store);this.releaseDeadPages();
@@ -318,6 +337,7 @@ class ArchivedKnowledge {
     this.archive=archive;this.concepts=[];this.active=indexColumn([],true);this.entities=[];
     this.rows=indexColumn();this.offsets=indexColumn();this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
     this.activeCount=0;this.sourceCount=0;this.sourceCounts=indexColumn();this.views=new Map();
+    this.entityCache=new Map();this.entityCacheIndices=0;
     const store=this;
     this.array=bindKnowledgeStorage(new Proxy([],{
       get(target,key,receiver){
@@ -351,10 +371,18 @@ class ArchivedKnowledge {
   }
   indexEntry(index,entry){
     const was=this.active[index],concept=this.concepts[index];
+    const oldEntities=this.entities[index];
     if(was)this.activeCount--;
     this.concepts[index]=ownedString(entry.concept);this.active[index]=entry.active!==false;
     if(!entry.concept&&entry.id)this.fallbackIds.set(index,ownedString(entry.id));else this.fallbackIds.delete(index);
     const ids=[...new Set((entry.provenance||[]).map(source=>source.evidence?.entityId).filter(Boolean))].map(ownedString);
+    const oldIds=Array.isArray(oldEntities)?oldEntities:oldEntities==null?[]:[oldEntities];
+    if(was!==this.active[index]||oldIds.length!==ids.length||oldIds.some((id,i)=>id!==ids[i])){
+      for(const id of new Set([...oldIds,...ids])){
+        const cached=this.entityCache.get(id);
+        if(cached&&index<cached.length)this.archive.dropEntityMatches(cached);
+      }
+    }
     this.entities[index]=ids.length>1?ids:ids[0]??null;
     const sources=entry.provenance?.length||0;
     this.sourceCount+=sources-(this.sourceCounts[index]||0);this.sourceCounts[index]=sources;
@@ -426,8 +454,14 @@ class ArchivedKnowledge {
   recent(limit){const entries=[];for(let i=this.concepts.length-1;i>=0&&entries.length<limit;i--)
     if(this.active[i])entries.push(this.view(i));return entries.reverse();}
   activeConcepts(){return this.concepts.filter((_,i)=>this.active[i]);}
-  forEntity(id){const entries=[];for(let i=0;i<this.entities.length;i++)if(this.active[i]&&
-    (this.entities[i]===id||Array.isArray(this.entities[i])&&this.entities[i].includes(id)))entries.push(this.view(i));return entries;}
+  forEntity(id){
+    const cacheable=typeof id==='string'&&id.length<=256;
+    const cached=cacheable?this.entityCache.get(id):null,indices=cached?[...cached.indices]:[];
+    for(let i=cached?.length??0;i<this.entities.length;i++)if(this.active[i]&&
+      (this.entities[i]===id||Array.isArray(this.entities[i])&&this.entities[i].includes(id)))indices.push(i);
+    if(cacheable)this.archive.retainEntityMatches(this,id,indices,this.entities.length);
+    return indices.map(i=>this.view(i));
+  }
   *serializedRecords(){
     // Group a bounded logical window by physical page, then emit original order.
     // Cross-Citizen dirty flushes otherwise cause repeated inflation on every record.

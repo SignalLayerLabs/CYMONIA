@@ -127,3 +127,21 @@ soak: they can repeatedly discard unsaved in-memory progress and force recovery.
 Stop diagnostic tail sessions before starting quiet advancement verification;
 inspect completed GitHub logs while it runs. A live quiet proof must not overlap
 deployments, tail activation or Observer requests.
+
+## Dense inventory CPU work
+
+The thirty-boundary production pulse exposed another CPU limit: inventory
+planning repeatedly scanned each Citizen's historical entity evidence. A native
+fixture with 980,531 records and 11,483 positive held objects took 29.15 seconds
+for thirty minutes, compared with the earlier sparse-object fixture. Bounded
+entity-query matches now scan appended records incrementally and invalidate
+relevant changes. Bounds apply per Citizen (128 queries/8,192 indices) and across
+the archive (16,384 queries/65,536 indices); oversized matches remain complete
+and are simply uncached. Releasing a store also releases its cached references.
+This fixture takes 10.66 seconds after the change.
+
+Alarm advancement yields through storage completion and a timer between
+chronological boundaries, allowing genuinely incoming scheduler requests to
+renew the platform CPU window. The original target remains fixed through these
+yields. The kernel, complete private history, separate checkpoint phase and
+strict quiet verification remain unchanged.
