@@ -24,6 +24,7 @@ import {
   encodeWorldSnapshotParts,
   decodeWorldSnapshot,
   snapshotJsonStream,
+  compressedSnapshotByteStream,
   estimateSnapshotRowWrites,
   createWriteBudget,
   reserveWriteBudget,
@@ -819,6 +820,8 @@ export class SovereignWorld {
       clock:publicState.clock,
       ledgerHead:publicState.ledgerHead,
       maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
+      jsonPrefix:'{"ok":true,"world":',
+      jsonSuffix:'}',
     });
     // Drop the materialized projection before joining its much smaller,
     // compressed representation.
@@ -1304,14 +1307,22 @@ export class SovereignWorld {
       }
 
       if(this.committedPublicSnapshot){
+        const acceptsGzip=(request.headers.get('accept-encoding')||'').split(',').some(value=>{
+          const [encoding,...parameters]=value.trim().toLowerCase().split(';');
+          if(encoding.trim()!=='gzip')return false;
+          const quality=parameters.find(parameter=>parameter.trim().startsWith('q='));
+          const q=quality===undefined?1:Number(quality.trim().slice(2));
+          return q>0&&q<=1;
+        });
         return new Response(
-          snapshotJsonStream(this.committedPublicSnapshot,{
-            prefix:'{"ok":true,"world":',
-            suffix:'}'
-          }),
-          {headers:{
+          acceptsGzip
+            ?compressedSnapshotByteStream(this.committedPublicSnapshot).stream
+            :snapshotJsonStream(this.committedPublicSnapshot),
+          {encodeBody:'manual',headers:{
             'content-type':'application/json; charset=utf-8',
-            'cache-control':'no-store'
+            'cache-control':'no-store',
+            'vary':'Accept-Encoding',
+            ...(acceptsGzip?{'content-encoding':'gzip'}:{})
           }}
         );
       }

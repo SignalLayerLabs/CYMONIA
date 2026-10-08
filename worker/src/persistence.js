@@ -136,6 +136,8 @@ export async function encodeWorldSnapshotParts(world,{
   onPart=null,
   onProgress=null,
   packedKnowledge=false,
+  jsonPrefix='',
+  jsonSuffix='',
 }={}){
   const limit=Math.max(1024,Math.floor(Number(maxCodeUnits)||256*1024));
   const snapshot={...world,clock:{...clock},ledgerHead};
@@ -144,7 +146,12 @@ export async function encodeWorldSnapshotParts(world,{
     if(world.runtime.neuronBudget)snapshot.runtime.neuronBudget={...world.runtime.neuronBudget};
   }
 
-  let input=recordByteStream(worldJsonRecords(snapshot,new Set(),'',packedKnowledge));
+  const records=function*(){
+    if(jsonPrefix)yield jsonPrefix;
+    yield* worldJsonRecords(snapshot,new Set(),'',packedKnowledge);
+    if(jsonSuffix)yield jsonSuffix;
+  };
+  let input=recordByteStream(records());
   const digest=sealDue&&typeof crypto.DigestStream==='function'
     ?new crypto.DigestStream('SHA-256')
     :null;
@@ -382,7 +389,7 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
   finally{reader.releaseLock();}
 }
 
-function compressedSnapshotByteStream(encoded){
+export function compressedSnapshotByteStream(encoded){
   const marker=`${SNAPSHOT_ENCODING}:`;
   const iterator=typeof encoded==='string'?[encoded][Symbol.iterator]():encoded[Symbol.iterator]();
   let source='',offset=0,header='',carry='',ready=false,stopped=false;
