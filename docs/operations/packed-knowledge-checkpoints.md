@@ -63,3 +63,36 @@ still requires the unchanged unattended clock/identity/physical-state CI gate.
 Regression coverage includes legacy migration, lazy cold records, complete
 logical exports, cache bounds, private source mutations, missing/corrupt bins,
 interrupted publication, durable staging charges and collection across eviction.
+
+## Compact directory v2
+
+The first production migration committed the packed history, but its next alarm
+exceeded memory with 791,410 records, 53,322 memories and 11,158 objects. V1
+restored a second complete concept-string index in page directories alongside
+the logical index; numeric columns also used ordinary JavaScript arrays.
+
+V2 writes each logical concept once, reconstructs page identities from guarded
+logical references, and detaches index strings from parsed Citizen buffers.
+Rows, offsets and source counts use geometric Uint32 backing; active flags use
+Uint8 backing. Cold columns allocate their actual length; growth adds at most
+50% spare capacity. Their array-compatible readers preserve append, iteration and
+JSON semantics, with bounded per-field JSON conversion. Large arrays bypass
+the small-record classifier before it can enumerate all their keys.
+
+Both packed v1 and legacy full-array snapshots remain readable. V1 page
+identities are validated before releasing their duplicate strings. After v2
+publication, rollback requires this v2-compatible reader; the PR54 v1-only
+runtime cannot read v2 descriptors. No canonical records or sources are dropped.
+
+The v2 native fixture includes 108 Citizens, 799,200 knowledge records and private
+sources, 55,296 episodic memories and 11,158 objects. Legacy cold migration took
+7.8 seconds and its first hot encoding 2.6 seconds. Packed cold recovery took
+2.9–3.2 seconds; subsequent checkpoint encoding took 2.7 seconds. Independent
+SHA-256 streams match all original records and all 2,052 confidence mutations
+after cold restart. An ordinary save used 73 SQL row reads and 27 writes, with
+the persisted budget charging the same 27 writes. Growth to 961,200 records
+retained 39.4 MB of compressed history with 7.8 MB resident compressed cache;
+encoding took 3.1 seconds and produced seven hot parts. With compact cold
+allocation, growth recovery took 3.7 seconds and a 30-minute physical pulse
+used 259 ms with zero SQL operations. These remain local measurements, with
+the production unattended gate required before clearance.
