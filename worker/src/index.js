@@ -237,7 +237,7 @@ export class SovereignWorld {
       }else{
         ensureRuntime(this.world);
         this.establishClockGuardBaseline();
-        if(!this.lastPersistedGeneration)await this.persist({forceSeal:true});
+        if(!this.lastPersistedGeneration||this.knowledgeArchive?.backingBytes)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
       // Wake only the canonical graph and bounded diagnostics. Building the
@@ -262,6 +262,8 @@ export class SovereignWorld {
     ctx.waitUntil?.(this.ready);
   }
   initializeSQLite(){
+    this.sql.exec('CREATE TABLE IF NOT EXISTS knowledge_bins(id TEXT PRIMARY KEY,data BLOB NOT NULL) WITHOUT ROWID');
+    this.sql.exec('CREATE TABLE IF NOT EXISTS knowledge_bin_slots(id INTEGER PRIMARY KEY,bin_ids TEXT NOT NULL)');
     this.sql.exec(`CREATE TABLE IF NOT EXISTS world_state(
       id INTEGER PRIMARY KEY CHECK(id=1),
       state_json TEXT NOT NULL,
@@ -418,6 +420,7 @@ export class SovereignWorld {
             return this.yieldRuntime().then(()=>item);}
           return item;
         }});
+        await archive.verifyBacking(()=>this.yieldRuntime());
         assertMonotonicSnapshot(world,{worldId:guard?.world_id||null});
         if(meta.world_minute!==undefined&&Number(meta.world_minute)!==world.clock.worldMinute)throw new Error('sovereign_snapshot_metadata_mismatch');
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
@@ -428,7 +431,13 @@ export class SovereignWorld {
         this.evidencePool=pool;
         this.committedSnapshot=null;
         break;
-      }catch(error){console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));}
+      }catch(error){
+        console.error('CYMONIA_SNAPSHOT_CANDIDATE_REJECTED',String(error?.message||error).slice(0,240));
+        // An older slot can share the same clock while missing newer private
+        // mutations. Archive corruption must never silently select that state.
+        if(String(error?.message||error).startsWith('knowledge_'))
+          throw new Error('sovereign_world_snapshot_unavailable_below_clock_guard',{cause:error});
+      }
     }
     if(!selected){
       const chunks=this.sqlRows('SELECT id FROM world_state_chunks_v2 LIMIT 1').length||this.sqlRows('SELECT seq FROM world_state_chunks LIMIT 1').length;
@@ -481,6 +490,7 @@ export class SovereignWorld {
         return this.yieldRuntime().then(()=>item);}
       return item;
     }});
+    await archive.verifyBacking(()=>this.yieldRuntime());
     assertMonotonicSnapshot(restored,{
       highWaterMark:this.clockHighWaterMark,
       worldId:this.committedStats?.worldId||null
@@ -519,7 +529,7 @@ export class SovereignWorld {
   createKnowledgeArchive(pool,recovering=false){
     this.knowledgeArchive?.dispose();
     if(recovering){this.awaitingColdCpuRenewal=true;this.coldCpuRenewalToken=crypto.randomUUID();}
-    const archive=new KnowledgeArchive(null,{hydrateEntry:entry=>{
+    const archive=new KnowledgeArchive(this.sql,{hydrateEntry:entry=>{
       for(const source of entry.provenance||[])if(source.evidence)source.evidence=pool.intern(source.evidence);
     }});
     archive.recovering=recovering;
@@ -655,10 +665,24 @@ export class SovereignWorld {
   }){
     // Reserve enough headroom before staging: the exact chunk count is known
     // only after streaming, and an incomplete inactive slot still costs rows.
-    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS+10).allowed){
+    const stagedBins=this.knowledgeArchive?.stagedBinCount()||0;
+    if(!reserveWriteBudget(currentBudget,MAX_STAGED_SNAPSHOT_PARTS*2+15+stagedBins*2).allowed){
       return {persisted:false,reason:'write_budget_exhausted'};
     }
     const generation=nextSnapshotSlot(this.lastPersistedGeneration);
+    await this.knowledgeArchive?.stageBins((data,id)=>{
+      // Each staged bin and its budget charge commit together. An interrupted
+      // snapshot never erases the charge or replaces the active manifest.
+      this.ctx.storage.transactionSync(()=>{
+        const chargeDay=utcDay();
+        const budget=this.readPersistenceBudget(chargeDay,currentBudget.limit);
+        const admission=reserveWriteBudget(budget,2);
+        if(!admission.allowed)throw new Error('knowledge_staging_budget_exhausted');
+        this.sql.exec('INSERT INTO knowledge_bins(id,data) VALUES(?,?) ON CONFLICT(id) DO NOTHING',id,data);
+        this.sql.exec('UPDATE persistence_budget SET day=?,rows_written=?,updated_at=? WHERE id=1',chargeDay,admission.budget.rowsWritten,Date.now());
+      });
+      return id;
+    },()=>this.yieldRuntime());
     const slotBase=generation==='slot-b'?1_000_000:0;
     let chunkCount=0;
     const encodingStartedAt=Date.now();
@@ -669,15 +693,22 @@ export class SovereignWorld {
       ledgerHead,
       maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
       onProgress:()=>this.yieldRuntime(),
+      packedKnowledge:true,
       onPart:part=>{
         if(chunkCount>=MAX_STAGED_SNAPSHOT_PARTS)throw new Error('sovereign_snapshot_exceeds_staging_limit');
         // The active generation and its manifest remain intact until the
         // final metadata transaction. No large SQLite transaction accumulates
         // all of the compressed chunks in the isolate.
-        this.sql.exec(
-          'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
-          slotBase+chunkCount,part
-        );
+        this.ctx.storage.transactionSync(()=>{
+          const chargeDay=utcDay();
+          const budget=this.readPersistenceBudget(chargeDay,currentBudget.limit),admission=reserveWriteBudget(budget,2);
+          if(!admission.allowed)throw new Error('sovereign_snapshot_staging_budget_exhausted');
+          this.sql.exec(
+            'INSERT INTO world_state_chunks_v2(id,state_part) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET state_part=excluded.state_part',
+            slotBase+chunkCount,part
+          );
+          this.sql.exec('UPDATE persistence_budget SET day=?,rows_written=?,updated_at=? WHERE id=1',chargeDay,admission.budget.rowsWritten,Date.now());
+        });
         chunkCount++;
       },
     });
@@ -686,20 +717,18 @@ export class SovereignWorld {
       ?Number([...this.sql.exec('SELECT row_count AS count FROM world_seal_inventory WHERE id=1 LIMIT 1')][0]?.count||0)
       :0;
     const sealPruneRows=due&&sealCount>=4096?1:0;
-    const rowWrites=estimateSnapshotRowWrites({
-      chunkCount,
+    const rowWrites=1+estimateSnapshotRowWrites({
+      chunkCount:0,
       sealDue:due,
       sealPruneRows,
     });
-    const reservation=reserveWriteBudget(currentBudget,rowWrites);
-    if(!reservation.allowed){
-      return {persisted:false,reason:'write_budget_exhausted',rowWrites};
-    }
-
     // Workers clocks stay frozen during pure CPU work. Complete staged I/O
     // before timestamping publication; encoding start is not commit time.
     await this.ctx.storage.sync?.();
     const committedAtRealMs=Date.now();
+    day=utcDay(committedAtRealMs);
+    const reservation=reserveWriteBudget(this.readPersistenceBudget(day,currentBudget.limit),rowWrites);
+    if(!reservation.allowed)return {persisted:false,reason:'write_budget_exhausted',rowWrites};
     this.ctx.storage.transactionSync(()=>{
       this.sql.exec(`INSERT INTO world_state_manifest(id,generation,chunk_count,world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?,?)
@@ -709,6 +738,8 @@ export class SovereignWorld {
         VALUES(?,?,?,?,?)
         ON CONFLICT(generation) DO UPDATE SET chunk_count=excluded.chunk_count,world_minute=excluded.world_minute,ledger_head=excluded.ledger_head,updated_at=excluded.updated_at`,
         generation,chunkCount,worldMinute,ledgerHead,committedAtRealMs);
+      this.sql.exec('INSERT INTO knowledge_bin_slots(id,bin_ids) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET bin_ids=excluded.bin_ids',
+        generation==='slot-b'?1:0,JSON.stringify(this.knowledgeArchive?.referencedBins()||[]));
       this.sql.exec(`INSERT INTO world_clock_guard(id,world_id,highest_world_minute,ledger_head,updated_at)
         VALUES(1,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET
@@ -731,15 +762,47 @@ export class SovereignWorld {
         day,reservation.budget.rowsWritten,committedAtRealMs);
     });
     await this.ctx.storage.sync?.();
+    // Publication already succeeded; optional maintenance cannot roll it back.
+    try{this.collectKnowledgeBins(day,currentBudget.limit);}
+    catch(error){console.error('CYMONIA_KNOWLEDGE_GC_DEFERRED',String(error?.message||error).slice(0,200));}
 
     return {
       persisted:true,
       generation,
       chunkCount,
       committedAtRealMs:Date.now(),
-      rowWrites,
-      rowsWritten:reservation.budget.rowsWritten,
+      rowWrites:rowWrites+(stagedBins+chunkCount)*2,
+      rowsWritten:this.readPersistenceBudget(day,currentBudget.limit).rowsWritten,
     };
+  }
+  collectKnowledgeBins(day,limit){
+    day=utcDay();
+    // Two slot inventories and a bounded primary-key window; no full table
+    // scan or per-record rows. In-flight/live handles are retained as well.
+    const retained=new Set(this.knowledgeArchive?.referencedBins()||[]);
+    for(const row of this.sql.exec('SELECT bin_ids FROM knowledge_bin_slots WHERE id<2'))for(const id of JSON.parse(row.bin_ids))retained.add(id);
+    this.knowledgeGcCursor??=JSON.parse([...this.sql.exec('SELECT bin_ids FROM knowledge_bin_slots WHERE id=2')][0]?.bin_ids||'[""]')[0];
+    const candidates=[...this.sql.exec('SELECT id FROM knowledge_bins WHERE id>? ORDER BY id LIMIT 16',this.knowledgeGcCursor||'')];
+    let deleted=0;
+    for(const {id} of candidates){
+      this.knowledgeGcCursor=id;if(retained.has(id))continue;
+      if(deleted>=2)break;
+      const budget=this.readPersistenceBudget(day,limit),admission=reserveWriteBudget(budget,2);
+      if(!admission.allowed)break;
+      this.ctx.storage.transactionSync(()=>{
+        this.sql.exec('DELETE FROM knowledge_bins WHERE id=?',id);
+        this.sql.exec('UPDATE persistence_budget SET day=?,rows_written=?,updated_at=? WHERE id=1',day,admission.budget.rowsWritten,Date.now());
+      });deleted++;
+      const cached=this.knowledgeArchive?.binCache.get(id);
+      if(cached){this.knowledgeArchive.binCacheBytes-=cached.length;this.knowledgeArchive.binCache.delete(id);}
+      this.knowledgeArchive?.bins.delete(id);
+    }
+    if(!candidates.length)this.knowledgeGcCursor='';
+    const budget=this.readPersistenceBudget(day,limit),admission=reserveWriteBudget(budget,2);
+    if(admission.allowed)this.ctx.storage.transactionSync(()=>{
+      this.sql.exec('INSERT INTO knowledge_bin_slots(id,bin_ids) VALUES(2,?) ON CONFLICT(id) DO UPDATE SET bin_ids=excluded.bin_ids',JSON.stringify([this.knowledgeGcCursor]));
+      this.sql.exec('UPDATE persistence_budget SET day=?,rows_written=?,updated_at=? WHERE id=1',day,admission.budget.rowsWritten,Date.now());
+    });
   }
 
   async refreshPublicSnapshot({clock=this.world.clock,ledgerHead=this.world.ledgerHead}={}){
@@ -869,7 +932,9 @@ export class SovereignWorld {
   checkpointIntervalWorldMinutes(){
     // Reserve 2k of the normal 40k allowance for recovery/retries. Chunk size
     // growth changes cadence without raising the persisted admission limit.
-    const rows=estimateSnapshotRowWrites({chunkCount:this.lastSnapshotChunkCount||1,sealDue:true,sealPruneRows:1});
+    const pending=(this.knowledgeArchive?.backingBytes||0)+3*(this.knowledgeArchive?.dirtyCodeUnits||0);
+    const bins=Math.ceil(pending/(1024*1024));
+    const rows=7+2*bins+2*(this.lastSnapshotChunkCount||1)+estimateSnapshotRowWrites({chunkCount:0,sealDue:true,sealPruneRows:1});
     const minutesPerRealDay=86400000/REAL_MS_PER_WORLD_MINUTE;
     return Math.max(PERSIST_INTERVAL_WORLD_MINUTES,Math.ceil(minutesPerRealDay*rows/(SAFE_ROW_WRITE_BUDGET-2000)));
   }

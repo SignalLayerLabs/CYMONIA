@@ -64,8 +64,9 @@ function isSmallJsonRecord(value){
   return true;
 }
 
-function* worldJsonRecords(value,ancestors=new Set(),key=''){
+function* worldJsonRecords(value,ancestors=new Set(),key='',packedKnowledge=false){
   const archive=knowledgeStorage(value);
+  if(archive&&packedKnowledge){yield* worldJsonRecords(archive.checkpointValue(),ancestors,key,false);return;}
   if(archive){yield '[';let first=true;for(const text of archive.serializedRecords()){
     if(!first)yield ',';first=false;yield text;
   }yield ']';return;}
@@ -79,7 +80,7 @@ function* worldJsonRecords(value,ancestors=new Set(),key=''){
     yield '[';
     for(let i=0;i<value.length;i++){
       if(i)yield ',';
-      yield* worldJsonRecords(value[i],ancestors,String(i));
+      yield* worldJsonRecords(value[i],ancestors,String(i),packedKnowledge);
     }
     yield ']';
   }else{
@@ -89,7 +90,7 @@ function* worldJsonRecords(value,ancestors=new Set(),key=''){
       if(item===undefined||typeof item==='function'||typeof item==='symbol')continue;
       if(!first)yield ',';first=false;
       yield `${JSON.stringify(name)}:`;
-      yield* worldJsonRecords(item,ancestors,name);
+      yield* worldJsonRecords(item,ancestors,name,packedKnowledge);
     }
     yield '}';
   }
@@ -133,6 +134,7 @@ export async function encodeWorldSnapshotParts(world,{
   maxCodeUnits=256*1024,
   onPart=null,
   onProgress=null,
+  packedKnowledge=false,
 }={}){
   const limit=Math.max(1024,Math.floor(Number(maxCodeUnits)||256*1024));
   const snapshot={...world,clock:{...clock},ledgerHead};
@@ -141,7 +143,7 @@ export async function encodeWorldSnapshotParts(world,{
     if(world.runtime.neuronBudget)snapshot.runtime.neuronBudget={...world.runtime.neuronBudget};
   }
 
-  let input=recordByteStream(worldJsonRecords(snapshot));
+  let input=recordByteStream(worldJsonRecords(snapshot,new Set(),'',packedKnowledge));
   const digest=sealDue&&typeof crypto.DigestStream==='function'
     ?new crypto.DigestStream('SHA-256')
     :null;

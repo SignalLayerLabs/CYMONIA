@@ -1,19 +1,29 @@
 import {bindKnowledgeStorage,bindKnowledgeView} from '../../world/knowledge-storage.js';
 import {hash32} from '../../world/rng.js';
 import {deflateSync,inflateSync} from './vendor/fflate.js';
+import {archiveDigest} from './archive-digest.js';
 
 const PAGE_UNITS=65536,CACHE_UNITS=524288,DIRTY_UNITS=524288;
 const BACKING_BYTES=32*1024*1024;
+const BIN_BYTES=1024*1024,BIN_CACHE_BYTES=8*1024*1024;
 const encoder=new TextEncoder(),decoder=new TextDecoder();
 const numeric=key=>typeof key==='string'&&/^(0|[1-9][0-9]*)$/.test(key);
 // Parsed strings can retain their large Citizen JSON backing buffer in V8.
 // Logical indexes must own small strings independently of evicted records.
 const ownedString=value=>typeof value==='string'?JSON.parse(JSON.stringify(value)):value;
+const undefinedConcepts=concepts=>concepts.flatMap((value,index)=>value===undefined?[index]:[]);
+function restoreAbsentConcepts(concepts,indices=[]){
+  if(!Array.isArray(concepts)||!Array.isArray(indices))throw new Error('knowledge_absent_concept_mask_invalid');
+  for(const index of indices){if(!Number.isSafeInteger(index)||index<0||index>=concepts.length||concepts[index]!==null)
+    throw new Error('knowledge_absent_concept_mask_invalid');concepts[index]=undefined;}
+}
 
-// Disposable compressed RAM pages back the live graph. The full guarded gzip
-// checkpoint remains the only durable authority; cold recovery incurs no scratch SQL.
+// Immutable compressed pages are packed once into durable bins. The guarded
+// checkpoint owns the bin descriptors and logical order; caches are disposable.
 export class KnowledgeArchive {
-  constructor(_sql,{hydrateEntry=()=>{},maxBackingBytes=BACKING_BYTES}={}){
+  constructor(sql,{hydrateEntry=()=>{},maxBackingBytes=BACKING_BYTES,maxBinCacheBytes=BIN_CACHE_BYTES}={}){
+    this.sql=sql;this.bins=new Map();this.binCache=new Map();this.binCacheBytes=0;this.maxBinCacheBytes=maxBinCacheBytes;
+    this.sqlRowsRead=0;this.sqlRowsWritten=0;
     this.hydrateEntry=hydrateEntry;this.maxBackingBytes=maxBackingBytes;
     this.pages=new Map();this.backingBytes=0;this.nextPageId=1;this.citizenStores=new WeakMap();
     this.cache=new Map();this.cachedCodeUnits=0;this.stores=new Set();
@@ -25,12 +35,62 @@ export class KnowledgeArchive {
     this.pages.clear();this.cache.clear();this.serializedCache.clear();this.stores.clear();this.citizenStores=new WeakMap();
     this.pageRefs.clear();this.pageCounts.clear();
     this.deadPages.clear();
+    this.bins.clear();this.binCache.clear();this.binCacheBytes=0;
     this.backingBytes=0;this.cachedCodeUnits=0;this.serializedCodeUnits=0;this.dirtyCodeUnits=0;
     this.hydrateEntry=()=>{};
   }
   stats(){return {cachedCodeUnits:this.cachedCodeUnits,dirtyCodeUnits:this.dirtyCodeUnits,
     cachedPages:this.cache.size,pageReads:this.pageReads,livePages:this.pageRefs.size,
-    serializedCodeUnits:this.serializedCodeUnits,compressedBytes:this.backingBytes,maxCompressedBytes:this.maxBackingBytes,storage:'compressed-ram',sqlRowsRead:0,sqlRowsWritten:0};}
+    serializedCodeUnits:this.serializedCodeUnits,compressedBytes:this.backingBytes+this.binCacheBytes,
+    pendingCompressedBytes:this.backingBytes,cachedBinBytes:this.binCacheBytes,archivedCompressedBytes:[...this.bins.values()].reduce((n,b)=>n+b.size,0),
+    maxCompressedBytes:this.maxBackingBytes,storage:this.sql?'packed-sqlite':'compressed-ram',sqlRowsRead:this.sqlRowsRead,sqlRowsWritten:this.sqlRowsWritten};}
+  readBin(id){
+    let bytes=this.binCache.get(id);
+    if(bytes){this.binCache.delete(id);this.binCache.set(id,bytes);return bytes;}
+    const descriptor=this.bins.get(id);
+    if(!descriptor)throw new Error('knowledge_bin_descriptor_missing');
+    let row;
+    try{row=[...this.sql.exec('SELECT data FROM knowledge_bins WHERE id=?',id)][0];this.sqlRowsRead++;}
+    catch(error){throw new Error('knowledge_bin_load_failed',{cause:error});}
+    if(!row)throw new Error('knowledge_bin_missing');
+    bytes=new Uint8Array(row.data);
+    if(bytes.length!==descriptor.size||archiveDigest(bytes)!==descriptor.sha256)throw new Error('knowledge_bin_integrity');
+    if(bytes.length<=this.maxBinCacheBytes){
+      this.binCache.set(id,bytes);this.binCacheBytes+=bytes.length;
+      while(this.binCacheBytes>this.maxBinCacheBytes){const first=this.binCache.keys().next().value;
+        this.binCacheBytes-=this.binCache.get(first).length;this.binCache.delete(first);}
+    }
+    return bytes;
+  }
+  async verifyBacking(yieldRuntime=async()=>{}){
+    for(const id of this.referencedBins()){this.readBin(id);await yieldRuntime();}
+  }
+  referencedBins(){return [...new Set([...this.pages.values()].filter(p=>p.binId!=null).map(p=>p.binId))];}
+  stagedBinCount(){
+    this.flush();let count=0,size=0;
+    for(const p of this.pages.values())if(p.bytes){if(size&&size+p.bytes.length>BIN_BYTES){count++;size=0;}
+      size+=p.bytes.length;if(size>=BIN_BYTES){count++;size=0;}}
+    return count+(size?1:0);
+  }
+  async stageBins(stage,yieldRuntime=async()=>{}){
+    this.flush();let items=[],size=0;
+    const flush=async()=>{
+      if(!items.length)return;
+      const data=new Uint8Array(size);let offset=0;
+      for(const [,page] of items){data.set(page.bytes,offset);offset+=page.bytes.length;}
+      const sha256=archiveDigest(data),id=await stage(data,sha256);
+      this.bins.set(id,{id,size:data.length,sha256});this.sqlRowsWritten++;
+      offset=0;
+      for(const [,page] of items){const length=page.bytes.length;this.backingBytes-=length;
+        delete page.bytes;page.binId=id;page.offset=offset;page.length=length;offset+=length;}
+      items=[];size=0;await yieldRuntime();
+    };
+    for(const item of this.pages)if(item[1].bytes){const length=item[1].bytes.length;
+      if(size&&size+length>BIN_BYTES)await flush();
+      if(length>1_500_000)throw new Error('knowledge_bin_exceeds_row_limit');
+      items.push(item);size+=length;if(size>=BIN_BYTES)await flush();}
+    await flush();
+  }
   readPage(id){
     if(this.serializedCache.size){this.serializedCache.clear();this.serializedCodeUnits=0;}
     let page=this.cache.get(id);
@@ -52,7 +112,8 @@ export class KnowledgeArchive {
     const encoded=this.pages.get(id);
     if(!encoded)throw new Error('knowledge_page_missing');
     // Supply a bounded output buffer: malformed data cannot inflate unboundedly.
-    const bytes=inflateSync(encoded.bytes,{out:new Uint8Array(encoded.rawBytes)});
+    const compressed=encoded.bytes||this.readBin(encoded.binId).subarray(encoded.offset,encoded.offset+encoded.length);
+    const bytes=inflateSync(compressed,{out:new Uint8Array(encoded.rawBytes)});
     const text=decoder.decode(bytes);
     if(hash32(text)!==encoded.checksum)throw new Error('knowledge_page_checksum');
     return text;
@@ -125,6 +186,12 @@ export class KnowledgeArchive {
   }
   attach(citizen){
     if(citizen.knowledge?.runtimeKnowledgeArchive===this)return citizen.knowledge;
+    if(citizen.knowledge?.format==='knowledge-packed-v1'){
+      try{return this.restore(citizen);}
+      catch(error){if(String(error?.message||error).startsWith('knowledge_'))throw error;
+        throw new Error('knowledge_checkpoint_descriptor_invalid',{cause:error});}
+    }
+    if(citizen.knowledge!=null&&!Array.isArray(citizen.knowledge))throw new Error('knowledge_format_invalid');
     const source=citizen.knowledge||[],store=new ArchivedKnowledge(this);
     this.stores.add(store);
     try{
@@ -136,6 +203,42 @@ export class KnowledgeArchive {
     citizen.knowledge=store.array;this.citizenStores.set(citizen,store);
     if(old)this.releaseStore(old);
     return store.array;
+  }
+  restore(citizen){
+    const saved=citizen.knowledge,store=new ArchivedKnowledge(this);
+    restoreAbsentConcepts(saved.concepts,saved.undefinedConcepts);
+    if(!this.sql)throw new Error('knowledge_packed_storage_unavailable');
+    for(const b of saved.bins){
+      if(!/^[0-9a-f]{64}$/.test(b.id)||b.id!==b.sha256||!Number.isInteger(b.size)||b.size<1||b.size>1_500_000)throw new Error('knowledge_bin_descriptor_invalid');
+      const prior=this.bins.get(b.id);
+      if(prior&&(prior.sha256!==b.sha256||prior.size!==b.size))throw new Error('knowledge_bin_descriptor_conflict');
+      this.bins.set(b.id,b);
+    }
+    for(const p of saved.pages){
+      restoreAbsentConcepts(p.concepts,p.undefinedConcepts);
+      const {id,binId,offset,length,rawBytes,checksum,ends,endsChecksum,concepts,activeBits}=p,bin=this.bins.get(binId);
+      if(!Number.isSafeInteger(id)||id<1||!bin||!Number.isInteger(offset)||offset<0||!Number.isInteger(length)||length<1||offset+length>bin.size||
+        !Number.isInteger(rawBytes)||rawBytes<2||rawBytes>1_500_002||!Array.isArray(ends)||!Array.isArray(concepts)||ends.length!==concepts.length||
+        !Array.isArray(activeBits)||activeBits.length!==Math.ceil(ends.length/8)||hash32(ends.join(','))!==endsChecksum)throw new Error('knowledge_page_descriptor_invalid');
+      const prior=this.pages.get(id);
+      if(prior&&(prior.binId!==binId||prior.offset!==offset||prior.length!==length||prior.checksum!==checksum||prior.endsChecksum!==endsChecksum))throw new Error('knowledge_page_descriptor_conflict');
+      if(!prior){this.pages.set(id,{binId,offset,length,rawBytes,checksum,ends:new Uint32Array(ends),endsChecksum,concepts,activeBits:new Uint8Array(activeBits)});
+        this.pageRefs.set(id,0);this.pageCounts.set(id,ends.length);}
+      this.nextPageId=Math.max(this.nextPageId,id+1);
+    }
+    const n=saved.concepts.length;
+    for(const field of ['active','entities','rows','offsets','sourceCounts'])if(!Array.isArray(saved[field])||saved[field].length!==n)throw new Error('knowledge_index_invalid');
+    for(const field of ['concepts','active','entities','rows','offsets','sourceCounts'])store[field]=saved[field];
+    store.fallbackIds=new Map(saved.fallbackIds);
+    for(let i=0;i<n;i++){
+      const page=this.pages.get(store.rows[i]),offset=store.offsets[i];
+      if(!page||!Number.isInteger(offset)||offset<0||offset>=page.ends.length||page.concepts[offset]!==store.concepts[i]||
+        Boolean(page.activeBits[offset>>3]&(1<<(offset&7)))!==store.active[i]||!Number.isSafeInteger(store.sourceCounts[i])||store.sourceCounts[i]<0)throw new Error('knowledge_index_record_mismatch');
+      this.pageRefs.set(store.rows[i],this.pageRefs.get(store.rows[i])+1);
+      store.sourceCount+=store.sourceCounts[i];if(store.active[i]){store.activeCount++;
+        if(!store.lookupIndex.has(store.concepts[i]))store.lookupIndex.set(store.concepts[i],i);}
+    }
+    this.stores.add(store);this.citizenStores.set(citizen,store);citizen.knowledge=store.array;return store.array;
   }
   releaseStore(store){
     for(const id of store.rows)if(id)this.releasePage(id);
@@ -165,7 +268,7 @@ export class KnowledgeArchive {
     for(const id of dead){
       const serialized=this.serializedCache.get(id);
       if(serialized!==undefined){this.serializedCodeUnits-=serialized.length;this.serializedCache.delete(id);}
-      this.backingBytes-=this.pages.get(id).bytes.byteLength;this.pages.delete(id);
+      this.backingBytes-=this.pages.get(id).bytes?.byteLength||0;this.pages.delete(id);
       const page=this.cache.get(id);if(page){this.cachedCodeUnits-=page.units;this.cache.delete(id);}
       this.pageRefs.delete(id);this.pageCounts.delete(id);}
     dead.clear();
@@ -200,6 +303,17 @@ class ArchivedKnowledge {
         throw new Error('knowledge_archive_array_mutation_unsupported');
       }
     }),store);
+  }
+  checkpointValue(){
+    if(this.dirty.size)throw new Error('knowledge_checkpoint_unflushed');
+    const ids=[...new Set(this.rows)],bins=new Set();
+    const pages=ids.map(id=>{const p=this.archive.pages.get(id);
+      if(!p||p.bytes||p.binId==null)throw new Error('knowledge_checkpoint_unstaged');
+      bins.add(p.binId);return {id,binId:p.binId,offset:p.offset,length:p.length,rawBytes:p.rawBytes,checksum:p.checksum,
+        ends:[...p.ends],endsChecksum:p.endsChecksum,concepts:p.concepts,undefinedConcepts:undefinedConcepts(p.concepts),activeBits:[...p.activeBits]};});
+    return {format:'knowledge-packed-v1',concepts:this.concepts,undefinedConcepts:undefinedConcepts(this.concepts),active:this.active,entities:this.entities,
+      rows:this.rows,offsets:this.offsets,sourceCounts:this.sourceCounts,fallbackIds:[...this.fallbackIds],pages,
+      bins:[...bins].map(id=>this.archive.bins.get(id))};
   }
   indexEntry(index,entry){
     const was=this.active[index],concept=this.concepts[index];

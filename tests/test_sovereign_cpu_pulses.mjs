@@ -149,7 +149,7 @@ test('successful cognition shares a planned checkpoint instead of forcing a save
   assert.equal(cognition,0,'physics pulses must not enter expensive AI/checkpoint feedback');
   assert.equal(instance.pendingCheckpoint,undefined);
   assert.equal(saved.length,0);
-  t.mock.method(Date,'now',()=>120000);
+  t.mock.method(Date,'now',()=>180000);
   for(let i=0;i<50&&!instance.pendingCheckpoint;i++)await instance.tick(30,360,{maxSegments:6,deferCheckpoint:true});
   assert.equal(cognition,0);
   assert.ok(instance.world.clock.worldMinute>=80,'large checkpoints must fit the daily normal write budget');

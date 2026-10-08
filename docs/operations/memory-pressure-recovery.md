@@ -1,5 +1,7 @@
 # Durable Object memory-pressure recovery
 
+The current private knowledge format is [Packed canonical knowledge checkpoints](packed-knowledge-checkpoints.md). The sections below record the earlier memory-path fixes.
+
 ## Production evidence
 
 On 2026-10-01 Cloudflare logs recorded:

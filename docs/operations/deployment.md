@@ -115,3 +115,5 @@ Cloudflare references for the dated assumptions and cache-compatible prompt layo
 - [Workers AI pricing and neurons](https://developers.cloudflare.com/workers-ai/platform/pricing/)
 - [GLM-4.7-Flash model](https://developers.cloudflare.com/workers-ai/models/glm-4.7-flash/)
 - [Workers AI prompt caching](https://developers.cloudflare.com/workers-ai/features/prompt-caching/)
+
+Private knowledge uses [packed canonical checkpoints](packed-knowledge-checkpoints.md), with compatible legacy migration, bounded bin caches, charged staging and guarded slot retention. Roll back only to a runtime that understands that format.

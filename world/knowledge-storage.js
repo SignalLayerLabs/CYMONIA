@@ -1,5 +1,6 @@
-// Runtime adapters never change the canonical knowledge schema. Snapshots
-// still contain complete ordinary arrays, including every private source.
+// Logical knowledge and standalone exports remain complete ordinary arrays.
+// The Worker may persist these adapters as immutable compressed archive
+// references; only that explicitly selected private checkpoint codec differs.
 const stores=new WeakMap(),views=new WeakMap();
 export function bindKnowledgeStorage(array,store){stores.set(array,store);return array;}
 export function knowledgeStorage(array){return stores.get(array)||null;}
