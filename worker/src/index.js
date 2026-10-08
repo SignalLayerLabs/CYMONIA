@@ -46,9 +46,11 @@ import {knowledgeStorage,activeKnowledgeCount} from '../../world/knowledge-stora
 const MODEL='@cf/zai-org/glm-4.7-flash';
 const ALARM_MS=15_000;
 const ALARM_PULSE_MS=2_500;
-// Six boundaries divide the retained 30-minute target evenly and leave
-// wall-time headroom for the separate mature-world checkpoint phase.
-const ALARM_MAX_SEGMENTS=6;
+// Delivery can be several seconds later than the requested pulse. Mature
+// worlds have one-minute boundaries: complete the bounded thirty-minute
+// target instead of falling behind while limiting every invocation to six.
+// Checkpoint compression retains its separate invocation and CPU window.
+const ALARM_MAX_SEGMENTS=30;
 const STALE_ALARM_MS=5*60_000;
 const ALARM_REARM_COOLDOWN_MS=2*60_000;
 const PERSIST_INTERVAL_WORLD_MINUTES=60;
