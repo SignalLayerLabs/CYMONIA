@@ -189,6 +189,8 @@ test('a failed SQLite checkpoint never leaks advanced time through REST or broad
   advance(15_000);
   instance.lastPersistedWorldMinute=YEAR-90;
   await instance.alarm(); // simulation requests a checkpoint
+  // The save phase needs a genuine incoming request with encoding headroom.
+  await renewCpuWindow(instance);
   await instance.alarm(); // separate checkpoint invocation fails
   assert.match(instance.world.runtime.lastTickError,/injected storage failure/);
   assert.equal((await readWorld(instance)).clock.worldMinute,YEAR-30);
