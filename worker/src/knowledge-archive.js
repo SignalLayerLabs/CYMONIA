@@ -2,10 +2,12 @@ import {bindKnowledgeStorage,bindKnowledgeView} from '../../world/knowledge-stor
 import {hash32} from '../../world/rng.js';
 import {deflateSync,inflateSync} from './vendor/fflate.js';
 import {archiveDigest} from './archive-digest.js';
+import {CompactStringIndex} from '../../world/compact-string-index.js';
 
 const PAGE_UNITS=65536,CACHE_UNITS=524288,DIRTY_UNITS=524288;
 const BACKING_BYTES=32*1024*1024;
 const BIN_BYTES=1024*1024,BIN_CACHE_BYTES=8*1024*1024;
+const INDEX_STRINGS=65536,INDEX_STRING_UNITS=2*1024*1024;
 const encoder=new TextEncoder(),decoder=new TextDecoder();
 const numeric=key=>typeof key==='string'&&/^(0|[1-9][0-9]*)$/.test(key);
 // Parsed strings can retain their large Citizen JSON backing buffer in V8.
@@ -49,7 +51,8 @@ function indexColumn(source=[],boolean=false){
 // Immutable compressed pages are packed once into durable bins. The guarded
 // checkpoint owns the bin descriptors and logical order; caches are disposable.
 export class KnowledgeArchive {
-  constructor(sql,{hydrateEntry=()=>{},maxBackingBytes=BACKING_BYTES,maxBinCacheBytes=BIN_CACHE_BYTES}={}){
+  constructor(sql,{hydrateEntry=()=>{},maxBackingBytes=BACKING_BYTES,maxBinCacheBytes=BIN_CACHE_BYTES,
+    maxIndexStrings=INDEX_STRINGS,maxIndexStringUnits=INDEX_STRING_UNITS}={}){
     this.sql=sql;this.bins=new Map();this.binCache=new Map();this.binCacheBytes=0;this.maxBinCacheBytes=maxBinCacheBytes;
     this.sqlRowsRead=0;this.sqlRowsWritten=0;
     this.hydrateEntry=hydrateEntry;this.maxBackingBytes=maxBackingBytes;
@@ -59,12 +62,15 @@ export class KnowledgeArchive {
     this.dirtyCodeUnits=0;this.pageRefs=new Map();this.pageCounts=new Map();this.pageReads=0;
     this.deadPages=new Set();
     this.entityMatchCache=new Map();this.entityMatchIndices=0;
+    this.indexStringPool=new Map();this.indexStringPoolUnits=0;this.indexStringPoolHits=0;
+    this.maxIndexStrings=maxIndexStrings;this.maxIndexStringUnits=maxIndexStringUnits;
   }
   dispose(){
     this.pages.clear();this.cache.clear();this.serializedCache.clear();this.stores.clear();this.citizenStores=new WeakMap();
     this.pageRefs.clear();this.pageCounts.clear();
     this.deadPages.clear();
     this.entityMatchCache.clear();this.entityMatchIndices=0;
+    this.indexStringPool.clear();this.indexStringPoolUnits=0;this.indexStringPoolHits=0;
     this.bins.clear();this.binCache.clear();this.binCacheBytes=0;
     this.backingBytes=0;this.cachedCodeUnits=0;this.serializedCodeUnits=0;this.dirtyCodeUnits=0;
     this.hydrateEntry=()=>{};
@@ -73,7 +79,27 @@ export class KnowledgeArchive {
     cachedPages:this.cache.size,pageReads:this.pageReads,livePages:this.pageRefs.size,
     serializedCodeUnits:this.serializedCodeUnits,compressedBytes:this.backingBytes+this.binCacheBytes,
     pendingCompressedBytes:this.backingBytes,cachedBinBytes:this.binCacheBytes,archivedCompressedBytes:[...this.bins.values()].reduce((n,b)=>n+b.size,0),
-    maxCompressedBytes:this.maxBackingBytes,storage:this.sql?'packed-sqlite':'compressed-ram',sqlRowsRead:this.sqlRowsRead,sqlRowsWritten:this.sqlRowsWritten};}
+    maxCompressedBytes:this.maxBackingBytes,storage:this.sql?'packed-sqlite':'compressed-ram',sqlRowsRead:this.sqlRowsRead,sqlRowsWritten:this.sqlRowsWritten,
+    indexStringPoolEntries:this.indexStringPool.size,indexStringPoolUnits:this.indexStringPoolUnits,indexStringPoolHits:this.indexStringPoolHits};}
+  internIndexString(value){
+    if(typeof value!=='string')return value;
+    const prior=this.indexStringPool.get(value);
+    if(prior!==undefined){this.indexStringPoolHits++;return prior;}
+    const owned=ownedString(value);
+    // Cache only immutable primitive values, never personal membership or
+    // evidence. Eviction cannot change knowledge, sources, or array order.
+    if(this.maxIndexStrings<1||owned.length>4096||owned.length>this.maxIndexStringUnits)return owned;
+    this.indexStringPool.set(owned,owned);this.indexStringPoolUnits+=owned.length;
+    while(this.indexStringPool.size>this.maxIndexStrings||this.indexStringPoolUnits>this.maxIndexStringUnits){
+      const first=this.indexStringPool.keys().next().value;
+      this.indexStringPoolUnits-=first.length;this.indexStringPool.delete(first);
+    }
+    return owned;
+  }
+  shareCitizenEntityIds(citizen){
+    if(Array.isArray(citizen.knownEntityIds))for(let i=0;i<citizen.knownEntityIds.length;i++)
+      citizen.knownEntityIds[i]=this.internIndexString(citizen.knownEntityIds[i]);
+  }
   dropEntityMatches(entry){
     this.entityMatchCache.delete(entry);this.entityMatchIndices-=entry.indices.length;
     entry.store.entityCache.delete(entry.id);entry.store.entityCacheIndices-=entry.indices.length;
@@ -237,6 +263,7 @@ export class KnowledgeArchive {
       catch(error){if(String(error?.message||error).startsWith('knowledge_'))throw error;
         throw new Error('knowledge_checkpoint_descriptor_invalid',{cause:error});}
     }
+    this.shareCitizenEntityIds(citizen);
     if(citizen.knowledge!=null&&!Array.isArray(citizen.knowledge))throw new Error('knowledge_format_invalid');
     const source=citizen.knowledge||[],store=new ArchivedKnowledge(this);
     this.stores.add(store);
@@ -252,6 +279,7 @@ export class KnowledgeArchive {
   }
   restore(citizen){
     const saved=citizen.knowledge,store=new ArchivedKnowledge(this);
+    this.shareCitizenEntityIds(citizen);
     restoreAbsentConcepts(saved.concepts,saved.undefinedConcepts);
     const legacy=saved.format==='knowledge-packed-v1',legacyPages=new Map();
     if(!this.sql)throw new Error('knowledge_packed_storage_unavailable');
@@ -275,11 +303,12 @@ export class KnowledgeArchive {
     }
     const n=saved.concepts.length;
     for(const field of ['active','entities','rows','offsets','sourceCounts'])if(!Array.isArray(saved[field])||saved[field].length!==n)throw new Error('knowledge_index_invalid');
-    store.concepts=saved.concepts.map(ownedString);
-    store.entities=saved.entities.map(value=>Array.isArray(value)?value.map(ownedString):ownedString(value));
+    store.concepts=saved.concepts.map(value=>this.internIndexString(value));
+    store.lookupIndex=new CompactStringIndex(store.concepts,n);
+    store.entities=saved.entities.map(value=>Array.isArray(value)?value.map(id=>this.internIndexString(id)):this.internIndexString(value));
     for(const field of ['rows','offsets','sourceCounts'])store[field]=indexColumn(saved[field]);
     store.active=indexColumn(saved.active,true);
-    store.fallbackIds=new Map(saved.fallbackIds.map(([index,id])=>[index,ownedString(id)]));
+    store.fallbackIds=new Map(saved.fallbackIds.map(([index,id])=>[index,this.internIndexString(id)]));
     for(let i=0;i<n;i++){
       const page=this.pages.get(store.rows[i]),offset=store.offsets[i];
       if(!page||!Number.isInteger(offset)||offset<0||offset>=page.ends.length||legacy&&legacyPages.get(store.rows[i])[offset]!==store.concepts[i]||
@@ -335,7 +364,7 @@ export class KnowledgeArchive {
 class ArchivedKnowledge {
   constructor(archive){
     this.archive=archive;this.concepts=[];this.active=indexColumn([],true);this.entities=[];
-    this.rows=indexColumn();this.offsets=indexColumn();this.lookupIndex=new Map();this.fallbackIds=new Map();this.dirty=new Map();
+    this.rows=indexColumn();this.offsets=indexColumn();this.lookupIndex=new CompactStringIndex(this.concepts);this.fallbackIds=new Map();this.dirty=new Map();
     this.activeCount=0;this.sourceCount=0;this.sourceCounts=indexColumn();this.views=new Map();
     this.entityCache=new Map();this.entityCacheIndices=0;
     const store=this;
@@ -372,10 +401,12 @@ class ArchivedKnowledge {
   indexEntry(index,entry){
     const was=this.active[index],concept=this.concepts[index];
     const oldEntities=this.entities[index];
+    const wasIndexed=this.lookupIndex.get(concept)===index;
+    if(wasIndexed)this.lookupIndex.delete(concept);
     if(was)this.activeCount--;
-    this.concepts[index]=ownedString(entry.concept);this.active[index]=entry.active!==false;
-    if(!entry.concept&&entry.id)this.fallbackIds.set(index,ownedString(entry.id));else this.fallbackIds.delete(index);
-    const ids=[...new Set((entry.provenance||[]).map(source=>source.evidence?.entityId).filter(Boolean))].map(ownedString);
+    this.concepts[index]=this.archive.internIndexString(entry.concept);this.active[index]=entry.active!==false;
+    if(!entry.concept&&entry.id)this.fallbackIds.set(index,this.archive.internIndexString(entry.id));else this.fallbackIds.delete(index);
+    const ids=[...new Set((entry.provenance||[]).map(source=>source.evidence?.entityId).filter(Boolean))].map(id=>this.archive.internIndexString(id));
     const oldIds=Array.isArray(oldEntities)?oldEntities:oldEntities==null?[]:[oldEntities];
     if(was!==this.active[index]||oldIds.length!==ids.length||oldIds.some((id,i)=>id!==ids[i])){
       for(const id of new Set([...oldIds,...ids])){
@@ -387,8 +418,7 @@ class ArchivedKnowledge {
     const sources=entry.provenance?.length||0;
     this.sourceCount+=sources-(this.sourceCounts[index]||0);this.sourceCounts[index]=sources;
     if(this.active[index])this.activeCount++;
-    if(concept!==undefined&&this.lookupIndex.get(concept)===index){
-      this.lookupIndex.delete(concept);
+    if(wasIndexed){
       if(concept!==entry.concept||!this.active[index]){
         const replacement=this.concepts.findIndex((id,i)=>id===concept&&this.active[i]);
         if(replacement>=0)this.lookupIndex.set(concept,replacement);

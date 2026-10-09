@@ -1,6 +1,7 @@
 import {shareLearnedEvidence} from './evidence-pool.js';
 import {recordMemory} from './memory.js';
 import {knowledgeStorage} from './knowledge-storage.js';
+import {CompactStringIndex} from './compact-string-index.js';
 const knowledgeIndexes=new WeakMap();
 const entityIndexes=new WeakMap();
 export function knowsEntity(citizen,entityId){
@@ -8,12 +9,14 @@ export function knowsEntity(citizen,entityId){
   if(!Array.isArray(entries))return false;
   let index=entityIndexes.get(entries);
   if(!index||entries.length<index.length){
-    index={length:0,ids:new Set()};
+    index={length:0,ids:new CompactStringIndex([],entries.length)};
     entityIndexes.set(entries,index);
   }
   // Canonical entity lists are append-only. Replaced snapshot arrays and
   // truncated lists rebuild automatically; new IDs are indexed once.
-  for(let i=index.length;i<entries.length;i++)index.ids.add(entries[i]);
+  for(let i=index.length;i<entries.length;i++){
+    const id=entries[i];index.ids.entries.push(id);index.ids.set(id,i);
+  }
   index.length=entries.length;
   return index.ids.has(entityId);
 }

@@ -234,3 +234,60 @@ See [Cloudflare pricing](https://developers.cloudflare.com/durable-objects/platf
 Account request, CPU, storage and row limits still apply. This change neither
 upgrades the plan nor promises unlimited retention or availability on a finite
 Free account.
+
+## Shared strings and compact exact lookup directories
+
+The main deployment from PR 59 failed its production quiet gate with HTTP 503.
+A single post-failure diagnostic on October 9 recorded an actual isolate memory
+reset. Cold recovery contained 875,469 knowledge records, 875,471 sources, 50,255
+memories and 12,023 objects. Earlier sparse native fixtures did not reproduce
+the repeated concept/entity strings and large personal membership directories.
+
+A bounded pool now shares detached immutable concept/entity/fallback/known-entity
+strings (65,536 entries and 2 Mi code units maximum). It contains neither personal
+membership nor evidence. Exact per-Citizen lookup directories retain Uint32
+positions into their existing string arrays rather than full Map/Set buckets.
+Hash collisions compare the complete original key; append, deletion, forgetting,
+first-active duplicate selection and non-string keys preserve their semantics.
+No canonical knowledge, object, source, chronology or private membership is removed.
+The packed-v2 durable format and backward readers are unchanged.
+
+The controlled native fixture reconstructs the public physical shape and 875,469
+private knowledge records, 50,255 initial memories and 108 Citizens. An additional
+3,585 inert object-shaped records brings object count to 12,023; these are synthetic
+records because the public projection omits depleted objects. The old reader
+exhausts a 96 MiB V8 old-space cap during cold recovery. String sharing alone passes
+the smaller fixture but exhausts an 80 MiB old-space cap in the first physical phase
+with all objects. Shared strings plus numeric lookup directories pass cold recovery,
+thirty chronological minutes and checkpoint publication under 80 MiB old space
+and 4 MiB semi space: 4 moved Citizens, 72 changed actions, 100 changed bodies, all 108
+IDs retained. Sampled JavaScript heap plus ArrayBuffer backing peaks at 112.48 MiB.
+Encoding takes 4.66 seconds; first physical phase takes 11.83 seconds. A subsequent
+cold restart recovers minute 177,183 with 876,938 knowledge records and both sampled
+original private sources intact.
+
+These are local controlled measurements, not an exact reproduction of Cloudflare's
+128 MiB account/runtime enforcement or a guarantee of indefinite capacity. Private
+sources, cold lookup semantics, collision/deletion handling and the existing
+known-entity read-count gate have regression coverage. Production must pass all
+unchanged gates and a separate ten-minute quiet proof before stability clearance.
+
+## Repeated harvest growth
+
+Compact caches alone cannot make continuous allocation sustainable. The duration
+audit found that every GATHER action created another physical object, possession
+and personal entity ID, prompting all nearby Citizens to acquire another concept.
+Repeated ordinary harvests now add matter to one compatible personal stack from
+the same deposit. Existing objects/IDs and original provenance remain intact.
+Every harvest still emits its own causal receipt; the stack points to the latest
+physical event, whose causes also retain the prior stack contribution (or the
+original action for a legacy stack). Reserved, heated, transformed, damaged, foreign and different-source
+objects are excluded. Fractional availability caps the harvested quantity exactly;
+a depleted source cannot manufacture the former minimum 0.1 kg of matter.
+
+A thousand repeated harvests retain one new object and one new personal entity,
+with all thousand distinct action receipts, 2,000 kg gathered and 3,000 kg remaining
+in the source. This prevents this routine activity from growing object/concept
+directories with elapsed time. Other genuine discoveries, births, transformations
+and preserved historical records still consume finite resources; account-level
+Free quotas remain external capacity constraints.
