@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {sqliteStorage,wake,readWorld} from './helpers/sovereign-sqlite.mjs';
 import {worldDate,worldMinuteAt} from '../world/clock.js';
-import {decodeSnapshot} from '../worker/src/persistence.js';
+import {decodeSnapshot,decodeWorldSnapshot} from '../worker/src/persistence.js';
 import {publicWorld} from '../world/index.js';
 
 const YEAR=525600;
@@ -226,7 +226,7 @@ test('snapshot metadata is captured from the same state as its encoded payload',
   const meta=storage.sql.exec('SELECT * FROM world_state_manifest')[0];
   const base=meta.generation==='slot-b'?1_000_000:0;
   const parts=storage.sql.exec('SELECT state_part FROM world_state_chunks_v2 WHERE id>=? AND id<? ORDER BY id',base,base+meta.chunk_count);
-  const saved=JSON.parse(await decodeSnapshot(parts.map(r=>r.state_part).join('')));
+  const saved=await decodeWorldSnapshot(parts.map(r=>r.state_part));
   assert.equal(meta.world_minute,saved.clock.worldMinute);
   assert.equal(instance.lastPersistedWorldMinute,saved.clock.worldMinute);
   assert.equal(instance.readableWorld().clock.worldMinute,saved.clock.worldMinute);

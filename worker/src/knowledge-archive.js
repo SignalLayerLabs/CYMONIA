@@ -213,6 +213,14 @@ export class KnowledgeArchive {
     // A checkpoint needs the immutable text, not a second graph of decoded evidence.
     this.cache.clear();this.cachedCodeUnits=0;
   }
+  releaseReadCaches(){
+    // Packed checkpoint encoding reads directory metadata, never bin bodies.
+    // After staging, discard these reloadable copies before allocating gzip
+    // and SQLite buffers. Pending pages and every durable descriptor remain.
+    this.cache.clear();this.cachedCodeUnits=0;
+    this.serializedCache.clear();this.serializedCodeUnits=0;
+    this.binCache.clear();this.binCacheBytes=0;
+  }
   recordUnits(id,offset){
     const ends=this.pages.get(id)?.ends;
     if(!ends||!Number.isInteger(offset)||offset<0||offset>=ends.length)throw new Error('knowledge_page_offsets_invalid');

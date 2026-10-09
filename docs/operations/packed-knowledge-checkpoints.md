@@ -326,3 +326,55 @@ peaks at 105.20 MiB (105.57 MiB including measured embedder heap). Cold restart 
 intact. This reduces the nine-part normal cadence to 66–71 world minutes without
 raising the 40k/60k budgets. Native measurements are controlled local evidence;
 all main production gates and a separate ten-minute quiet proof remain required.
+
+
+## Restart-safe public checkpoints and binary SQLite rows
+
+The PR61 production run passed real autonomous progression (+202 saved minutes in
+three minutes), but a later cold wake recovered the private checkpoint after the
+RAM-only public projection had disappeared. Once live physics was ahead of the
+saved minute, the Observer correctly refused to fabricate a public past from the
+live graph and returned HTTP503. Passing the physics gate alone did not prove
+Observer continuity.
+
+The public projection is now compressed before canonical staging and embedded as
+codec metadata in the same private checkpoint. The inactive slot is published
+only after all parts and the canonical manifest commit. Recovery validates the
+public gzip trailer and complete JSON envelope one root-array item at a time,
+checks version/world ID/minute/ledger agreement, and removes codec metadata from
+the logical world. The Observer can reuse this immutable saved view even when
+live physics has already advanced. An interrupted publication retains the prior
+private/public pair; a projection failure retains the last valid public view
+while allowing private physics to commit.
+
+Canonical SQLite rows now contain gzip bytes directly, bounded to 1,900 KiB per
+row, instead of expanding them into base64. Up to four rows share each transaction
+and its quota charge. Existing base64 snapshots and fragmented binary snapshots
+remain readable; mixed, missing or truncated input remains fatal. Seals cover the
+exact uncompressed wire bytes. No SQL tables, migrations, budgets or CI thresholds
+are added or relaxed. Deploy rollback must retain the compatible binary reader.
+
+The encoder allocates part buffers only when needed, emits a view of its final
+partial buffer, and releases the temporary shared-index lookup dictionary as soon
+as JSON input is consumed. After immutable bins have staged successfully, the archive also releases its
+reloadable compressed/parsed read caches before encoding directory metadata.
+Pending pages and durable evidence remain intact; subsequent physics reloads
+only the bins it actually reads. This avoids retaining codec and read-cache
+allocations during gzip flush and final SQLite staging. Regression coverage includes real cold physics
+before the first Observer read, interrupted publication, projection failure,
+malformed public metadata, encoded identity/time/ledger disagreement, binary
+fragmentation, cancellation, exact seals and measured staging charges.
+
+
+
+The release fixture cold-loads 928,878 original private records, 54,418 recent
+memories and 12,026 objects under 80 MiB V8 old space/4 MiB semi space. It advances
+thirty chronological minutes, retains all 108 Citizen IDs, changes six positions,
+66 actions and 100 biological states, and commits in seven binary parts. Sampled
+heap plus ArrayBuffer backing peaks at 119.40 MiB (119.77 MiB including measured
+embedder heap). Reserved heap plus backing peaks at 130.39 MiB; reserved V8 space
+is not equivalent to live memory or Cloudflare enforcement. These are sampled
+local measurements, not an exact reproduction of the production limit. Using
+1,900 KiB rows keeps fewer SQLite writes per checkpoint; releasing read caches
+provides the measured live-memory headroom. Production CI and a separate ten-minute
+quiet proof remain the release acceptance gates.
