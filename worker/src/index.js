@@ -720,7 +720,7 @@ export class SovereignWorld {
       ledgerHead,
       maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
       onProgress:()=>this.yieldRuntime(),
-      packedKnowledge:true,
+      packedKnowledge:'shared-indices-v1',
       onPart:part=>{
         if(chunkCount>=MAX_STAGED_SNAPSHOT_PARTS)throw new Error('sovereign_snapshot_exceeds_staging_limit');
         // The active slot remains authoritative until final publication.
