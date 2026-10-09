@@ -4,6 +4,8 @@ export const SAFE_ROW_WRITE_BUDGET=40_000;
 export const EMERGENCY_ROW_WRITE_BUDGET=60_000;
 export const SNAPSHOT_ENCODING='gzip-base64-v1';
 import {knowledgeStorage,knowledgeSnapshotValue} from '../../world/knowledge-storage.js';
+import {checkpointIndexDictionary,checkpointIndexHeader,encodeKnowledgeIndex,encodeKnownIndex,
+  readCheckpointIndexHeader,restoreCitizenIndices} from './checkpoint-indices.js';
 
 function bytesToBase64(bytes){
   let binary='';
@@ -65,9 +67,15 @@ function isSmallJsonRecord(value){
   return true;
 }
 
-function* worldJsonRecords(value,ancestors=new Set(),key='',packedKnowledge=false){
+function* worldJsonRecords(value,ancestors=new Set(),key='',packedKnowledge=false,indexDictionary=null){
   const archive=knowledgeStorage(value);
-  if(archive&&packedKnowledge){yield* worldJsonRecords(archive.checkpointValue(),ancestors,key,false);return;}
+  if(archive&&packedKnowledge){
+    const saved=archive.checkpointValue();
+    yield* worldJsonRecords(indexDictionary?encodeKnowledgeIndex(saved,indexDictionary):saved,ancestors,key,false);return;
+  }
+  if(indexDictionary&&value&&typeof value==='object'&&indexDictionary.knownArrays.has(value)){
+    yield* worldJsonRecords(encodeKnownIndex(value,indexDictionary),ancestors,key,false);return;
+  }
   if(archive){yield '[';let first=true;for(const text of archive.serializedRecords()){
     if(!first)yield ',';first=false;yield text;
   }yield ']';return;}
@@ -81,7 +89,7 @@ function* worldJsonRecords(value,ancestors=new Set(),key='',packedKnowledge=fals
     yield '[';
     for(let i=0;i<value.length;i++){
       if(i)yield ',';
-      yield* worldJsonRecords(value[i],ancestors,String(i),packedKnowledge);
+      yield* worldJsonRecords(value[i],ancestors,String(i),packedKnowledge,indexDictionary);
     }
     yield ']';
   }else{
@@ -91,7 +99,7 @@ function* worldJsonRecords(value,ancestors=new Set(),key='',packedKnowledge=fals
       if(item===undefined||typeof item==='function'||typeof item==='symbol')continue;
       if(!first)yield ',';first=false;
       yield `${JSON.stringify(name)}:`;
-      yield* worldJsonRecords(item,ancestors,name,packedKnowledge);
+      yield* worldJsonRecords(item,ancestors,name,packedKnowledge,indexDictionary);
     }
     yield '}';
   }
@@ -146,9 +154,12 @@ export async function encodeWorldSnapshotParts(world,{
     if(world.runtime.neuronBudget)snapshot.runtime.neuronBudget={...world.runtime.neuronBudget};
   }
 
+  const indexDictionary=packedKnowledge==='shared-indices-v1'?checkpointIndexDictionary(world):null;
+  if(indexDictionary&&Object.hasOwn(snapshot,'checkpointIndexStrings'))throw new Error('knowledge_index_dictionary_collision');
+  const wireSnapshot=indexDictionary?{checkpointIndexStrings:checkpointIndexHeader(indexDictionary),...snapshot}:snapshot;
   const records=function*(){
     if(jsonPrefix)yield jsonPrefix;
-    yield* worldJsonRecords(snapshot,new Set(),'',packedKnowledge);
+    yield* worldJsonRecords(wireSnapshot,new Set(),'',packedKnowledge,indexDictionary);
     if(jsonSuffix)yield jsonSuffix;
   };
   let input=recordByteStream(records());
@@ -324,7 +335,7 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
   // full private JSON string alongside the hydrated canonical object graph.
   const reader=snapshotJsonStream(encoded).pipeThrough(new TextDecoderStream()).getReader();
   const world={};
-  let mode='start',key=null,array=null,parts=[],depth=0,quoted=false,escaped=false;
+  let mode='start',key=null,array=null,parts=[],depth=0,quoted=false,escaped=false,indexStrings=null;
   const fail=()=>{throw new SyntaxError('Invalid snapshot JSON');};
   function finishToken(){
     const text=parts.join('');parts=[];
@@ -352,10 +363,18 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
               key=finishToken();if(typeof key!=='string')fail();mode='value';
             }else{
               const item=finishToken();
-              if(array){const processed=onArrayItem?onArrayItem(key,item):item;
+              if(array){
+                if(key==='citizens')restoreCitizenIndices(item,indexStrings);
+                const processed=onArrayItem?onArrayItem(key,item):item;
                 array.push(processed&&typeof processed.then==='function'?await processed:processed);
                 if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
-              else{Object.defineProperty(world,key,{value:item,writable:true,enumerable:true,configurable:true});mode=c===','?'next':c==='}'?'done':fail();}
+              else{
+                if(key==='checkpointIndexStrings'){
+                  if(indexStrings)throw new Error('knowledge_index_dictionary_duplicate');
+                  indexStrings=readCheckpointIndexHeader(item);
+                }else Object.defineProperty(world,key,{value:item,writable:true,enumerable:true,configurable:true});
+                mode=c===','?'next':c==='}'?'done':fail();
+              }
             }
             continue;
           }
@@ -372,6 +391,7 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
           if(c==='}'&&mode==='first'){mode='done';continue;}
           if(c!=='"')fail();mode='key';quoted=true;parts=[];start=i;
         }else if(mode==='value'){
+          if(key==='checkpointIndexStrings'&&c==='[')throw new Error('knowledge_index_dictionary_invalid');
           if(c==='['){array=[];Object.defineProperty(world,key,{value:array,writable:true,enumerable:true,configurable:true});mode='firstItem';}
           else{mode='token';parts=[];depth=0;quoted=false;escaped=false;start=i;i--;}
         }else if(mode==='firstItem'||mode==='item'){

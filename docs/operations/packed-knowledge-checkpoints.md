@@ -291,3 +291,38 @@ in the source. This prevents this routine activity from growing object/concept
 directories with elapsed time. Other genuine discoveries, births, transformations
 and preserved historical records still consume finite resources; account-level
 Free quotas remain external capacity constraints.
+
+## Shared checkpoint index dictionary
+
+PR60 removed the reproduced isolate memory reset, but its first production quiet
+gate failed the saved-progress threshold. A separate 180-second sterile proof
+advanced 213 saved minutes with 39 moved Citizens, 96 changed actions and 100
+changed biological states. The saved-state cadence was 105 minutes: an arbitrary
+180-second window can contain only one checkpoint and fail the unchanged
+120-minute advancement gate.
+
+The private checkpoint writer now emits a bounded shared string dictionary before
+streamed Citizens. Its maximum is 65,536 strings/2 Mi code units; identifiers longer
+than 4,096 units or beyond either bound remain inline. Packed-v3 knowledge stores
+ordered references for concept/entity/fallback indices and personal known-entity
+IDs. Original non-string values use tagged literals; the existing absent-concept
+mask remains authoritative. No shared membership or private evidence is added.
+
+The streaming reader resolves each Citizen to the existing packed-v2 logical
+indices before archive hydration, then releases the temporary dictionary. Full
+arrays and packed-v1/v2 remain readable. Missing dictionaries, invalid references,
+malformed known-entity envelopes and invalid dictionary limits fail closed before
+Citizen hydration. SHA-256 seals cover the exact dictionary and reference wire
+bytes; immutable evidence bins and their digests are unchanged. Ordinary exports
+continue to contain complete private records. No SQL rows, budgets or CI gates
+are added or relaxed. Rollback after v3 publication requires this compatible reader.
+
+The controlled native fixture cold-loads 878,451 historical records and 12,023
+objects under 80 MiB V8 old space/4 MiB semi space, advances thirty chronological
+minutes, preserves 108 IDs and saves in nine parts instead of sixteen. Physics
+takes 11.06 seconds, encoding 4.77 seconds, and sampled heap plus ArrayBuffer backing
+peaks at 105.20 MiB (105.57 MiB including measured embedder heap). Cold restart takes
+2.50 seconds and recovers 879,084 records with sampled original private sources
+intact. This reduces the nine-part normal cadence to 66–71 world minutes without
+raising the 40k/60k budgets. Native measurements are controlled local evidence;
+all main production gates and a separate ten-minute quiet proof remain required.
