@@ -271,3 +271,22 @@ These are local controlled measurements, not an exact reproduction of Cloudflare
 sources, cold lookup semantics, collision/deletion handling and the existing
 known-entity read-count gate have regression coverage. Production must pass all
 unchanged gates and a separate ten-minute quiet proof before stability clearance.
+
+## Repeated harvest growth
+
+Compact caches alone cannot make continuous allocation sustainable. The duration
+audit found that every GATHER action created another physical object, possession
+and personal entity ID, prompting all nearby Citizens to acquire another concept.
+Repeated ordinary harvests now add matter to one compatible personal stack from
+the same deposit. Existing objects/IDs and original provenance remain intact.
+Every harvest still emits its own causal receipt; the stack points to the latest
+physical event. Reserved, heated, transformed, damaged, foreign and different-source
+objects are excluded. Fractional availability caps the harvested quantity exactly;
+a depleted source cannot manufacture the former minimum 0.1 kg of matter.
+
+A thousand repeated harvests retain one new object and one new personal entity,
+with all thousand distinct action receipts, 2,000 kg gathered and 3,000 kg remaining
+in the source. This prevents this routine activity from growing object/concept
+directories with elapsed time. Other genuine discoveries, births, transformations
+and preserved historical records still consume finite resources; account-level
+Free quotas remain external capacity constraints.

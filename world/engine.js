@@ -55,7 +55,30 @@ function runReflex(world,citizen,at){
     type:'OBSERVE',durationMinutes:10,purpose:'orientation'
   },at);
 }
-function gather(world,c,a,at){const d=world.resourceDeposits.find(x=>x.id===a.targetId);if(!d)return;const q=Math.max(.1,Math.min(Number(a.payload?.quantity)||1,d.quantity));d.quantity-=q;recordHarvest(world,d,q,at);const o={id:stableId('obj',d.id,c.id,world.objects.length,at),kind:'gathered_material',material:d.type,quantity:q,massPerUnitKg:1,properties:null,holderId:c.id,position:{...c.position},condition:1,provenance:{type:'GATHERED',depositId:d.id,actionId:a.id}};world.objects.push(o);c.possessions.push(o.id);if(!knowsEntity(c,o.id))c.knownEntityIds.push(o.id);appendEvent(world,'RESOURCE_GATHERED',c.id,{objectId:o.id,depositId:d.id,quantity:q},[a.id],at);}
+function gather(world,c,a,at){
+  const d=world.resourceDeposits.find(x=>x.id===a.targetId);
+  if(!d||!(d.quantity>0))throw new Error('gather_source_unavailable');
+  const q=Math.min(Math.max(.1,Number(a.payload?.quantity)||1),d.quantity);
+  // Repeated harvests add homogeneous matter to a compatible personal stack.
+  // Existing objects and their original provenance remain intact; each harvest
+  // still gets its own causal receipt. Processed/reserved matter never absorbs it.
+  let o=world.objects.find(x=>x.kind==='gathered_material'&&x.holderId===c.id&&
+    x.material===d.type&&x.massPerUnitKg===1&&x.condition===1&&
+    !x.reservedProjectId&&!x.burning&&!x.geometry&&x.properties==null&&
+    x.temperatureC==null&&x.provenance?.type==='GATHERED'&&x.provenance.depositId===d.id);
+  d.quantity-=q;recordHarvest(world,d,q,at);
+  if(o){o.quantity+=q;o.position={...c.position};}
+  else{
+    o={id:stableId('obj',d.id,c.id,world.objects.length,at),kind:'gathered_material',material:d.type,
+      quantity:q,massPerUnitKg:1,properties:null,holderId:c.id,position:{...c.position},condition:1,
+      provenance:{type:'GATHERED',depositId:d.id,actionId:a.id}};
+    world.objects.push(o);
+  }
+  if(!c.possessions.includes(o.id))c.possessions.push(o.id);
+  if(!knowsEntity(c,o.id))c.knownEntityIds.push(o.id);
+  const event=appendEvent(world,'RESOURCE_GATHERED',c.id,{objectId:o.id,depositId:d.id,quantity:q},[a.id],at);
+  o.lastPhysicalEventId=event.id;
+}
 function consumeFromDeposit(world,c,a,type,amount,restore,at){const d=world.resourceDeposits.find(x=>x.id===a.targetId&&x.type===type);if(!d||d.quantity<amount)return;d.quantity-=amount;world.environment.metabolicMatterKg=(world.environment.metabolicMatterKg||0)+amount;restore(c);appendEvent(world,type==='water'?'DRANK_RESOURCE':'ATE_RESOURCE',c.id,{depositId:d.id,quantity:amount},[a.id],at);}
 function pickup(world,c,a,at){
   const o=world.objects.find(x=>x.id===a.targetId&&x.quantity>0&&(x.holderId===null||x.holderId===undefined));
