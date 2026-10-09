@@ -41,7 +41,7 @@ function recordByteStream(records){
     }
     if(length)controller.enqueue(encoder.encode(pieces.join('')));
     if(done)controller.close();
-  }});
+  },cancel(){records.return?.();}});
 }
 function snapshotByteStream(serialized){return recordByteStream([String(serialized)][Symbol.iterator]());}
 
@@ -146,6 +146,8 @@ export async function encodeWorldSnapshotParts(world,{
   packedKnowledge=false,
   jsonPrefix='',
   jsonSuffix='',
+  binaryParts=false,
+  publicSnapshot=null,
 }={}){
   const limit=Math.max(1024,Math.floor(Number(maxCodeUnits)||256*1024));
   const snapshot={...world,clock:{...clock},ledgerHead};
@@ -156,11 +158,20 @@ export async function encodeWorldSnapshotParts(world,{
 
   const indexDictionary=packedKnowledge==='shared-indices-v1'?checkpointIndexDictionary(world):null;
   if(indexDictionary&&Object.hasOwn(snapshot,'checkpointIndexStrings'))throw new Error('knowledge_index_dictionary_collision');
-  const wireSnapshot=indexDictionary?{checkpointIndexStrings:checkpointIndexHeader(indexDictionary),...snapshot}:snapshot;
+  if(publicSnapshot&&Object.hasOwn(snapshot,'checkpointPublicSnapshot'))throw new Error('knowledge_public_checkpoint_collision');
+  const wireSnapshot={...(indexDictionary?{checkpointIndexStrings:checkpointIndexHeader(indexDictionary)}:{}),
+    ...snapshot,...(publicSnapshot?{checkpointPublicSnapshot:publicSnapshot}:{})};
   const records=function*(){
-    if(jsonPrefix)yield jsonPrefix;
-    yield* worldJsonRecords(wireSnapshot,new Set(),'',packedKnowledge,indexDictionary);
-    if(jsonSuffix)yield jsonSuffix;
+    try{
+      if(jsonPrefix)yield jsonPrefix;
+      yield* worldJsonRecords(wireSnapshot,new Set(),'',packedKnowledge,indexDictionary);
+      if(jsonSuffix)yield jsonSuffix;
+    }finally{
+      // The dictionary belongs to this encoder. Release its lookup table as
+      // soon as input is consumed, before gzip flush and final SQLite staging.
+      indexDictionary?.positions.clear();
+      if(indexDictionary)indexDictionary.strings.length=0;
+    }
   };
   let input=recordByteStream(records());
   const digest=sealDue&&typeof crypto.DigestStream==='function'
@@ -194,6 +205,7 @@ export async function encodeWorldSnapshotParts(world,{
     partCount++;
   };
   const state={value:`${SNAPSHOT_ENCODING}:`};
+  let binaryBuffer=null,binaryLength=0;
   const reader=input.pipeThrough(new CompressionStream('gzip')).getReader();
   let carry=new Uint8Array(0);
 
@@ -204,6 +216,16 @@ export async function encodeWorldSnapshotParts(world,{
       const chunk=item.value instanceof Uint8Array
         ?item.value
         :new Uint8Array(item.value);
+      if(binaryParts){
+        for(let offset=0;offset<chunk.length;){
+          binaryBuffer??=new Uint8Array(limit);
+          const count=Math.min(limit-binaryLength,chunk.length-offset);
+          binaryBuffer.set(chunk.subarray(offset,offset+count),binaryLength);
+          binaryLength+=count;offset+=count;
+          if(binaryLength===limit){emitPart(binaryBuffer);binaryBuffer=null;binaryLength=0;}
+        }
+        continue;
+      }
       let bytes;
       if(carry.length){
         bytes=new Uint8Array(carry.length+chunk.length);
@@ -225,7 +247,8 @@ export async function encodeWorldSnapshotParts(world,{
     writer?.releaseLock();
   }
 
-  if(state.value||!partCount)emitPart(state.value);
+  if(binaryParts){if(binaryLength)emitPart(binaryBuffer.subarray(0,binaryLength));binaryBuffer=null;}
+  else if(state.value||!partCount)emitPart(state.value);
   if(onProgress)await onProgress();
 
   let stateSha256=null;
@@ -330,12 +353,16 @@ export function snapshotGzipSize(encoded){
   return tail.byteLength>=4?new DataView(tail.buffer).getUint32(tail.byteLength-4,true):null;
 }
 
-export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
+export async function decodeWorldSnapshot(encoded,{onArrayItem=null,onPublicSnapshot=null}={}){
+  return decodeWorldJsonStream(snapshotJsonStream(encoded),{onArrayItem,onPublicSnapshot});
+}
+
+async function decodeWorldJsonStream(stream,{onArrayItem=null,onPublicSnapshot=null,discardArrayItems=false,publicView=false}={}){
   // Parse root arrays one entity at a time. A cold wake must never retain the
   // full private JSON string alongside the hydrated canonical object graph.
-  const reader=snapshotJsonStream(encoded).pipeThrough(new TextDecoderStream()).getReader();
+  const reader=stream.pipeThrough(new TextDecoderStream()).getReader();
   const world={};
-  let mode='start',key=null,array=null,parts=[],depth=0,quoted=false,escaped=false,indexStrings=null;
+  let mode='start',key=null,array=null,parts=[],depth=0,quoted=false,escaped=false,indexStrings=null,publicSnapshot=null,hasPublicSnapshot=false;
   const fail=()=>{throw new SyntaxError('Invalid snapshot JSON');};
   function finishToken(){
     const text=parts.join('');parts=[];
@@ -366,12 +393,18 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
               if(array){
                 if(key==='citizens')restoreCitizenIndices(item,indexStrings);
                 const processed=onArrayItem?onArrayItem(key,item):item;
-                array.push(processed&&typeof processed.then==='function'?await processed:processed);
+                const value=processed&&typeof processed.then==='function'?await processed:processed;
+                if(!discardArrayItems)array.push(value);
                 if(c===']'){array=null;mode='after';}else if(c===',')mode='item';else fail();}
               else{
                 if(key==='checkpointIndexStrings'){
                   if(indexStrings)throw new Error('knowledge_index_dictionary_duplicate');
                   indexStrings=readCheckpointIndexHeader(item);
+                }else if(key==='checkpointPublicSnapshot'){
+                  if(publicView)throw new Error('knowledge_public_checkpoint_invalid');
+                  if(hasPublicSnapshot)throw new Error('knowledge_public_checkpoint_duplicate');
+                  hasPublicSnapshot=true;
+                  publicSnapshot=item;
                 }else Object.defineProperty(world,key,{value:item,writable:true,enumerable:true,configurable:true});
                 mode=c===','?'next':c==='}'?'done':fail();
               }
@@ -392,6 +425,7 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
           if(c!=='"')fail();mode='key';quoted=true;parts=[];start=i;
         }else if(mode==='value'){
           if(key==='checkpointIndexStrings'&&c==='[')throw new Error('knowledge_index_dictionary_invalid');
+          if(key==='checkpointPublicSnapshot'&&(publicView||c!=='{'))throw new Error('knowledge_public_checkpoint_invalid');
           if(c==='['){array=[];Object.defineProperty(world,key,{value:array,writable:true,enumerable:true,configurable:true});mode='firstItem';}
           else{mode='token';parts=[];depth=0;quoted=false;escaped=false;start=i;i--;}
         }else if(mode==='firstItem'||mode==='item'){
@@ -404,15 +438,52 @@ export async function decodeWorldSnapshot(encoded,{onArrayItem=null}={}){
       if(mode==='key'||mode==='token')parts.push(chunk.slice(start));
     }
     if(mode!=='done')fail();
+    if(hasPublicSnapshot){
+      if(publicSnapshot.format!=='public-checkpoint-v1'||publicSnapshot.worldId!==world.worldId||
+        !Number.isSafeInteger(publicSnapshot.worldMinute)||publicSnapshot.worldMinute<0||
+        publicSnapshot.worldMinute>world.clock?.worldMinute||typeof publicSnapshot.ledgerHead!=='string'||
+        typeof publicSnapshot.encoded!=='string'||!publicSnapshot.encoded.startsWith(`${SNAPSHOT_ENCODING}:`))
+        throw new Error('knowledge_public_checkpoint_invalid');
+      await validatePublicSnapshot(publicSnapshot);
+      onPublicSnapshot?.(publicSnapshot);
+    }
     return world;
   }catch(error){await reader.cancel(error).catch(()=>{});throw error;}
   finally{reader.releaseLock();}
 }
 
+async function validatePublicSnapshot(saved){
+  // Validate gzip (including its CRC/trailer) and JSON while retaining only
+  // one public array item at a time. Never rebuild a second public world graph
+  // beside the hydrated private state during a cold wake.
+  const prefix=new TextEncoder().encode('{"ok":true,"world":');
+  let prefixOffset=0,last=null;
+  const stripEnvelope=new TransformStream({
+    transform(chunk,controller){
+      let offset=0;
+      while(prefixOffset<prefix.length&&offset<chunk.length){
+        if(chunk[offset++]!==prefix[prefixOffset++])throw new Error('knowledge_public_checkpoint_invalid');
+      }
+      if(prefixOffset<prefix.length||offset===chunk.length)return;
+      if(last!==null)controller.enqueue(new Uint8Array([last]));
+      if(chunk.length-offset>1)controller.enqueue(chunk.subarray(offset,chunk.length-1));
+      last=chunk[chunk.length-1];
+    },
+    flush(){if(prefixOffset!==prefix.length||last!==125)throw new Error('knowledge_public_checkpoint_invalid');}
+  });
+  try{
+    const view=await decodeWorldJsonStream(snapshotJsonStream(saved.encoded).pipeThrough(stripEnvelope),{
+      discardArrayItems:true,publicView:true
+    });
+    if(view.version!==2||view.worldId!==saved.worldId||view.clock?.worldMinute!==saved.worldMinute||
+      view.ledgerHead!==saved.ledgerHead||!Array.isArray(view.citizens))throw new Error('knowledge_public_checkpoint_invalid');
+  }catch(error){throw new Error('knowledge_public_checkpoint_invalid',{cause:error});}
+}
+
 export function compressedSnapshotByteStream(encoded){
   const marker=`${SNAPSHOT_ENCODING}:`;
   const iterator=typeof encoded==='string'?[encoded][Symbol.iterator]():encoded[Symbol.iterator]();
-  let source='',offset=0,header='',carry='',ready=false,stopped=false;
+  let source='',offset=0,header='',carry='',ready=false,stopped=false,binary=null;
   const stop=()=>{if(stopped)return;stopped=true;source='';carry='';iterator.return?.();};
   const stream=new ReadableStream({
     pull(controller){
@@ -426,8 +497,18 @@ export function compressedSnapshotByteStream(encoded){
               if(!ready||carry.length)throw new SyntaxError('Truncated compressed snapshot');
               controller.close();return;
             }
-            if(typeof next.value!=='string')throw new TypeError('Invalid snapshot chunk');
-            source=next.value;
+            const bytes=next.value instanceof Uint8Array?next.value:
+              next.value instanceof ArrayBuffer?new Uint8Array(next.value):null;
+            const isBinary=bytes!==null;
+            if(binary===null)binary=isBinary;
+            if(binary!==isBinary||!isBinary&&typeof next.value!=='string')throw new TypeError('Invalid snapshot chunk');
+            source=isBinary?bytes:next.value;
+          }
+          if(binary){
+            ready=true;
+            const end=Math.min(source.length,offset+65536);
+            if(end===offset)continue;
+            controller.enqueue(source.subarray(offset,end));offset=end;return;
           }
           if(!ready){
             const take=Math.min(marker.length-header.length,source.length-offset);

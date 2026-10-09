@@ -7,7 +7,9 @@ async function fixture(t){
   const storage=sqliteStorage();t.after(()=>storage.db.close());
   const {instance}=await wake(storage);
   instance.refreshPublicSnapshot=async()=>{};instance.collectKnowledgeBins=()=>{};
-  instance.world.runtime.batchProbe=randomBytes(6*1024*1024).toString('base64');
+  // Binary rows fit more compressed data than base64 rows. Keep this fixture
+  // across two complete batches so the sixth-part interruption remains real.
+  instance.world.runtime.batchProbe=randomBytes(12*1024*1024).toString('base64');
   return {storage,instance};
 }
 

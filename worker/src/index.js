@@ -62,6 +62,7 @@ const AI_CALL_TIMEOUT_MS=3_000;
 const CHECKPOINT_WORLD_MINUTES=60;
 const SNAPSHOT_CHUNK_CODE_UNITS=256*1024;
 const ENCODED_SNAPSHOT_CHUNK_CODE_UNITS=1536*1024;
+const BINARY_SNAPSHOT_CHUNK_BYTES=1900*1024;
 const MAX_STAGED_SNAPSHOT_PARTS=64;
 const SNAPSHOT_PARTS_PER_TRANSACTION=4;
 const MAX_CATCHUP_WORLD_MINUTES=90;
@@ -188,6 +189,7 @@ export class SovereignWorld {
     this.committedSnapshot=null;
     this.committedPublicSnapshot=null;
     this.committedPublicWorldMinute=null;
+    this.durablePublicSnapshot=null;
     this.committedStats=null;
     this.committedHistory={entries:[]};
     this.committedCausalWorld={ledger:[],physicalReceipts:[],objects:[],procedures:[]};
@@ -423,7 +425,8 @@ export class SovereignWorld {
         let trimmedMemories=0;
         const pool=createEvidencePool();
         const archive=this.createKnowledgeArchive(pool,true);
-        const world=await decodeWorldSnapshot(encoded,{onArrayItem:(key,item)=>{
+        let recoveredPublic=null;
+        const world=await decodeWorldSnapshot(encoded,{onPublicSnapshot:value=>{recoveredPublic=value;},onArrayItem:(key,item)=>{
           if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);archive.attach(item);pool.hydrateCitizen(item);
             return this.yieldRuntime().then(()=>item);}
           return item;
@@ -434,6 +437,8 @@ export class SovereignWorld {
         if(meta.ledger_head!==undefined&&meta.ledger_head!==world.ledgerHead)throw new Error('sovereign_snapshot_metadata_mismatch');
         assertMonotonicSnapshot(world,{highWaterMark,worldId:guard?.world_id||null});
         selected={world,generation:meta.generation,source:meta.source};
+        this.durablePublicSnapshot=recoveredPublic;
+        if(recoveredPublic?.history)this.committedHistory=recoveredPublic.history;
         this.lastSnapshotChunkCount=count;
         this.pendingTrimmedMemories=trimmedMemories;
         this.evidencePool=pool;
@@ -466,7 +471,7 @@ export class SovereignWorld {
     compactOperationalState(selected.world);return selected.world;
   }
   *storedSnapshotParts(generation,count){
-    // Only the current SQLite row and a 64 KiB base64 window need remain
+    // Only the current SQLite row and a 64 KiB compressed window need remain
     // alive alongside the canonical graph during wake and rollback.
     const slotted=generation==='slot-a'||generation==='slot-b';
     const base=generation==='slot-b'?1_000_000:0;
@@ -493,7 +498,8 @@ export class SovereignWorld {
     let trimmedMemories=0;
     const pool=createEvidencePool();
     const archive=this.createKnowledgeArchive(pool,true);
-    const restored=await decodeWorldSnapshot(this.storedSnapshotParts(generation,count),{onArrayItem:(key,item)=>{
+    let recoveredPublic=null;
+    const restored=await decodeWorldSnapshot(this.storedSnapshotParts(generation,count),{onPublicSnapshot:value=>{recoveredPublic=value;},onArrayItem:(key,item)=>{
       if(key==='citizens'){trimmedMemories+=trimCitizenMemories(item);archive.attach(item);pool.hydrateCitizen(item);
         return this.yieldRuntime().then(()=>item);}
       return item;
@@ -506,6 +512,9 @@ export class SovereignWorld {
     if(Number(meta.world_minute)!==Number(restored.clock.worldMinute)||String(meta.ledger_head)!==String(restored.ledgerHead)){
       throw new Error('sovereign_committed_snapshot_metadata_mismatch');
     }
+    this.durablePublicSnapshot=recoveredPublic;
+    this.committedPublicSnapshot=null;this.committedPublicWorldMinute=null;
+    if(recoveredPublic?.history)this.committedHistory=recoveredPublic.history;
     this.lastSnapshotChunkCount=count;
     const seal=this.sqlRows('SELECT MAX(world_minute) AS world_minute FROM world_seals')[0]||null;
     const persistedSealMinute=Number(seal?.world_minute);
@@ -670,6 +679,7 @@ export class SovereignWorld {
     ledgerHead,
     worldId,
     snapshotClock,
+    publicSnapshot,
   }){
     // Reserve enough headroom before staging: the exact chunk count is known
     // only after streaming, and an incomplete inactive slot still costs rows.
@@ -692,12 +702,13 @@ export class SovereignWorld {
       });
       return id;
     },()=>this.yieldRuntime());
+    this.knowledgeArchive?.releaseReadCaches();
     const slotBase=generation==='slot-b'?1_000_000:0;
     let chunkCount=0,stagedPartBatches=0;
     const stagedParts=[];
     const flushParts=()=>{
       if(!stagedParts.length)return;
-      // At most four 1.5 MiB ASCII parts, rather than the entire checkpoint.
+      // At most four 1,900 KiB binary parts, rather than the whole checkpoint.
       // Their writes and one shared quota charge commit or roll back together.
       this.ctx.storage.transactionSync(()=>{
         const chargeDay=utcDay();
@@ -718,9 +729,11 @@ export class SovereignWorld {
       sealDue:due,
       clock:snapshotClock,
       ledgerHead,
-      maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
+      maxCodeUnits:BINARY_SNAPSHOT_CHUNK_BYTES,
       onProgress:()=>this.yieldRuntime(),
       packedKnowledge:'shared-indices-v1',
+      binaryParts:true,
+      publicSnapshot,
       onPart:part=>{
         if(chunkCount>=MAX_STAGED_SNAPSHOT_PARTS)throw new Error('sovereign_snapshot_exceeds_staging_limit');
         // The active slot remains authoritative until final publication.
@@ -822,7 +835,7 @@ export class SovereignWorld {
     });
   }
 
-  async refreshPublicSnapshot({clock=this.world.clock,ledgerHead=this.world.ledgerHead}={}){
+  async refreshPublicSnapshot({clock=this.world.clock,ledgerHead=this.world.ledgerHead,capture=false}={}){
     const minute=Number(clock.worldMinute);
     let publicState=publicWorld({
       ...this.world,
@@ -836,11 +849,14 @@ export class SovereignWorld {
       maxCodeUnits:ENCODED_SNAPSHOT_CHUNK_CODE_UNITS,
       jsonPrefix:'{"ok":true,"world":',
       jsonSuffix:'}',
+      onProgress:()=>this.yieldRuntime(),
     });
     // Drop the materialized projection before joining its much smaller,
     // compressed representation.
     publicState=null;
     const snapshot=joinSnapshot(encoded.parts);
+    if(capture)return {format:'public-checkpoint-v1',worldId:this.world.worldId,worldMinute:minute,
+      ledgerHead,encoded:snapshot,history:committedHistory};
     this.committedPublicSnapshot=snapshot;
     this.committedPublicWorldMinute=minute;
     this.committedHistory=committedHistory;
@@ -892,6 +908,14 @@ export class SovereignWorld {
     const ledgerHead=this.world.ledgerHead;
     const worldId=this.world.worldId;
     const snapshotClock={...this.world.clock};
+    let publicSnapshot=this.durablePublicSnapshot;
+    try{
+      // Prepare under the writer lock, but publish only with the canonical
+      // manifest. Failure retains the prior durable view and cannot stop physics.
+      publicSnapshot=await this.refreshPublicSnapshot({clock:snapshotClock,ledgerHead,capture:true})||publicSnapshot;
+    }catch(error){
+      console.error('CYMONIA_PUBLIC_SNAPSHOT_REFRESH_FAILED',String(error?.message||error).slice(0,300));
+    }
 
     const canonical=await this.writeCanonicalSnapshot({
       forceSeal,
@@ -903,6 +927,7 @@ export class SovereignWorld {
       ledgerHead,
       worldId,
       snapshotClock,
+      publicSnapshot,
     });
 
     if(!canonical.persisted){
@@ -935,15 +960,11 @@ export class SovereignWorld {
     this.lastCompletedCheckpointRealMs=canonical.committedAtRealMs;
     console.log('CYMONIA_CHECKPOINT_COMMITTED',JSON.stringify({worldMinute,generation:canonical.generation,committedAtRealMs:canonical.committedAtRealMs}));
 
-    try{
-      // Private gzip/base64 buffers belonged to writeCanonicalSnapshot() and
-      // are now out of scope. Refresh public state only after canonical commit.
-      await this.refreshPublicSnapshot({clock:snapshotClock,ledgerHead});
-    }catch(error){
-      console.error(
-        'CYMONIA_PUBLIC_SNAPSHOT_REFRESH_FAILED',
-        String(error?.message||error).slice(0,300)
-      );
+    if(publicSnapshot){
+      this.durablePublicSnapshot=publicSnapshot;
+      this.committedPublicSnapshot=publicSnapshot.encoded;
+      this.committedPublicWorldMinute=publicSnapshot.worldMinute;
+      this.committedHistory=publicSnapshot.history||{entries:[]};
     }
 
     return canonical;
@@ -1341,27 +1362,20 @@ export class SovereignWorld {
       const persistedMinute=Number(this.lastPersistedWorldMinute);
       const publicStale=
         !this.committedPublicSnapshot||
-        Number(this.committedPublicWorldMinute)!==persistedMinute;
+        Number(this.committedPublicWorldMinute)!==Number(this.durablePublicSnapshot?.worldMinute??persistedMinute);
 
       if(publicStale){
-        // Never project an in-flight/uncommitted graph. If this is the first
-        // state read after wake, wait for any current writer and only project
-        // when the in-memory graph still equals the durable generation.
-        await (this.mutationChain||Promise.resolve()).catch(()=>{});
-        if(
-          this.world&&
-          Number(this.world.clock?.worldMinute)===persistedMinute
-        ){
-          try{
-            await this.refreshPublicSnapshot({
-              clock:{...this.world.clock},
-              ledgerHead:this.world.ledgerHead,
-            });
-          }catch(error){
-            console.error(
-              'CYMONIA_PUBLIC_SNAPSHOT_LAZY_FAILED',
-              String(error?.message||error).slice(0,300)
-            );
+        if(this.durablePublicSnapshot){
+          this.committedPublicSnapshot=this.durablePublicSnapshot.encoded;
+          this.committedPublicWorldMinute=this.durablePublicSnapshot.worldMinute;
+          this.committedHistory=this.durablePublicSnapshot.history||{entries:[]};
+        }else{
+          // Legacy checkpoints have no public sidecar. Only project their
+          // committed graph, never an in-flight physical future.
+          await (this.mutationChain||Promise.resolve()).catch(()=>{});
+          if(this.world&&Number(this.world.clock?.worldMinute)===persistedMinute){
+            try{await this.refreshPublicSnapshot({clock:{...this.world.clock},ledgerHead:this.world.ledgerHead});}
+            catch(error){console.error('CYMONIA_PUBLIC_SNAPSHOT_LAZY_FAILED',String(error?.message||error).slice(0,300));}
           }
         }
       }
