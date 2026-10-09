@@ -647,10 +647,21 @@ export class SovereignWorld {
     this.mutationChain=pending.catch(()=>{});
     return pending;
   }
-  async restoreCommittedWorld(neuronBudget){
+  restoreCommittedWorld(neuronBudget){
+    if(neuronBudget)this.pendingRecoveryNeuronBudget=neuronBudget;
+    if(this.recoveryPromise)return this.recoveryPromise;
+    // Incoming heartbeats, readers and the timer can meet while world is null.
+    // Share one loader/archive/nonce rather than disposing another caller's
+    // partially hydrated archive or allocating concurrent canonical graphs.
+    const pending=Promise.resolve().then(()=>this.reloadCommittedWorld());
+    const shared=pending.finally(()=>{if(this.recoveryPromise===shared)this.recoveryPromise=null;});
+    this.recoveryPromise=shared;
+    shared.catch(()=>{});
+    return shared;
+  }
+  async reloadCommittedWorld(){
     // Failure recovery is rare. Release the failed full graph first, then
     // reload exactly the durable committed generation from SQLite.
-    if(neuronBudget)this.pendingRecoveryNeuronBudget=neuronBudget;
     this.world=null;
     this.evidencePool=null;
     const restored=await this.loadCommittedWorldFromStorage();
@@ -1261,7 +1272,8 @@ export class SovereignWorld {
   async fetch(request){
     this.lastIncomingRequestRealMs=Date.now();
     const url=new URL(request.url),path=url.pathname.replace(/^\/world/,'')||'/';
-    if(request.method==='GET'&&path==='/runtime-heartbeat'&&(this.initializing||!this.world)){
+    if(request.method==='GET'&&path==='/runtime-heartbeat'&&(this.initializing||!this.world)&&
+      request.headers.get('x-cymonia-await-ready')!=='1'){
       this.lastSchedulerHeartbeatRealMs=Date.now();
       return json({ok:true,service:'cymonia-sovereign-world',initializing:true,world_minute:null,lag_world_minutes:null});
     }
@@ -1278,6 +1290,7 @@ export class SovereignWorld {
       this.startRuntimeLoop();
       return json({ok:true,service:'cymonia-sovereign-world',world_minute:world.clock.worldMinute,
         cpu_renewal_token:this.coldCpuRenewalToken,
+        cpu_renewal_required:Boolean(this.awaitingColdCpuRenewal),
         lag_world_minutes:Math.max(0,worldMinuteAt(world,Date.now())-world.clock.worldMinute)});
     }
     if(request.method==='GET'&&path==='/health'){
@@ -1314,7 +1327,8 @@ export class SovereignWorld {
         },
         websocket:{mode:'hibernation',clients:this.ctx.getWebSockets().length},
         scheduler:{interval_ms:20_000,last_received_real_ms:this.lastSchedulerHeartbeatRealMs??null},
-        runtime_driver:{timer_active:this.runtimeTimer!=null||Boolean(this.runtimeLoopRunning),pulse_running:Boolean(this.runtimePulsePromise)},
+        runtime_driver:{timer_active:this.runtimeTimer!=null||Boolean(this.runtimeLoopRunning),pulse_running:Boolean(this.runtimePulsePromise),
+          awaiting_cold_cpu_renewal:Boolean(this.awaitingColdCpuRenewal)},
         knowledge_archive:this.knowledgeArchive?.stats()??null,
         seal_read_index_ready:Boolean(this.sealIndexReady),
         last_checkpoint_real_ms:Math.max(checkpointRealMs,this.lastCompletedCheckpointRealMs??0),
@@ -1450,14 +1464,28 @@ export default {
         if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
         try{
           const id=env.WORLD.idFromName('canonical-v2'),stub=env.WORLD.get(id);
-          const response=await stub.fetch(new Request('https://cymonia.internal/world/runtime-heartbeat',{
-            signal:AbortSignal.timeout(45_000),
-            headers:cpuRenewalToken?{'x-cymonia-cpu-renewal':cpuRenewalToken}:{},
-          }));
-          if(!response.ok){await response.body?.cancel();throw new Error(`heartbeat_http_${response.status}`);}
-          const health=await response.json();
-          if(!health.ok||health.service!=='cymonia-sovereign-world')throw new Error('heartbeat_response_invalid');
-          if(typeof health.cpu_renewal_token==='string'&&delay>=lastTokenSlot){cpuRenewalToken=health.cpu_renewal_token;lastTokenSlot=delay;}
+          const signal=AbortSignal.timeout(45_000);
+          const readHeartbeat=async(token,awaitReady=false)=>{
+            const headers={};
+            if(token)headers['x-cymonia-cpu-renewal']=token;
+            if(awaitReady)headers['x-cymonia-await-ready']='1';
+            const response=await stub.fetch(new Request('https://cymonia.internal/world/runtime-heartbeat',{signal,headers}));
+            if(!response.ok){await response.body?.cancel();throw new Error(`heartbeat_http_${response.status}`);}
+            const health=await response.json();
+            if(!health.ok||health.service!=='cymonia-sovereign-world')throw new Error('heartbeat_response_invalid');
+            if(typeof health.cpu_renewal_token==='string'&&delay>=lastTokenSlot){cpuRenewalToken=health.cpu_renewal_token;lastTokenSlot=delay;}
+            return health;
+          };
+          let health=await readHeartbeat(cpuRenewalToken);
+          // Waiting for decode is not a CPU renewal. Obtain the recovered
+          // challenge, then dispatch a genuine post-response incoming request
+          // immediately, instead of leaving physics gated until another slot.
+          if(health.initializing)health=await readHeartbeat(null,true);
+          for(let attempt=0;health.cpu_renewal_required&&attempt<2;attempt++){
+            if(typeof health.cpu_renewal_token!=='string')throw new Error('heartbeat_renewal_challenge_missing');
+            health=await readHeartbeat(health.cpu_renewal_token);
+          }
+          if(health.cpu_renewal_required)throw new Error('heartbeat_renewal_unavailable');
           console.log('CYMONIA_SCHEDULED_HEARTBEAT',JSON.stringify({
             scheduledTime:controller.scheduledTime,slot:delay/20_000,
             worldMinute:health.world_minute,lagWorldMinutes:health.lag_world_minutes,

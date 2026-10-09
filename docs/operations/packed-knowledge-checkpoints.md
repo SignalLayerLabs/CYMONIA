@@ -378,3 +378,33 @@ local measurements, not an exact reproduction of the production limit. Using
 1,900 KiB rows keeps fewer SQLite writes per checkpoint; releasing read caches
 provides the measured live-memory headroom. Production CI and a separate ten-minute
 quiet proof remain the release acceptance gates.
+
+
+## Immediate cold CPU renewal
+
+PR62's three-minute quiet proof passed (+156 saved minutes), but a later canonical
+health sample found a cold recovered object with a stale tick (71 seconds) and a
+fresh scheduler. The object subsequently resumed and the recovered public view
+returned HTTP200. Bounded diagnostics reported no exceptions, so the reason for
+that object replacement remains unproven.
+
+A separate reproducible recovery delay existed: the scheduler waited for another
+20-second slot to echo the post-decode CPU challenge. After an initializing
+response, it now starts one private readiness request and then dispatches a genuine
+post-response request immediately. Only a matching challenge arriving after decode
+releases the gate; waiting for readiness alone never does. Two bounded echo attempts
+handle replacement between challenge and echo. All requests and body reads in one
+slot share its 45-second deadline. The other20/40-second slots remain independent;
+warm requests retain their original cadence. Public traffic cannot reach this route.
+
+Regression tests cover delayed decode across a Cron boundary, stale responses,
+replacement during the echo, a hung readiness request, bounded repeated replacement
+and preservation of the actual physical clock. Health explicitly reports whether
+cold CPU renewal is pending; stale-tick checks and all CI thresholds remain intact.
+
+
+All null-world rollback callers now share one recovery promise. Overlapping
+readiness heartbeats, the timer and mutation recovery cannot hydrate concurrent
+canonical graphs, dispose each other's archive or rotate independent challenges.
+The promise clears after success or failure so a later incoming request can retry;
+already consumed inference budget remains attached to the recovered world.
