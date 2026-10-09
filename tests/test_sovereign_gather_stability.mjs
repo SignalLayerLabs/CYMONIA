@@ -16,6 +16,7 @@ test('a thousand repeated gathers retain one compatible stack, every harvest rec
   assert.ok(ids.every(id=>f.world.objects.some(o=>o.id===id)));assert.equal(new Set(f.c.possessions).size,f.c.possessions.length);
   assert.deepEqual(f.c.knownEntityIds.filter(id=>!initialEntities.has(id)),[stacks[0].id],'harvests must introduce only one new personal entity membership');
   const receipts=f.world.ledger.filter(e=>e.type==='RESOURCE_GATHERED');assert.equal(receipts.length,1000);assert.equal(new Set(receipts.map(e=>e.causes[0])).size,1000);
+  for(let i=1;i<receipts.length;i++)assert.ok(receipts[i].causes.includes(receipts[i-1].id),'every stack addition must preserve its preceding physical contribution');
   assert.equal(stacks[0].provenance.actionId,receipts[0].causes[0]);assert.equal(stacks[0].lastPhysicalEventId,receipts.at(-1).id);assert.equal(verifyLedger(f.world),true);
 });
 
@@ -30,4 +31,11 @@ test('depleted and fractional deposits cannot manufacture matter or go negative'
   const f=fixture();f.d.quantity=.03;gather(f,2);
   const stack=f.world.objects.find(o=>o.holderId===f.c.id&&o.provenance?.depositId===f.d.id);assert.equal(stack.quantity,.03);assert.equal(f.d.quantity,0);
   gather(f,2);assert.equal(stack.quantity,.03);assert.equal(f.d.quantity,0);assert.equal(f.world.ledger.filter(e=>e.type==='RESOURCE_GATHERED').length,1);
+});
+
+test('reused legacy material retains its original action as the causal anchor',()=>{
+  const f=fixture(),first=gather(f),stack=f.world.objects.find(o=>o.holderId===f.c.id&&o.provenance?.depositId===f.d.id);
+  delete stack.lastPhysicalEventId;const second=gather(f);
+  const receipt=f.world.ledger.findLast(e=>e.type==='RESOURCE_GATHERED');
+  assert.equal(stack.quantity,4);assert.deepEqual(receipt.causes,[second.id,first.id]);assert.equal(stack.provenance.actionId,first.id);
 });

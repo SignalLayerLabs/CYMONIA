@@ -280,7 +280,8 @@ and personal entity ID, prompting all nearby Citizens to acquire another concept
 Repeated ordinary harvests now add matter to one compatible personal stack from
 the same deposit. Existing objects/IDs and original provenance remain intact.
 Every harvest still emits its own causal receipt; the stack points to the latest
-physical event. Reserved, heated, transformed, damaged, foreign and different-source
+physical event, whose causes also retain the prior stack contribution (or the
+original action for a legacy stack). Reserved, heated, transformed, damaged, foreign and different-source
 objects are excluded. Fractional availability caps the harvested quantity exactly;
 a depleted source cannot manufacture the former minimum 0.1 kg of matter.
 

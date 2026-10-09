@@ -66,6 +66,7 @@ function gather(world,c,a,at){
     x.material===d.type&&x.massPerUnitKg===1&&x.condition===1&&
     !x.reservedProjectId&&!x.burning&&!x.geometry&&x.properties==null&&
     x.temperatureC==null&&x.provenance?.type==='GATHERED'&&x.provenance.depositId===d.id);
+  const previousCause=o?.lastPhysicalEventId||o?.provenance?.actionId;
   d.quantity-=q;recordHarvest(world,d,q,at);
   if(o){o.quantity+=q;o.position={...c.position};}
   else{
@@ -76,7 +77,8 @@ function gather(world,c,a,at){
   }
   if(!c.possessions.includes(o.id))c.possessions.push(o.id);
   if(!knowsEntity(c,o.id))c.knownEntityIds.push(o.id);
-  const event=appendEvent(world,'RESOURCE_GATHERED',c.id,{objectId:o.id,depositId:d.id,quantity:q},[a.id],at);
+  const causes=previousCause?[a.id,previousCause]:[a.id];
+  const event=appendEvent(world,'RESOURCE_GATHERED',c.id,{objectId:o.id,depositId:d.id,quantity:q},causes,at);
   o.lastPhysicalEventId=event.id;
 }
 function consumeFromDeposit(world,c,a,type,amount,restore,at){const d=world.resourceDeposits.find(x=>x.id===a.targetId&&x.type===type);if(!d||d.quantity<amount)return;d.quantity-=amount;world.environment.metabolicMatterKg=(world.environment.metabolicMatterKg||0)+amount;restore(c);appendEvent(world,type==='water'?'DRANK_RESOURCE':'ATE_RESOURCE',c.id,{depositId:d.id,quantity:amount},[a.id],at);}
