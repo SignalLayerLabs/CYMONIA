@@ -25,3 +25,23 @@
 .avatar-current-action p{margin:0}
 .activity-row{grid-template-columns:42px 1fr}
 @media(max-width:720px){.action-image{width:28px;height:28px}.activity-row{grid-template-columns:36px 1fr}}
+
+/* The public roster is available to guests as well as avatar owners. */
+.agent-window{height:min(680px,80vh);display:flex;flex-direction:column}
+.agent-copy{min-height:0;overflow-y:auto}
+.github-citizens{margin-top:0;border-top:0;padding-top:0;padding-bottom:12px}
+.github-citizens p{font-size:10px}
+.github-citizen-row{display:flex;align-items:center;gap:10px;width:100%;padding:9px 8px;margin:4px 0;border:1px solid #876b3a55;background:#e7d7aa;color:#2b2417;text-align:left;cursor:pointer}
+.github-citizen-row>span:nth-child(2){flex:1;min-width:0}
+.github-citizen-row b,.github-citizen-row small{display:block;overflow-wrap:anywhere}
+.github-citizen-row b{font-size:12px}.github-citizen-row small,.github-citizen-row>span:last-child{font-size:9px}
+.github-citizen-row:hover,.github-citizen-row:focus-visible{background:#f4e8c5;outline:2px solid #39708e}
+.github-citizen-marker{width:9px;height:9px;flex:none;border-radius:50%;background:#397da9}
+.github-citizen-marker[data-alive="false"]{background:#8b7661}
+
+.game-dock .avatar-owner-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+.game-dock #agentOpen{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.game-dock #agentOpen>span{line-height:26px}
+.game-dock #agentOpen>b{line-height:10px}
+.game-dock #githubCitizenCount{line-height:8px;white-space:nowrap}
