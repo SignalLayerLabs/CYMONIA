@@ -8,6 +8,7 @@ import {terrainAt,nearestDryLandPoint,isWaterTerrainKind,isSleepUnsafeTerrainKin
 import {constructionDemand,nightPressure,rememberedCrowding,structureUseSummary} from './living-world.js';
 import {grievancePressure,strongestGrievance} from './destruction.js';
 import {activeConcepts,knowledgeForEntity as storedKnowledgeForEntity} from './knowledge-storage.js';
+import {procedureProposal} from './procedures.js';
 
 const clamp01=value=>Math.max(0,Math.min(1,Number(value)||0));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -33,6 +34,12 @@ function resourceAction(citizen,deposit,type,duration,purpose,payload={}){
 
 function knowledgeForEntity(citizen,entityId){
   return storedKnowledgeForEntity(citizen,entityId);
+}
+
+function attentionWindow(values,limit,citizen,at){
+  if(values.length<=limit)return values;
+  const start=(hash32(citizen.id)+Math.floor(at/120)*limit)%values.length;
+  return Array.from({length:limit},(_,i)=>values[(start+i)%values.length]);
 }
 
 function hasUnknownObservableProperty(citizen,target){
@@ -199,7 +206,29 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
   if(!citizen?.alive||citizen.currentActionId)return [];
   const candidates=[],held=heldObjects(world,citizen);
   const knownResources=world.resourceDeposits.filter(deposit=>deposit.quantity>0&&knowsEntity(citizen,deposit.id)&&knows(citizen,resourceConceptId(deposit)));
-  const nearby=world.citizens.filter(other=>other.id!==citizen.id&&other.alive&&knowsEntity(citizen,other.id)&&dist(citizen.position,other.position)<=10);
+  // Match the cognitive context's 12 people / 32 concepts attention window.
+  // Rotating it avoids a lifetime all-concepts × all-neighbors comparison when
+  // mature citizens return to affordance deliberation after learned practice.
+  const nearby=attentionWindow(world.citizens.filter(other=>other.id!==citizen.id&&other.alive&&knowsEntity(citizen,other.id)&&dist(citizen.position,other.position)<=10),12,citizen,at);
+
+  // Remembered skills are opportunities, not an unconditional decision. A
+  // full memory must still compete with exploration, needs and ongoing work.
+  // Use the same activity family as a fresh experiment/demonstration so that
+  // switching procedure IDs cannot bypass outcome learning and cooldowns.
+  const remembered=procedureProposal(world,citizen,at);
+  if(remembered){
+    const action=remembered.actions[0],teaching=action.type==='TEACH',family=teaching?'teach':'experiment';
+    const confidence=clamp01(citizen.procedureKnowledge?.find(entry=>entry.procedureId===action.payload.procedureId)?.confidence);
+    candidates.push({
+      family,key:`${family}:procedure:${action.payload.procedureId}`,targetId:action.targetId,
+      // Confidence gives proven practice a value distinct from novelty. It
+      // can win for a cautious mind without becoming unconditional priority.
+      utility:teaching?.16:.24+.7*confidence,social:teaching?.8:0,
+      inventoryFit:teaching?0:.65,knowledgeGap:teaching?.65:0,
+      novelty:teaching?.25:0,effort:teaching?.08:.12,risk:teaching?clamp01(relation(citizen,action.targetId).fear):.12,
+      proposal:{...remembered,affordanceFamily:family},
+    });
+  }
 
   for(const deposit of knownResources){
     const distance=dist(citizen.position,deposit.position),heldSame=held.reduce((sum,object)=>sum+(object.material===deposit.type?object.quantity:0),0);
@@ -219,7 +248,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
     if(knowledgeForEntity(citizen,object.id).length)candidates.push({family:'transform',key:`transform:${object.id}`,targetId:object.id,utility:.24,inventoryFit:.9,knowledgeGap:.2,novelty:.55,effort:.2,risk:.12,proposal:proposal('transform',knowledgeForEntity(citizen,object.id).map(entry=>entry.concept),[{type:'ASSEMBLE',durationMinutes:35,purpose:'experiment',concepts:knowledgeForEntity(citizen,object.id).map(entry=>entry.concept),payload:{inputObjectIds:[object.id],quantities:[object.quantity],form:'bundle'}}])});
   }
 
-  const concepts=activeConcepts(citizen);
+  const concepts=nearby.length?attentionWindow(activeConcepts(citizen),32,citizen,at):[];
   for(const other of nearby){
     const gap=concepts.find(concept=>!knows(other,concept));
     if(gap){
@@ -363,7 +392,7 @@ export function enumerateAffordances(world,citizen,at=world.clock.worldMinute){
 
 export function scoreAffordance(world,citizen,candidate,at=world.clock.worldMinute){
   const state=ensureCognitionState(citizen,at),psychology=citizen.psychology||{},rel=relation(citizen,candidate.targetId);
-  const persistent=activeStrategy(citizen,at,world),legacy=citizen.activeGoal?.kind==='strategy-v1'?null:citizen.activeGoal;
+  const persistent=activeStrategy(citizen,at,world),legacy=citizen.activeGoal?.kind==='strategy-v1'||citizen.activeGoal?.source==='personal-procedure'?null:citizen.activeGoal;
   const desired=new Set(persistent?.actionBias||legacy?.actionTypes||[]),actions=candidate.proposal.actions||[];
   const actionAligned=actions.some(action=>desired.has(action.type));
   const partnerAligned=Boolean(persistent?.partnerIds?.includes(candidate.targetId));

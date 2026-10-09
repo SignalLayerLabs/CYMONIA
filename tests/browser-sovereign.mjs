@@ -265,10 +265,40 @@ try {
   await page.clock.fastForward(121000);
   assert.equal(await page.locator('#worldDate').innerText(),'YEAR 2 · DAY 1 · 00:00');
 
+  // Guests can discover existing GitHub citizens without creating one or
+  // treating dead citizens as missing. Names remain text, not account HTML.
+  await page.route('**/api/v2/avatar',route=>route.fulfill({status:401,contentType:'application/json',body:'{"ok":false}'}));
+  liveWorld.citizens.push(
+    {...structuredClone(liveWorld.citizens[0]),id:'human:living',kind:'HUMAN_LINKED',observerDisplayName:'GitHub <member>',position:{x:70,y:70},currentAction:null},
+    {...structuredClone(liveWorld.citizens[0]),id:'human:dead',kind:'HUMAN_LINKED',observerDisplayName:'Past member',alive:false,deathWorldMinute:30,currentAction:null}
+  );
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#populationValue')?.textContent==='2');
+  assert.equal(await page.locator('#githubCitizenCount').innerText(),'1 CITIZEN');
+  await page.locator('#agentOpen').click();
+  assert.ok(await page.locator('#avatarGuest').isVisible());
+  assert.equal(await page.locator('#githubCitizenList button').count(),2);
+  assert.ok((await page.locator('#githubCitizenList').innerText()).includes('GitHub <member>'));
+  assert.equal(await page.locator('#githubCitizenList member').count(),0);
+  await page.locator('[data-github-citizen="human:living"]').click();
+  assert.equal(await page.locator('#agentWindow').isVisible(),false);
+  assert.equal(JSON.parse(await page.evaluate(()=>window.render_game_to_text())).selectedId,'human:living');
+  assert.ok((await page.locator('#inspectorBody').innerText()).includes('GitHub <member>'));
+  await page.locator('#agentOpen').click();
+  await page.locator('[data-github-citizen="human:dead"]').click();
+  assert.ok((await page.locator('#inspectorBody').innerText()).includes('DEAD'));
+  assert.equal(JSON.parse(await page.evaluate(()=>window.render_game_to_text())).selectedId,'human:dead');
+  await page.locator('#closeInspector').click();
+
   await page.setViewportSize({
     width: 390,
     height: 844
   });
+
+  await page.locator('#agentOpen').click();
+  assert.ok(await page.locator('[data-github-citizen="human:living"]').isVisible());
+  await page.locator('[data-github-citizen="human:living"]').click();
+  assert.ok(await page.locator('#inspector').isVisible());
 
   assert.equal(
     await page.evaluate(
@@ -284,7 +314,7 @@ try {
   );
 
   console.log(
-    'PASS: canonical state rendering, fractional movement, durable year rollover, game-only shell, history, mobile containment and zero page errors.'
+    'PASS: canonical state rendering, fractional movement, durable year rollover, guest GitHub roster and locate/inspect, game-only shell, history, mobile containment and zero page errors.'
   );
 } finally {
   await browser.close();
