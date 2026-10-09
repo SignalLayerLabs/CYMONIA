@@ -97,10 +97,10 @@ test('three failed responses are cancelled and fail the scheduled invocation',as
   await rejected;assert.equal(cancelled,3);
 });
 
-test('scheduler echoes a post-decode challenge in the next independent request',async t=>{
+test('scheduler immediately echoes a post-decode challenge in a genuine independent request',async t=>{
  const s=setup(t);s.instance.awaitingColdCpuRenewal=true;s.instance.coldCpuRenewalToken='cold-challenge';
  worker.scheduled({scheduledTime:60000},s.env,s.ctx);await flush();
- assert.equal(s.instance.awaitingColdCpuRenewal,true);
+ assert.equal(s.instance.awaitingColdCpuRenewal,false);
  t.mock.timers.tick(20000);await flush();assert.equal(s.instance.awaitingColdCpuRenewal,false);
  t.mock.timers.tick(20000);await flush();await Promise.all(s.waits);
 });
@@ -113,7 +113,7 @@ test('a late old challenge response cannot overwrite a newer recovered object ch
  }};};
  worker.scheduled({scheduledTime:60000},s.env,s.ctx);await flush();
  s.instance.coldCpuRenewalToken='new-challenge';
- t.mock.timers.tick(20000);await flush();assert.equal(s.instance.awaitingColdCpuRenewal,true);
+ t.mock.timers.tick(20000);await flush();assert.equal(s.instance.awaitingColdCpuRenewal,false);
  release();await flush();t.mock.timers.tick(20000);await flush();await Promise.all(s.waits);
- assert.equal(s.instance.awaitingColdCpuRenewal,false,'the third request must echo the newer response token');
+ assert.equal(s.instance.awaitingColdCpuRenewal,false,'late older responses must not undo the immediate new challenge renewal');
 });
