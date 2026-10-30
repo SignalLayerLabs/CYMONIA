@@ -60,6 +60,7 @@ export function classifyHistory(world){
   for(const e of world.ledger||[]){
     let label=null,category='event';
     if(e.type==='WORLD_GENESIS'){label='Genesis: the first 100 inhabitants awaken';category='genesis';}
+    else if(e.type==='SYSTEM_POPULATION_REPAIR'){label=e.payload.message;category='system';}
     else if(e.type==='BIRTH'){label='A new life begins';category='life';}
     else if(e.type==='DEATH'){label='A Citizen dies';category='life';}
     else if(e.type==='BUILDING_COMPLETED'){label='A constructed structure is completed';category='construction';}
@@ -81,6 +82,12 @@ export function classifyHistory(world){
     else if(e.type==='PROGRAM_CREATED'){label='A Citizen creates a persistent behavioral program';category='knowledge';}
     else continue;
     entries.push(baseEntry(world,e,label,category));
+  }
+  // Incident notices remain visible after their original hot-ledger event ages out.
+  for(const repair of Object.values(world.systemRepairs||{})){
+    if(!entries.some(e=>e.eventId===repair.eventId))entries.push(baseEntry(world,{
+      id:repair.eventId,worldMinute:repair.worldMinute,actorId:'system',payload:repair
+    },repair.message,'system'));
   }
   const recentViolence=(world.ledger||[]).filter(e=>e.type==='VIOLENCE').slice(-20);
   if(recentViolence.length>=2){
