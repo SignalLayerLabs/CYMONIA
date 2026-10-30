@@ -1,5 +1,7 @@
 name: Runtime diagnostics
 on:
+  push:
+    branches: [diagnostics/survival-incident]
   workflow_dispatch:
 permissions:
   contents: read
