@@ -70,3 +70,23 @@ Coverage: `tests/test_sovereign_human_system_repair.mjs` verifies identity reuse
 canonical direction submission after recovery, conservation, audit history,
 post-fix exclusion, fail-before-mutation on insufficient biomass, and real SQLite
 cold-wake recovery with a subsequent death remaining permanent.
+
+## Runtime memory correction during mass recovery
+
+The post-deployment autonomous-progress check failed after the population returned.
+A mature-world replay produced approximately 96,000 discovery events within 71
+world minutes. The runtime previously compacted the hot ledger only during saves;
+meanwhile archive growth increased the adaptive checkpoint interval. Uncommitted
+ledger objects could therefore accumulate alongside the existing large archive.
+
+The runtime now applies its existing 4,096-event hot-history window after every
+complete simulation boundary, before yielding to the next pulse. Absolute sequence
+numbers, ledger hash head and chain anchor are preserved; learned evidence is not
+discarded. This uses the same retention policy as canonical snapshot persistence.
+It does not alter offline kernel advancement or the authoritative world clock.
+
+`tests/test_sovereign_hot_ledger_memory.mjs` reproduces a dense discovery burst
+(11,702 events in the first unbounded boundary), checks the bound before each yield
+across multiple boundaries, and verifies chain continuity after real SQLite
+publication/reload and a subsequent event append. The memory defect is reproduced;
+its impact on production progress still requires the deployment smoke check.
