@@ -13,7 +13,11 @@ export function advanceBody(world,citizen,deltaMinutes){
   if(thermal>0){healthLoss+=thermal*d/2200;b.calories=Math.max(0,b.calories-thermal*d/6000);}
   if(exposure.rainExposure>.02){const wet=exposure.rainExposure;healthLoss+=wet*d/18000;b.sleepPressure=Math.min(100,b.sleepPressure+wet*d/180);b.calories=Math.max(0,b.calories-wet*d/5000);}
   if(exposure.terrain==='river'){b.calories=Math.max(0,b.calories-d/4200);b.sleepPressure=Math.min(100,b.sleepPressure+d/8000);}
-  b.temperatureC=36.6+Math.max(-4,Math.min(4,(ambient-20)*(1-exposure.thermalProtection)*.035));b.health=Math.max(0,b.health-healthLoss);b.exposure={terrain:exposure.terrain,rainExposure:exposure.rainExposure,thermalProtection:exposure.thermalProtection,precipitationProtection:exposure.precipitationProtection,shelterId:exposure.shelterId};return b;
+  b.temperatureC=36.6+Math.max(-4,Math.min(4,(ambient-20)*(1-exposure.thermalProtection)*.035));// Healthy conditions must allow recovery; otherwise every minor exposure is
+  // permanent damage and even well-fed citizens inevitably die prematurely.
+  const recovery=healthLoss===0&&b.hydration>=35&&b.calories>=30&&b.sleepPressure<=85&&
+    !b.diseases.length&&!b.injuries.length&&years<=limit?d/200:0;
+  b.health=Math.min(100,Math.max(0,b.health-healthLoss+recovery));b.exposure={terrain:exposure.terrain,rainExposure:exposure.rainExposure,thermalProtection:exposure.thermalProtection,precipitationProtection:exposure.precipitationProtection,shelterId:exposure.shelterId};return b;
 }
 export function restoreHydration(citizen,amount=20){citizen.body.hydration=Math.min(100,citizen.body.hydration+amount);}
 export function restoreCalories(citizen,amount=18){citizen.body.calories=Math.min(100,citizen.body.calories+amount);}

@@ -1,3 +1,4 @@
+import {applySystemRepair} from '../../world/system-repair.js';
 import {
   createSovereignGenesis,
   advanceWorldTo,
@@ -247,7 +248,9 @@ export class SovereignWorld {
       }else{
         ensureRuntime(this.world);
         this.establishClockGuardBaseline();
-        if(!this.lastPersistedGeneration||this.knowledgeArchive?.backingBytes)await this.persist({forceSeal:true});
+        const repaired=applySystemRepair(this.world,this.env.SYSTEM_REPAIR_ID);
+        if(repaired)this.registerCitizenEvidence();
+        if(repaired||!this.lastPersistedGeneration||this.knowledgeArchive?.backingBytes)await this.persist({forceSeal:true});
       }
       this.lastPersistedWorldMinute=this.world.clock.worldMinute;
       // Wake only the canonical graph and bounded diagnostics. Building the
