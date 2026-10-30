@@ -1,4 +1,4 @@
-import {applySystemRepair} from '../../world/system-repair.js';
+import {applySystemRepair,applyHumanSystemRepair} from '../../world/system-repair.js';
 import {
   createSovereignGenesis,
   advanceWorldTo,
@@ -248,7 +248,9 @@ export class SovereignWorld {
       }else{
         ensureRuntime(this.world);
         this.establishClockGuardBaseline();
-        const repaired=applySystemRepair(this.world,this.env.SYSTEM_REPAIR_ID);
+        const populationRepaired=applySystemRepair(this.world,this.env.SYSTEM_REPAIR_ID);
+        const humansRepaired=applyHumanSystemRepair(this.world,this.env.HUMAN_SYSTEM_REPAIR_ID);
+        const repaired=populationRepaired||humansRepaired;
         if(repaired)this.registerCitizenEvidence();
         if(repaired||!this.lastPersistedGeneration||this.knowledgeArchive?.backingBytes)await this.persist({forceSeal:true});
       }
@@ -1013,6 +1015,9 @@ export class SovereignWorld {
       const advancementStartedAt=Date.now();
       console.log('CYMONIA_ADVANCE_BEGIN',JSON.stringify({worldMinute:this.world.clock.worldMinute}));
       const progress=advanceWorldBounded(this.world,Date.now(),maxCatchup,maxOutage,{maxSegments:deferCheckpoint?Math.min(1,maxSegments):maxSegments,targetWorldMinute:this.pendingAdvanceTarget??Infinity});
+      // Discovery bursts must not retain an unbounded ledger until the next
+      // checkpoint; preserve the same hot history window and hash-chain anchor.
+      compactLedger(this.world,HOT_LEDGER_EVENTS);
       if(deferCheckpoint){
         const target=progress.advanceTargetWorldMinute;
         // Preserve one chronological target while yielding between boundaries.
@@ -1023,6 +1028,7 @@ export class SovereignWorld {
           if(this.runtimeCpuWindowExpired())break;
           const step=advanceWorldBounded(this.world,this.world.clock.realEpochMs+target*REAL_MS_PER_WORLD_MINUTE,
             maxCatchup,maxOutage,{maxSegments:1,targetWorldMinute:target});
+          compactLedger(this.world,HOT_LEDGER_EVENTS);
           progress.trimmedMemories+=step.trimmedMemories;
         }
         progress.lagWorldMinutes=Math.max(0,worldMinuteAt(this.world,Date.now())-this.world.clock.worldMinute);

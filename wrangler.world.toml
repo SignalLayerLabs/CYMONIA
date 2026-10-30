@@ -9,6 +9,7 @@ crons = ["* * * * *"]
 binding = "AI"
 
 [vars]
+HUMAN_SYSTEM_REPAIR_ID = "2026-10-30-github-survival-recovery"
 SYSTEM_REPAIR_ID = "2026-10-30-survival-deterioration"
 BRAIN_MODEL = "@cf/zai-org/glm-4.7-flash"
 
