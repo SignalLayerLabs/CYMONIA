@@ -39,3 +39,34 @@ the stored marker remains the permanent audit record.
 Regression coverage: `tests/test_sovereign_system_repair.mjs`, including needs,
 resource selection, conservation of mass, death preservation, ledger integrity,
 history after compaction, and real SQLite cold-wake publication/idempotence.
+
+## Follow-up: restore affected GitHub-linked inhabitants
+
+The operator subsequently authorized recovery of the GitHub-linked inhabitants
+who died before the survival fix took effect. The initial production snapshot
+contained eleven such deceased avatars and one living GitHub-linked citizen.
+
+`HUMAN_SYSTEM_REPAIR_ID=2026-10-30-github-survival-recovery` enables a separate,
+one-time incident operation, restricted to the same production world. Only
+`HUMAN_LINKED` citizens with a recorded death at or before minute 1,942,898 are
+eligible. Later deaths and living avatars are untouched.
+
+This explicitly authorized exception restores each existing citizen ID and
+external identity link instead of creating duplicate accounts or avatars. It
+preserves names, knowledge, relationships and existing identity/session mappings.
+It resets biological needs/health, cancels stale active plans/actions and queues
+normal local cognition. Previous death times remain in the incident audit record
+and canonical per-citizen recovery provenance; old corpse matter remains in the
+world. Restored body mass is debited from natural biomass, preserving mass closure.
+
+A separate durable marker prevents the follow-up from repeating after restarts,
+ledger compaction or a later natural death. The same checkpoint publishes the
+restored bodies, material debit and incident marker. Society History explains in
+Italian that the GitHub-linked inhabitants were restored because of a system bug.
+The public notice contains citizen IDs and death times, never external GitHub IDs,
+session data or private intent content.
+
+Coverage: `tests/test_sovereign_human_system_repair.mjs` verifies identity reuse,
+canonical direction submission after recovery, conservation, audit history,
+post-fix exclusion, fail-before-mutation on insufficient biomass, and real SQLite
+cold-wake recovery with a subsequent death remaining permanent.

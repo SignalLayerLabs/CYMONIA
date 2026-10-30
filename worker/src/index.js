@@ -1,4 +1,4 @@
-import {applySystemRepair} from '../../world/system-repair.js';
+import {applySystemRepair,applyHumanSystemRepair} from '../../world/system-repair.js';
 import {
   createSovereignGenesis,
   advanceWorldTo,
@@ -248,7 +248,9 @@ export class SovereignWorld {
       }else{
         ensureRuntime(this.world);
         this.establishClockGuardBaseline();
-        const repaired=applySystemRepair(this.world,this.env.SYSTEM_REPAIR_ID);
+        const populationRepaired=applySystemRepair(this.world,this.env.SYSTEM_REPAIR_ID);
+        const humansRepaired=applyHumanSystemRepair(this.world,this.env.HUMAN_SYSTEM_REPAIR_ID);
+        const repaired=populationRepaired||humansRepaired;
         if(repaired)this.registerCitizenEvidence();
         if(repaired||!this.lastPersistedGeneration||this.knowledgeArchive?.backingBytes)await this.persist({forceSeal:true});
       }
